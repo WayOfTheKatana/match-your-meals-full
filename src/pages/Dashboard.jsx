@@ -58,7 +58,7 @@ const Dashboard = () => {
                   <User className="w-4 h-4 text-white" />
                 </div>
                 <div className="hidden md:block">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-white">
                     {userProfile?.full_name || user?.email || 'User'}
                   </p>
                   <p className="text-xs text-gray-500">
