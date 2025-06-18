@@ -49,7 +49,7 @@ const Dashboard = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <ChefHat className="w-8 h-8 text-primary-600" />
-              <h1 className="text-2xl font-serif text-gray-900">MatchMyMeals</h1>
+              <h1 className="text-2xl font-serif text-white">MatchMyMeals</h1>
             </div>
             
             <div className="flex items-center space-x-4">
