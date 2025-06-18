@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 255 255 255; /* white */
+    --foreground: 15 23 42; /* slate-900 */
+    --global-border: 226 232 240; /* slate-200 */
+    --muted: 248 250 252; /* slate-50 */
+    --muted-foreground: 100 116 139; /* slate-500 */
+  }
+
+  .dark {
+    --background: 15 23 42; /* slate-900 */
+    --foreground: 248 250 252; /* slate-50 */
+    --global-border: 51 65 85; /* slate-600 */
+    --muted: 30 41 59; /* slate-800 */
+    --muted-foreground: 148 163 184; /* slate-400 */
+  }
+
+  * {
+    border-color: rgb(var(--global-border));
+  }
+
+  body {
+    @apply bg-white text-slate-900 font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.8s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
