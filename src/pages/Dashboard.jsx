@@ -53,7 +53,7 @@ const Dashboard = () => {
               <h1 className="text-2xl font-serif text-white">MatchMyMeals</h1>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-12">
               {/* Creator Mode Button */}
               <Button
                 variant="ghost"
