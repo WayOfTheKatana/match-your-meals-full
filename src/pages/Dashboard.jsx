@@ -12,7 +12,8 @@ import {
   Star,
   ChefHat,
   LogOut,
-  AlertCircle
+  AlertCircle,
+  PenTool
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -53,6 +54,16 @@ const Dashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Creator Mode Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10 hover:text-white border border-white/20 hover:border-white/30 transition-all duration-200"
+              >
+                <PenTool className="w-4 h-4 mr-2" />
+                Creator Mode
+              </Button>
+
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
@@ -61,7 +72,7 @@ const Dashboard = () => {
                   <p className="text-sm font-medium text-white">
                     {userProfile?.full_name || user?.email || 'User'}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-400">
                     {userProfile?.subscription_status || 'Free Plan'}
                   </p>
                 </div>
@@ -71,7 +82,7 @@ const Dashboard = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-400 hover:text-white hover:bg-white/10"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
