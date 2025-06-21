@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
+import RecipeCreationModal from '../components/RecipeCreationModal';
 import { 
   User, 
   Settings, 
@@ -36,6 +37,7 @@ import {
 const Dashboard = () => {
   const { user, userProfile, signOut, isConnected } = useAuth();
   const [isCreatorMode, setIsCreatorMode] = useState(false);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
@@ -49,6 +51,22 @@ const Dashboard = () => {
 
   const toggleMode = () => {
     setIsCreatorMode(!isCreatorMode);
+  };
+
+  const handleCreateRecipe = () => {
+    setShowRecipeModal(true);
+  };
+
+  const handleSaveRecipe = async (recipeData) => {
+    console.log('Saving recipe as draft:', recipeData);
+    // TODO: Implement save to Supabase
+    setShowRecipeModal(false);
+  };
+
+  const handlePublishRecipe = async (recipeData) => {
+    console.log('Publishing recipe:', recipeData);
+    // TODO: Implement publish to Supabase
+    setShowRecipeModal(false);
   };
 
   // Consumer Mode Data
@@ -258,7 +276,12 @@ const Dashboard = () => {
                     </div>
                     <h3 className="text-xl font-semibold mb-2">New Recipe</h3>
                     <p className="text-primary-100 mb-4">Share your culinary creation</p>
-                    <Button variant="secondary" size="sm" className="bg-white text-primary-600 hover:bg-gray-100">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="bg-white text-primary-600 hover:bg-gray-100"
+                      onClick={handleCreateRecipe}
+                    >
                       Create Recipe
                     </Button>
                   </div>
@@ -491,6 +514,14 @@ const Dashboard = () => {
           </div>
         </aside>
       </main>
+
+      {/* Recipe Creation Modal */}
+      <RecipeCreationModal
+        isOpen={showRecipeModal}
+        onClose={() => setShowRecipeModal(false)}
+        onSave={handleSaveRecipe}
+        onPublish={handlePublishRecipe}
+      />
     </div>
   );
 };
