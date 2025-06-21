@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -163,16 +166,98 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Form Submission
+  // Prepare data for database
+  const prepareRecipeData = (status = 'draft') => {
+    // Convert ingredients to JSONB format
+    const ingredientsForDB = formData.ingredients.map(ing => ({
+      name: ing.item.trim(),
+      amount: ing.amount.trim(),
+      unit: ing.unit
+    }));
+
+    // Convert instructions to TEXT[] format
+    const instructionsForDB = formData.instructions.map(inst => inst.description.trim());
+
+    return {
+      creator_id: user.id,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      prep_time: parseInt(formData.prepTime),
+      cook_time: parseInt(formData.cookTime),
+      servings: parseInt(formData.servings),
+      ingredients: ingredientsForDB,
+      instructions: instructionsForDB,
+      status: status,
+      // Skip image_path, health_tags, dietary_tags, health_benefits, nutritional_info, embedding for now
+      image_path: null,
+      health_tags: null,
+      dietary_tags: null,
+      health_benefits: null,
+      nutritional_info: null,
+      embedding: null
+    };
+  };
+
+  // Save recipe to Supabase
+  const saveRecipeToDatabase = async (status = 'draft') => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const recipeData = prepareRecipeData(status);
+      
+      console.log('Saving recipe to database:', recipeData);
+
+      const { data, error } = await supabase
+        .from('recipes')
+        .insert([recipeData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Recipe saved successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('Error saving recipe:', error);
+      throw error;
+    }
+  };
+
+  // Form Submission Handlers
   const handleSaveDraft = async () => {
     if (!validateForm()) return;
     
     setLoading(true);
     try {
-      await onSave({ ...formData, status: 'draft' });
-      onClose();
+      const savedRecipe = await saveRecipeToDatabase('draft');
+      
+      // Show success message
+      alert('Recipe saved as draft successfully!');
+      
+      // Call parent handler if provided
+      if (onSave) {
+        await onSave({ ...formData, status: 'draft', id: savedRecipe.id });
+      }
+      
+      // Close modal and reset form
+      handleClose();
     } catch (error) {
       console.error('Error saving draft:', error);
+      
+      // Show user-friendly error message
+      let errorMessage = 'Failed to save recipe. Please try again.';
+      if (error.message?.includes('not authenticated')) {
+        errorMessage = 'Please log in to save recipes.';
+      } else if (error.message?.includes('violates')) {
+        errorMessage = 'Please check all required fields are filled correctly.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -183,10 +268,30 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     
     setLoading(true);
     try {
-      await onPublish({ ...formData, status: 'published' });
-      onClose();
+      const publishedRecipe = await saveRecipeToDatabase('published');
+      
+      // Show success message
+      alert('Recipe published successfully!');
+      
+      // Call parent handler if provided
+      if (onPublish) {
+        await onPublish({ ...formData, status: 'published', id: publishedRecipe.id });
+      }
+      
+      // Close modal and reset form
+      handleClose();
     } catch (error) {
       console.error('Error publishing recipe:', error);
+      
+      // Show user-friendly error message
+      let errorMessage = 'Failed to publish recipe. Please try again.';
+      if (error.message?.includes('not authenticated')) {
+        errorMessage = 'Please log in to publish recipes.';
+      } else if (error.message?.includes('violates')) {
+        errorMessage = 'Please check all required fields are filled correctly.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -231,6 +336,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            disabled={loading}
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -256,6 +362,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                     onChange={(e) => handleInputChange('title', e.target.value)}
                     placeholder="Enter recipe title"
                     className={`h-12 ${errors.title ? 'border-red-300' : ''}`}
+                    disabled={loading}
                   />
                   {errors.title && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -275,13 +382,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       placeholder="Describe your recipe..."
                       rows={4}
+                      disabled={loading}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none ${errors.description ? 'border-red-300' : 'border-gray-300'}`}
                     />
                     {/* AI Enhance Button - Fixed in bottom right corner of textarea */}
                     <button
                       type="button"
                       onClick={handleEnhanceDescription}
-                      disabled={enhancingDescription}
+                      disabled={enhancingDescription || loading}
                       className="absolute bottom-3 right-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Enhance description with AI"
                     >
@@ -313,6 +421,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                       onChange={(e) => handleInputChange('prepTime', e.target.value)}
                       placeholder="15"
                       className={`pl-10 h-12 ${errors.prepTime ? 'border-red-300' : ''}`}
+                      disabled={loading}
                     />
                   </div>
                   {errors.prepTime && (
@@ -332,6 +441,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                       onChange={(e) => handleInputChange('cookTime', e.target.value)}
                       placeholder="30"
                       className={`pl-10 h-12 ${errors.cookTime ? 'border-red-300' : ''}`}
+                      disabled={loading}
                     />
                   </div>
                   {errors.cookTime && (
@@ -351,6 +461,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                       onChange={(e) => handleInputChange('servings', e.target.value)}
                       placeholder="4"
                       className={`pl-10 h-12 ${errors.servings ? 'border-red-300' : ''}`}
+                      disabled={loading}
                     />
                   </div>
                   {errors.servings && (
@@ -366,6 +477,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                     value={formData.difficulty}
                     onChange={(e) => handleInputChange('difficulty', e.target.value)}
                     className="w-full h-12 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    disabled={loading}
                   >
                     {difficulties.map(diff => (
                       <option key={diff} value={diff}>
@@ -392,8 +504,9 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                   onChange={handleImageUpload}
                   className="hidden"
                   id="image-upload"
+                  disabled={loading}
                 />
-                <label htmlFor="image-upload" className="cursor-pointer">
+                <label htmlFor="image-upload" className={`cursor-pointer ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-lg text-gray-600 mb-2">Click to upload images or drag and drop</p>
                   <p className="text-sm text-gray-500">PNG, JPG, GIF up to 10MB each</p>
@@ -413,6 +526,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                         type="button"
                         onClick={() => removeImage(image.id)}
                         className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                        disabled={loading}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -435,6 +549,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                   variant="outline"
                   size="sm"
                   className="flex items-center space-x-1 hover:bg-primary-50 hover:border-primary-300"
+                  disabled={loading}
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Ingredient</span>
@@ -460,17 +575,20 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                         onChange={(e) => updateIngredient(ingredient.id, 'item', e.target.value)}
                         placeholder="Ingredient name"
                         className="h-10"
+                        disabled={loading}
                       />
                       <Input
                         value={ingredient.amount}
                         onChange={(e) => updateIngredient(ingredient.id, 'amount', e.target.value)}
                         placeholder="Amount"
                         className="h-10"
+                        disabled={loading}
                       />
                       <select
                         value={ingredient.unit}
                         onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
                         className="h-10 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        disabled={loading}
                       >
                         {units.map(unit => (
                           <option key={unit} value={unit}>{unit}</option>
@@ -482,6 +600,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                         type="button"
                         onClick={() => removeIngredient(ingredient.id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        disabled={loading}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -504,6 +623,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                   variant="outline"
                   size="sm"
                   className="flex items-center space-x-1 hover:bg-primary-50 hover:border-primary-300"
+                  disabled={loading}
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Step</span>
@@ -535,6 +655,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                         placeholder="Describe this cooking step in detail..."
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                        disabled={loading}
                       />
                     </div>
                     {formData.instructions.length > 1 && (
@@ -542,6 +663,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                         type="button"
                         onClick={() => removeInstruction(instruction.id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                        disabled={loading}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

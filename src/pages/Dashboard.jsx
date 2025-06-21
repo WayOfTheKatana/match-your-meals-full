@@ -58,15 +58,15 @@ const Dashboard = () => {
   };
 
   const handleSaveRecipe = async (recipeData) => {
-    console.log('Saving recipe as draft:', recipeData);
-    // TODO: Implement save to Supabase
-    setShowRecipeModal(false);
+    console.log('Recipe saved as draft:', recipeData);
+    // The actual saving is handled in the modal component
+    // You can add additional logic here if needed (e.g., refresh data, show notifications)
   };
 
   const handlePublishRecipe = async (recipeData) => {
-    console.log('Publishing recipe:', recipeData);
-    // TODO: Implement publish to Supabase
-    setShowRecipeModal(false);
+    console.log('Recipe published:', recipeData);
+    // The actual publishing is handled in the modal component
+    // You can add additional logic here if needed (e.g., refresh data, show notifications)
   };
 
   // Consumer Mode Data
