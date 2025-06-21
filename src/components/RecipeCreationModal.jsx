@@ -167,7 +167,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   };
 
   // Prepare data for database
-  const prepareRecipeData = (status = 'draft') => {
+  const prepareRecipeData = () => {
     // Convert ingredients to JSONB format
     const ingredientsForDB = formData.ingredients.map(ing => ({
       name: ing.item.trim(),
@@ -187,7 +187,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       servings: parseInt(formData.servings),
       ingredients: ingredientsForDB,
       instructions: instructionsForDB,
-      status: status,
       // Skip image_path, health_tags, dietary_tags, health_benefits, nutritional_info, embedding for now
       image_path: null,
       health_tags: null,
@@ -199,13 +198,13 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   };
 
   // Save recipe to Supabase
-  const saveRecipeToDatabase = async (status = 'draft') => {
+  const saveRecipeToDatabase = async () => {
     try {
       if (!user) {
         throw new Error('User not authenticated');
       }
 
-      const recipeData = prepareRecipeData(status);
+      const recipeData = prepareRecipeData();
       
       console.log('Saving recipe to database:', recipeData);
 
@@ -234,14 +233,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     
     setLoading(true);
     try {
-      const savedRecipe = await saveRecipeToDatabase('draft');
+      const savedRecipe = await saveRecipeToDatabase();
       
       // Show success message
       alert('Recipe saved as draft successfully!');
       
       // Call parent handler if provided
       if (onSave) {
-        await onSave({ ...formData, status: 'draft', id: savedRecipe.id });
+        await onSave({ ...formData, id: savedRecipe.id });
       }
       
       // Close modal and reset form
@@ -268,14 +267,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     
     setLoading(true);
     try {
-      const publishedRecipe = await saveRecipeToDatabase('published');
+      const publishedRecipe = await saveRecipeToDatabase();
       
       // Show success message
       alert('Recipe published successfully!');
       
       // Call parent handler if provided
       if (onPublish) {
-        await onPublish({ ...formData, status: 'published', id: publishedRecipe.id });
+        await onPublish({ ...formData, id: publishedRecipe.id });
       }
       
       // Close modal and reset form
