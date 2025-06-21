@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical } from 'lucide-react';
+import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 
@@ -18,6 +18,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [enhancingDescription, setEnhancingDescription] = useState(false);
 
   const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces', 'cloves', 'slices'];
   const difficulties = ['easy', 'medium', 'hard'];
@@ -30,6 +31,29 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  // AI Enhancement Function
+  const handleEnhanceDescription = async () => {
+    if (!formData.title.trim()) {
+      alert('Please enter a recipe title first to enhance the description.');
+      return;
+    }
+
+    setEnhancingDescription(true);
+    try {
+      // Simulate AI enhancement - replace with actual AI API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const enhancedDescription = `${formData.description || ''} This delicious ${formData.title.toLowerCase()} combines fresh ingredients with traditional cooking techniques to create a memorable dining experience. Perfect for ${formData.servings || 'family'} servings, this recipe balances flavors beautifully and is sure to become a household favorite. The preparation is ${formData.difficulty || 'easy'} and takes approximately ${formData.prepTime || '15'} minutes to prep.`.trim();
+      
+      handleInputChange('description', enhancedDescription);
+    } catch (error) {
+      console.error('Error enhancing description:', error);
+      alert('Failed to enhance description. Please try again.');
+    } finally {
+      setEnhancingDescription(false);
     }
   };
 
@@ -245,13 +269,30 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description *
                   </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Describe your recipe..."
-                    rows={4}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none ${errors.description ? 'border-red-300' : 'border-gray-300'}`}
-                  />
+                  <div className="relative">
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="Describe your recipe..."
+                      rows={4}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none ${errors.description ? 'border-red-300' : 'border-gray-300'}`}
+                    />
+                    {/* AI Enhance Button - Fixed in bottom right corner of textarea */}
+                    <button
+                      type="button"
+                      onClick={handleEnhanceDescription}
+                      disabled={enhancingDescription}
+                      className="absolute bottom-2 right-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Enhance description with AI"
+                    >
+                      {enhancingDescription ? (
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3" />
+                      )}
+                      <span>{enhancingDescription ? 'Enhancing...' : 'Enhance with AI'}</span>
+                    </button>
+                  </div>
                   {errors.description && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
                       <AlertCircle className="w-4 h-4 mr-1" />
