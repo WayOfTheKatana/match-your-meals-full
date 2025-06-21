@@ -38,6 +38,31 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     }
   };
 
+  // Test Edge Function - Simple Hello World
+  const testEdgeFunction = async () => {
+    try {
+      console.log('Testing hello-world Edge Function...');
+      
+      const { data, error } = await supabase.functions.invoke('hello-world', {
+        body: {
+          name: user?.email || 'Anonymous User',
+          message: 'Testing Edge Function from Recipe Modal'
+        }
+      });
+
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw error;
+      }
+
+      console.log('Edge Function test successful:', data);
+      return data;
+    } catch (error) {
+      console.error('Error testing Edge Function:', error);
+      throw error;
+    }
+  };
+
   // AI Enhancement Function
   const handleEnhanceDescription = async () => {
     if (!formData.title.trim()) {
@@ -47,15 +72,22 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
     setEnhancingDescription(true);
     try {
+      // Test the Edge Function first
+      const testResult = await testEdgeFunction();
+      console.log('Edge Function test result:', testResult);
+      
       // Simulate AI enhancement - replace with actual AI API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const enhancedDescription = `${formData.description || ''} This delicious ${formData.title.toLowerCase()} combines fresh ingredients with traditional cooking techniques to create a memorable dining experience. Perfect for ${formData.servings || 'family'} servings, this recipe balances flavors beautifully and is sure to become a household favorite. The preparation is ${formData.difficulty || 'easy'} and takes approximately ${formData.prepTime || '15'} minutes to prep.`.trim();
       
       handleInputChange('description', enhancedDescription);
+      
+      // Show success message with Edge Function test result
+      alert(`Description enhanced successfully! Edge Function test: ${testResult.success ? 'PASSED' : 'FAILED'}`);
     } catch (error) {
       console.error('Error enhancing description:', error);
-      alert('Failed to enhance description. Please try again.');
+      alert(`Failed to enhance description. Edge Function test failed: ${error.message}`);
     } finally {
       setEnhancingDescription(false);
     }
@@ -189,13 +221,22 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     };
   };
 
-  // Invoke recipe-analyzer Edge Function
+  // Test recipe analysis with hello-world function
   const analyzeRecipe = async (recipeData) => {
     try {
-      console.log('Invoking recipe-analyzer Edge Function with data:', recipeData);
+      console.log('Testing recipe analysis with hello-world function...');
       
-      const { data, error } = await supabase.functions.invoke('smooth-action', {
-        body: recipeData
+      // First test the basic hello-world function
+      const testResult = await testEdgeFunction();
+      console.log('Basic Edge Function test result:', testResult);
+      
+      // Then test with recipe data
+      const { data, error } = await supabase.functions.invoke('hello-world', {
+        body: {
+          name: 'Recipe Analyzer',
+          message: `Testing recipe analysis for: ${recipeData.title}`,
+          recipeData: recipeData
+        }
       });
 
       if (error) {
@@ -203,8 +244,23 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         throw error;
       }
 
-      console.log('Recipe analysis successful:', data);
-      return data;
+      console.log('Recipe analysis test successful:', data);
+      
+      // Return mock analyzed data for now
+      return {
+        success: true,
+        health_tags: ['healthy', 'nutritious'],
+        dietary_tags: ['vegetarian-friendly'],
+        health_benefits: ['Rich in nutrients', 'Good source of vitamins'],
+        nutritional_info: {
+          calories: 250,
+          protein: '12g',
+          carbs: '30g',
+          fat: '8g'
+        },
+        embedding: null,
+        edgeFunctionTest: data
+      };
     } catch (error) {
       console.error('Error analyzing recipe:', error);
       throw error;
@@ -292,11 +348,15 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     
     setLoading(true);
     try {
+      // Test Edge Function before saving
+      console.log('Testing Edge Function before saving draft...');
+      await testEdgeFunction();
+      
       // Save as draft without analysis
       const savedRecipe = await saveRecipeToDatabase();
       
       // Show success message
-      alert('Recipe saved as draft successfully!');
+      alert('Recipe saved as draft successfully! Edge Function test passed.');
       
       // Call parent handler if provided
       if (onSave) {
@@ -314,6 +374,8 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         errorMessage = 'Please log in to save recipes.';
       } else if (error.message?.includes('violates')) {
         errorMessage = 'Please check all required fields are filled correctly.';
+      } else if (error.message?.includes('Failed to fetch')) {
+        errorMessage = 'Edge Function connection failed. Please check your Supabase configuration.';
       }
       
       alert(errorMessage);
@@ -332,8 +394,8 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       // Step 1: Prepare data for analysis
       const analyzerPayload = prepareAnalyzerPayload();
       
-      // Step 2: Invoke recipe-analyzer Edge Function
-      console.log('Starting recipe analysis...');
+      // Step 2: Test recipe analysis with hello-world function
+      console.log('Starting recipe analysis test...');
       const analyzedData = await analyzeRecipe(analyzerPayload);
       
       setAnalyzingRecipe(false);
@@ -343,7 +405,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       const publishedRecipe = await saveRecipeToDatabase(analyzedData);
       
       // Show success message
-      alert('Recipe analyzed and published successfully!');
+      alert('Recipe analyzed and published successfully! Edge Function test passed.');
       
       // Call parent handler if provided
       if (onPublish) {
@@ -363,10 +425,12 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         errorMessage = 'Please log in to publish recipes.';
       } else if (error.message?.includes('violates')) {
         errorMessage = 'Please check all required fields are filled correctly.';
-      } else if (error.message?.includes('Function not found') || error.message?.includes('recipe-analyzer')) {
-        errorMessage = 'Recipe analysis service is currently unavailable. Please try again later.';
+      } else if (error.message?.includes('Function not found') || error.message?.includes('hello-world')) {
+        errorMessage = 'Edge Function test failed. Please ensure the hello-world function is deployed in Supabase.';
       } else if (error.message?.includes('timeout') || error.message?.includes('network')) {
-        errorMessage = 'Network error occurred during recipe analysis. Please check your connection and try again.';
+        errorMessage = 'Network error occurred during Edge Function test. Please check your connection and try again.';
+      } else if (error.message?.includes('Failed to fetch')) {
+        errorMessage = 'Edge Function connection failed. Please check your Supabase configuration and ensure the hello-world function is deployed.';
       }
       
       alert(errorMessage);
@@ -427,8 +491,8 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
             <div className="flex items-center space-x-3">
               <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
               <div>
-                <p className="text-sm font-medium text-blue-900">Analyzing your recipe with AI...</p>
-                <p className="text-xs text-blue-700">This may take a few moments while we generate health tags, nutritional info, and more.</p>
+                <p className="text-sm font-medium text-blue-900">Testing Edge Function and analyzing recipe...</p>
+                <p className="text-xs text-blue-700">This may take a few moments while we test the hello-world function and generate mock analysis data.</p>
               </div>
             </div>
           </div>
@@ -483,14 +547,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                       onClick={handleEnhanceDescription}
                       disabled={enhancingDescription || loading}
                       className="absolute bottom-3 right-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Enhance description with AI"
+                      title="Test Edge Function and enhance description"
                     >
                       {enhancingDescription ? (
                         <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <Sparkles className="w-3 h-3" />
                       )}
-                      <span>{enhancingDescription ? 'Enhancing...' : 'Enhance with AI'}</span>
+                      <span>{enhancingDescription ? 'Testing...' : 'Test & Enhance'}</span>
                     </button>
                   </div>
                   {errors.description && (
@@ -805,7 +869,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                 analyzingRecipe ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Analyzing Recipe...</span>
+                    <span>Testing Function...</span>
                   </>
                 ) : (
                   <>
@@ -816,7 +880,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               ) : (
                 <>
                   <ChefHat className="w-4 h-4" />
-                  <span>Publish Recipe</span>
+                  <span>Test & Publish</span>
                 </>
               )}
             </Button>
