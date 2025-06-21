@@ -194,7 +194,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     try {
       console.log('Invoking recipe-analyzer Edge Function with data:', recipeData);
       
-      const { data, error } = await supabase.functions.invoke('recipe-analyzer', {
+      const { data, error } = await supabase.functions.invoke('smooth-action', {
         body: recipeData
       });
 
