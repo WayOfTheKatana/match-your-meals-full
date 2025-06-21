@@ -203,7 +203,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       console.log('🚀 Calling recipe-analyzer Edge Function...');
       console.log('📋 Recipe data being sent:', recipeData);
       
-      setAnalysisStatus(prev => ({ ...prev, openaiConnected: null, geminiConnected: null }));
+      setAnalysisStatus(prev => ({ 
+        ...prev, 
+        openaiConnected: null, 
+        geminiConnected: null,
+        embeddingGenerated: false,
+        analysisCompleted: false,
+        databaseUpdated: false
+      }));
       
       const payload = {
         recipeData: recipeData,
@@ -407,23 +414,8 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       
       setAnalyzingRecipe(false);
       
-      // Show success message with connection status
-      const statusMessage = `
-Recipe published successfully! 
-
-🔗 Connection Status:
-• OpenAI: ${analyzedData.connectionStatus?.openai ? '✅ Connected' : '❌ Failed'}
-• Gemini: ${analyzedData.connectionStatus?.gemini ? '✅ Connected' : '❌ Failed'}
-
-📊 Analysis Results:
-• Health Tags: ${analyzedData.health_tags?.length || 0}
-• Dietary Tags: ${analyzedData.dietary_tags?.length || 0}
-• Health Benefits: ${analyzedData.health_benefits?.length || 0}
-• Embedding Generated: ${analyzedData.embedding ? '✅ Yes' : '❌ No'}
-• Database Updated: ${analyzedData.databaseUpdated ? '✅ Yes' : '❌ No'}
-      `.trim();
-      
-      alert(statusMessage);
+      // Show success message
+      alert('Recipe published successfully with AI analysis!');
       
       // Call parent handler if provided
       if (onPublish) {
@@ -515,30 +507,66 @@ Recipe published successfully!
         {/* Analysis Status */}
         {analyzingRecipe && (
           <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
                 <div>
                   <p className="text-sm font-medium text-blue-900">Analyzing Your Recipe</p>
-                  <p className="text-xs text-blue-700">Creating automatic health-tags for your recipe</p>
+                  <p className="text-xs text-blue-700">Creating automatic health tags for your recipe</p>
                 </div>
               </div>
               
-              {/* Connection Status Indicators */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    analysisStatus.openaiConnected === null ? 'bg-gray-400' :
-                    analysisStatus.openaiConnected ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-                  <span className="text-gray-700">Analyzing health tags</span>
+              {/* Progress Steps */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  {analysisStatus.openaiConnected === true ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : analysisStatus.openaiConnected === false ? (
+                    <X className="w-4 h-4 text-red-500" />
+                  ) : (
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span className={`text-sm ${
+                    analysisStatus.openaiConnected === true ? 'text-green-700' :
+                    analysisStatus.openaiConnected === false ? 'text-red-700' :
+                    'text-blue-700'
+                  }`}>
+                    {analysisStatus.openaiConnected === true ? 'Health tags analyzed ✓' :
+                     analysisStatus.openaiConnected === false ? 'Health tag analysis failed' :
+                     'Analyzing health tags...'}
+                  </span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    analysisStatus.geminiConnected === null ? 'bg-gray-400' :
-                    analysisStatus.geminiConnected ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-                  <span className="text-gray-700">Updating health tags</span>
+
+                <div className="flex items-center space-x-3">
+                  {analysisStatus.geminiConnected === true ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : analysisStatus.geminiConnected === false ? (
+                    <X className="w-4 h-4 text-red-500" />
+                  ) : (
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span className={`text-sm ${
+                    analysisStatus.geminiConnected === true ? 'text-green-700' :
+                    analysisStatus.geminiConnected === false ? 'text-red-700' :
+                    'text-blue-700'
+                  }`}>
+                    {analysisStatus.geminiConnected === true ? 'Nutritional info generated ✓' :
+                     analysisStatus.geminiConnected === false ? 'Nutritional analysis failed' :
+                     'Generating nutritional info...'}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  {analysisStatus.databaseUpdated ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span className={`text-sm ${
+                    analysisStatus.databaseUpdated ? 'text-green-700' : 'text-blue-700'
+                  }`}>
+                    {analysisStatus.databaseUpdated ? 'Recipe published successfully ✓' : 'Publishing recipe...'}
+                  </span>
                 </div>
               </div>
             </div>
