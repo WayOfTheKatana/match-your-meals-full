@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles } from 'lucide-react';
+import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,6 +22,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [enhancingDescription, setEnhancingDescription] = useState(false);
+  const [analyzingRecipe, setAnalyzingRecipe] = useState(false);
 
   const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces', 'cloves', 'slices'];
   const difficulties = ['easy', 'medium', 'hard'];
@@ -166,8 +167,52 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Prepare data for database
-  const prepareRecipeData = () => {
+  // Prepare data for recipe analyzer
+  const prepareAnalyzerPayload = () => {
+    const ingredientsForAnalysis = formData.ingredients.map(ing => ({
+      name: ing.item.trim(),
+      amount: ing.amount.trim(),
+      unit: ing.unit
+    }));
+
+    const instructionsForAnalysis = formData.instructions.map(inst => inst.description.trim());
+
+    return {
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      prep_time: parseInt(formData.prepTime),
+      cook_time: parseInt(formData.cookTime),
+      servings: parseInt(formData.servings),
+      difficulty: formData.difficulty,
+      ingredients: ingredientsForAnalysis,
+      instructions: instructionsForAnalysis
+    };
+  };
+
+  // Invoke recipe-analyzer Edge Function
+  const analyzeRecipe = async (recipeData) => {
+    try {
+      console.log('Invoking recipe-analyzer Edge Function with data:', recipeData);
+      
+      const { data, error } = await supabase.functions.invoke('recipe-analyzer', {
+        body: recipeData
+      });
+
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw error;
+      }
+
+      console.log('Recipe analysis successful:', data);
+      return data;
+    } catch (error) {
+      console.error('Error analyzing recipe:', error);
+      throw error;
+    }
+  };
+
+  // Prepare data for database with analyzed data
+  const prepareRecipeData = (processedRecipeData = null) => {
     // Convert ingredients to JSONB format
     const ingredientsForDB = formData.ingredients.map(ing => ({
       name: ing.item.trim(),
@@ -178,7 +223,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     // Convert instructions to TEXT[] format
     const instructionsForDB = formData.instructions.map(inst => inst.description.trim());
 
-    return {
+    const baseRecipeData = {
       creator_id: user.id,
       title: formData.title.trim(),
       description: formData.description.trim(),
@@ -187,7 +232,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       servings: parseInt(formData.servings),
       ingredients: ingredientsForDB,
       instructions: instructionsForDB,
-      // Skip image_path, health_tags, dietary_tags, health_benefits, nutritional_info, embedding for now
+      // Default values for fields that might not be analyzed
       image_path: null,
       health_tags: null,
       dietary_tags: null,
@@ -195,16 +240,30 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       nutritional_info: null,
       embedding: null
     };
+
+    // If we have processed data from the analyzer, merge it
+    if (processedRecipeData) {
+      return {
+        ...baseRecipeData,
+        health_tags: processedRecipeData.health_tags || null,
+        dietary_tags: processedRecipeData.dietary_tags || null,
+        health_benefits: processedRecipeData.health_benefits || null,
+        nutritional_info: processedRecipeData.nutritional_info || null,
+        embedding: processedRecipeData.embedding || null
+      };
+    }
+
+    return baseRecipeData;
   };
 
   // Save recipe to Supabase
-  const saveRecipeToDatabase = async () => {
+  const saveRecipeToDatabase = async (processedRecipeData = null) => {
     try {
       if (!user) {
         throw new Error('User not authenticated');
       }
 
-      const recipeData = prepareRecipeData();
+      const recipeData = prepareRecipeData(processedRecipeData);
       
       console.log('Saving recipe to database:', recipeData);
 
@@ -233,6 +292,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     
     setLoading(true);
     try {
+      // Save as draft without analysis
       const savedRecipe = await saveRecipeToDatabase();
       
       // Show success message
@@ -266,28 +326,47 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     if (!validateForm()) return;
     
     setLoading(true);
+    setAnalyzingRecipe(true);
+    
     try {
-      const publishedRecipe = await saveRecipeToDatabase();
+      // Step 1: Prepare data for analysis
+      const analyzerPayload = prepareAnalyzerPayload();
+      
+      // Step 2: Invoke recipe-analyzer Edge Function
+      console.log('Starting recipe analysis...');
+      const analyzedData = await analyzeRecipe(analyzerPayload);
+      
+      setAnalyzingRecipe(false);
+      
+      // Step 3: Save the analyzed recipe to database
+      console.log('Saving analyzed recipe to database...');
+      const publishedRecipe = await saveRecipeToDatabase(analyzedData);
       
       // Show success message
-      alert('Recipe published successfully!');
+      alert('Recipe analyzed and published successfully!');
       
       // Call parent handler if provided
       if (onPublish) {
-        await onPublish({ ...formData, id: publishedRecipe.id });
+        await onPublish({ ...formData, id: publishedRecipe.id, ...analyzedData });
       }
       
       // Close modal and reset form
       handleClose();
     } catch (error) {
       console.error('Error publishing recipe:', error);
+      setAnalyzingRecipe(false);
       
       // Show user-friendly error message
       let errorMessage = 'Failed to publish recipe. Please try again.';
+      
       if (error.message?.includes('not authenticated')) {
         errorMessage = 'Please log in to publish recipes.';
       } else if (error.message?.includes('violates')) {
         errorMessage = 'Please check all required fields are filled correctly.';
+      } else if (error.message?.includes('Function not found') || error.message?.includes('recipe-analyzer')) {
+        errorMessage = 'Recipe analysis service is currently unavailable. Please try again later.';
+      } else if (error.message?.includes('timeout') || error.message?.includes('network')) {
+        errorMessage = 'Network error occurred during recipe analysis. Please check your connection and try again.';
       }
       
       alert(errorMessage);
@@ -309,6 +388,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       images: []
     });
     setErrors({});
+    setAnalyzingRecipe(false);
   };
 
   const handleClose = () => {
@@ -340,6 +420,19 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
+
+        {/* Analysis Status */}
+        {analyzingRecipe && (
+          <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
+            <div className="flex items-center space-x-3">
+              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">Analyzing your recipe with AI...</p>
+                <p className="text-xs text-blue-700">This may take a few moments while we generate health tags, nutritional info, and more.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Form Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6">
@@ -694,7 +787,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               disabled={loading}
               className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
             >
-              {loading ? (
+              {loading && !analyzingRecipe ? (
                 <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Check className="w-4 h-4" />
@@ -709,11 +802,23 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
             >
               {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                analyzingRecipe ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Analyzing Recipe...</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Publishing...</span>
+                  </>
+                )
               ) : (
-                <ChefHat className="w-4 h-4" />
+                <>
+                  <ChefHat className="w-4 h-4" />
+                  <span>Publish Recipe</span>
+                </>
               )}
-              <span>Publish Recipe</span>
             </Button>
           </div>
         </div>
