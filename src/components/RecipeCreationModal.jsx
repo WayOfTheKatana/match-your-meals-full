@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles, Loader2 } from 'lucide-react';
+import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles, Loader2, Key, Brain, Database } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,10 +19,22 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     images: []
   });
 
+  const [apiKeys, setApiKeys] = useState({
+    openai: '',
+    gemini: ''
+  });
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [enhancingDescription, setEnhancingDescription] = useState(false);
   const [analyzingRecipe, setAnalyzingRecipe] = useState(false);
+  const [analysisStatus, setAnalysisStatus] = useState({
+    openaiConnected: null,
+    geminiConnected: null,
+    embeddingGenerated: false,
+    analysisCompleted: false,
+    databaseUpdated: false
+  });
 
   const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces', 'cloves', 'slices'];
   const difficulties = ['easy', 'medium', 'hard'];
@@ -36,6 +48,13 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
+  };
+
+  const handleApiKeyChange = (provider, value) => {
+    setApiKeys(prev => ({
+      ...prev,
+      [provider]: value
+    }));
   };
 
   // Simple AI Enhancement (no Edge Function call)
@@ -168,6 +187,18 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateApiKeys = () => {
+    if (!apiKeys.openai.trim()) {
+      alert('OpenAI API key is required for recipe analysis');
+      return false;
+    }
+    if (!apiKeys.gemini.trim()) {
+      alert('Gemini API key is required for recipe analysis');
+      return false;
+    }
+    return true;
+  };
+
   // Prepare data for recipe analyzer
   const prepareAnalyzerPayload = () => {
     const ingredientsForAnalysis = formData.ingredients.map(ing => ({
@@ -190,44 +221,68 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     };
   };
 
-  // Call the hello-world Edge Function for recipe publishing
-  const callRecipeAnalyzer = async (recipeData) => {
+  // Call the recipe-analyzer Edge Function
+  const callRecipeAnalyzer = async (recipeData, recipeId = null) => {
     try {
-      console.log('Calling hello-world Edge Function for recipe analysis...');
-      console.log('Recipe data being sent:', recipeData);
+      console.log('🚀 Calling recipe-analyzer Edge Function...');
+      console.log('📋 Recipe data being sent:', recipeData);
       
-      const { data, error } = await supabase.functions.invoke('hello-world', {
-        body: {
-          name: 'Recipe Publisher',
-          message: `Publishing recipe: ${recipeData.title}`,
-          recipeData: recipeData
-        }
+      setAnalysisStatus(prev => ({ ...prev, openaiConnected: null, geminiConnected: null }));
+      
+      const payload = {
+        recipeData: recipeData,
+        recipeId: recipeId,
+        openaiApiKey: apiKeys.openai.trim(),
+        geminiApiKey: apiKeys.gemini.trim()
+      };
+
+      const { data, error } = await supabase.functions.invoke('recipe-analyzer', {
+        body: payload
       });
 
       if (error) {
-        console.error('Edge Function error:', error);
-        throw new Error(`Edge Function failed: ${error.message}`);
+        console.error('❌ Edge Function error:', error);
+        throw new Error(`Recipe analyzer failed: ${error.message}`);
       }
 
-      console.log('Edge Function response:', data);
+      console.log('✅ Edge Function response:', data);
       
-      // Return mock analyzed data for now
+      // Update analysis status based on response
+      if (data.connectionStatus) {
+        setAnalysisStatus(prev => ({
+          ...prev,
+          openaiConnected: data.connectionStatus.openai,
+          geminiConnected: data.connectionStatus.gemini,
+          embeddingGenerated: !!data.embedding,
+          analysisCompleted: !!data.analysisResult,
+          databaseUpdated: data.databaseUpdated
+        }));
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Recipe analysis failed');
+      }
+
       return {
         success: true,
-        health_tags: ['healthy', 'nutritious'],
-        dietary_tags: ['vegetarian-friendly'],
-        health_benefits: ['Rich in nutrients', 'Good source of vitamins'],
-        nutritional_info: {
-          calories: 250,
-          protein: '12g',
-          carbs: '30g',
-          fat: '8g'
-        },
-        embedding: null,
-        edgeFunctionResponse: data
+        health_tags: data.analysisResult.health_tags,
+        dietary_tags: data.analysisResult.dietary_tags,
+        health_benefits: data.analysisResult.health_benefits,
+        nutritional_info: data.analysisResult.nutritional_info,
+        embedding: data.embedding,
+        connectionStatus: data.connectionStatus,
+        databaseUpdated: data.databaseUpdated
       };
     } catch (error) {
-      console.error('Error calling recipe analyzer:', error);
+      console.error('❌ Error calling recipe analyzer:', error);
+      
+      // Update status to show failure
+      setAnalysisStatus(prev => ({
+        ...prev,
+        openaiConnected: false,
+        geminiConnected: false
+      }));
+      
       throw error;
     }
   };
@@ -286,7 +341,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
       const recipeData = prepareRecipeData(processedRecipeData);
       
-      console.log('Saving recipe to database:', recipeData);
+      console.log('💾 Saving recipe to database:', recipeData);
 
       const { data, error } = await supabase
         .from('recipes')
@@ -295,14 +350,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('❌ Supabase error:', error);
         throw error;
       }
 
-      console.log('Recipe saved successfully:', data);
+      console.log('✅ Recipe saved successfully:', data);
       return data;
     } catch (error) {
-      console.error('Error saving recipe:', error);
+      console.error('❌ Error saving recipe:', error);
       throw error;
     }
   };
@@ -345,40 +400,67 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
   const handlePublish = async () => {
     if (!validateForm()) return;
+    if (!validateApiKeys()) return;
     
     setLoading(true);
     setAnalyzingRecipe(true);
     
+    // Reset analysis status
+    setAnalysisStatus({
+      openaiConnected: null,
+      geminiConnected: null,
+      embeddingGenerated: false,
+      analysisCompleted: false,
+      databaseUpdated: false
+    });
+    
     try {
-      console.log('Starting recipe publishing process...');
+      console.log('🚀 Starting recipe publishing process...');
       
-      // Step 1: Prepare data for analysis
+      // Step 1: Save recipe to database first to get an ID
+      console.log('💾 Saving recipe to database...');
+      const savedRecipe = await saveRecipeToDatabase();
+      const recipeId = savedRecipe.id;
+      console.log('✅ Recipe saved with ID:', recipeId);
+      
+      // Step 2: Prepare data for analysis
       const analyzerPayload = prepareAnalyzerPayload();
-      console.log('Prepared analyzer payload:', analyzerPayload);
+      console.log('📋 Prepared analyzer payload:', analyzerPayload);
       
-      // Step 2: Call the hello-world Edge Function for recipe analysis
-      console.log('Calling Edge Function for recipe analysis...');
-      const analyzedData = await callRecipeAnalyzer(analyzerPayload);
-      console.log('Recipe analysis completed:', analyzedData);
+      // Step 3: Call the recipe-analyzer Edge Function
+      console.log('🔄 Calling Edge Function for recipe analysis...');
+      const analyzedData = await callRecipeAnalyzer(analyzerPayload, recipeId);
+      console.log('✅ Recipe analysis completed:', analyzedData);
       
       setAnalyzingRecipe(false);
       
-      // Step 3: Save the analyzed recipe to database
-      console.log('Saving analyzed recipe to database...');
-      const publishedRecipe = await saveRecipeToDatabase(analyzedData);
+      // Show success message with connection status
+      const statusMessage = `
+Recipe published successfully! 
+
+🔗 Connection Status:
+• OpenAI: ${analyzedData.connectionStatus?.openai ? '✅ Connected' : '❌ Failed'}
+• Gemini: ${analyzedData.connectionStatus?.gemini ? '✅ Connected' : '❌ Failed'}
+
+📊 Analysis Results:
+• Health Tags: ${analyzedData.health_tags?.length || 0}
+• Dietary Tags: ${analyzedData.dietary_tags?.length || 0}
+• Health Benefits: ${analyzedData.health_benefits?.length || 0}
+• Embedding Generated: ${analyzedData.embedding ? '✅ Yes' : '❌ No'}
+• Database Updated: ${analyzedData.databaseUpdated ? '✅ Yes' : '❌ No'}
+      `.trim();
       
-      // Show success message
-      alert('Recipe published successfully! Edge Function was called and recipe was analyzed.');
+      alert(statusMessage);
       
       // Call parent handler if provided
       if (onPublish) {
-        await onPublish({ ...formData, id: publishedRecipe.id, ...analyzedData });
+        await onPublish({ ...formData, id: recipeId, ...analyzedData });
       }
       
       // Close modal and reset form
       handleClose();
     } catch (error) {
-      console.error('Error publishing recipe:', error);
+      console.error('❌ Error publishing recipe:', error);
       setAnalyzingRecipe(false);
       
       // Show user-friendly error message
@@ -388,10 +470,16 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         errorMessage = 'Please log in to publish recipes.';
       } else if (error.message?.includes('violates')) {
         errorMessage = 'Please check all required fields are filled correctly.';
-      } else if (error.message?.includes('Function not found') || error.message?.includes('hello-world')) {
-        errorMessage = 'Edge Function not found. Please ensure the hello-world function is deployed in Supabase.';
-      } else if (error.message?.includes('Edge Function failed')) {
-        errorMessage = `Edge Function error: ${error.message}`;
+      } else if (error.message?.includes('Function not found') || error.message?.includes('recipe-analyzer')) {
+        errorMessage = 'Recipe analyzer function not found. Please ensure the recipe-analyzer function is deployed in Supabase.';
+      } else if (error.message?.includes('OpenAI API key')) {
+        errorMessage = 'Invalid OpenAI API key. Please check your API key and try again.';
+      } else if (error.message?.includes('Gemini API key')) {
+        errorMessage = 'Invalid Gemini API key. Please check your API key and try again.';
+      } else if (error.message?.includes('Failed to connect')) {
+        errorMessage = `API Connection failed: ${error.message}`;
+      } else if (error.message?.includes('Recipe analyzer failed')) {
+        errorMessage = `Recipe analysis failed: ${error.message}`;
       } else if (error.message?.includes('Failed to fetch')) {
         errorMessage = 'Failed to connect to Edge Function. Please check your Supabase configuration.';
       }
@@ -414,8 +502,19 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       instructions: [{ id: 1, step: '1', description: '' }],
       images: []
     });
+    setApiKeys({
+      openai: '',
+      gemini: ''
+    });
     setErrors({});
     setAnalyzingRecipe(false);
+    setAnalysisStatus({
+      openaiConnected: null,
+      geminiConnected: null,
+      embeddingGenerated: false,
+      analysisCompleted: false,
+      databaseUpdated: false
+    });
   };
 
   const handleClose = () => {
@@ -436,7 +535,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
             </div>
             <div>
               <h2 className="text-2xl font-serif text-gray-900">Create New Recipe</h2>
-              <p className="text-sm text-gray-600">Share your culinary creation with the world</p>
+              <p className="text-sm text-gray-600">Share your culinary creation with AI-powered analysis</p>
             </div>
           </div>
           <button
@@ -451,11 +550,43 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         {/* Analysis Status */}
         {analyzingRecipe && (
           <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
-            <div className="flex items-center space-x-3">
-              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-              <div>
-                <p className="text-sm font-medium text-blue-900">Calling Edge Function and analyzing recipe...</p>
-                <p className="text-xs text-blue-700">Publishing your recipe with AI analysis via hello-world function.</p>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Analyzing recipe with AI models...</p>
+                  <p className="text-xs text-blue-700">OpenAI Embeddings + Gemini 2.5 Flash Analysis</p>
+                </div>
+              </div>
+              
+              {/* Connection Status Indicators */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    analysisStatus.openaiConnected === null ? 'bg-gray-400' :
+                    analysisStatus.openaiConnected ? 'bg-green-500' : 'bg-red-500'
+                  }`} />
+                  <span className="text-gray-700">OpenAI</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    analysisStatus.geminiConnected === null ? 'bg-gray-400' :
+                    analysisStatus.geminiConnected ? 'bg-green-500' : 'bg-red-500'
+                  }`} />
+                  <span className="text-gray-700">Gemini</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    analysisStatus.embeddingGenerated ? 'bg-green-500' : 'bg-gray-400'
+                  }`} />
+                  <span className="text-gray-700">Embedding</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    analysisStatus.databaseUpdated ? 'bg-green-500' : 'bg-gray-400'
+                  }`} />
+                  <span className="text-gray-700">Database</span>
+                </div>
               </div>
             </div>
           </div>
@@ -464,6 +595,55 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         {/* Form Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6">
           <form className="space-y-8">
+            {/* API Keys Section */}
+            <div className="space-y-6 bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Key className="w-5 h-5 mr-2 text-yellow-600" />
+                AI API Keys (Required for Publishing)
+              </h3>
+              <p className="text-sm text-gray-600">
+                These keys are required to analyze your recipe with OpenAI embeddings and Gemini analysis.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    OpenAI API Key *
+                  </label>
+                  <div className="relative">
+                    <Brain className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      type="password"
+                      value={apiKeys.openai}
+                      onChange={(e) => handleApiKeyChange('openai', e.target.value)}
+                      placeholder="sk-..."
+                      className="pl-10 h-12"
+                      disabled={loading}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">For text-embedding-3-small model</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gemini API Key *
+                  </label>
+                  <div className="relative">
+                    <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      type="password"
+                      value={apiKeys.gemini}
+                      onChange={(e) => handleApiKeyChange('gemini', e.target.value)}
+                      placeholder="AI..."
+                      className="pl-10 h-12"
+                      disabled={loading}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">For Gemini 2.5 Flash analysis</p>
+                </div>
+              </div>
+            </div>
+
             {/* Basic Information */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -825,14 +1005,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
             <Button
               type="button"
               onClick={handlePublish}
-              disabled={loading}
-              className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
+              disabled={loading || !apiKeys.openai.trim() || !apiKeys.gemini.trim()}
+              className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
             >
               {loading ? (
                 analyzingRecipe ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Calling Function...</span>
+                    <span>Analyzing with AI...</span>
                   </>
                 ) : (
                   <>
@@ -842,8 +1022,8 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                 )
               ) : (
                 <>
-                  <ChefHat className="w-4 h-4" />
-                  <span>Publish Recipe</span>
+                  <Brain className="w-4 h-4" />
+                  <span>Publish with AI Analysis</span>
                 </>
               )}
             </Button>
