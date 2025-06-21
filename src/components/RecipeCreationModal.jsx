@@ -24,6 +24,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   const [enhancingDescription, setEnhancingDescription] = useState(false);
   const [analyzingRecipe, setAnalyzingRecipe] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces', 'cloves', 'slices'];
   const difficulties = ['easy', 'medium', 'hard'];
@@ -119,28 +120,105 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   };
 
   // Image Management
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, {
-              id: Date.now() + Math.random(),
-              file,
-              preview: e.target.result,
-              name: file.name
-            }]
-          }));
+    if (files.length === 0) return;
+
+    setUploadingImages(true);
+    
+    try {
+      const uploadPromises = files.map(async (file) => {
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`${file.name} is not a valid image file`);
+        }
+
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`${file.name} is too large. Maximum size is 5MB.`);
+        }
+
+        // Generate unique filename
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+        console.log('📤 Uploading image to Supabase Storage:', fileName);
+
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('matchmymeals-images')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('❌ Upload error:', uploadError);
+          throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+        }
+
+        console.log('✅ Image uploaded successfully:', uploadData);
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('matchmymeals-images')
+          .getPublicUrl(fileName);
+
+        // Create preview URL for immediate display
+        const previewUrl = URL.createObjectURL(file);
+
+        return {
+          id: Date.now() + Math.random(),
+          file,
+          preview: previewUrl,
+          name: file.name,
+          storagePath: fileName,
+          publicUrl: urlData.publicUrl,
+          uploaded: true
         };
-        reader.readAsDataURL(file);
-      }
-    });
+      });
+
+      const uploadedImages = await Promise.all(uploadPromises);
+      
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...uploadedImages]
+      }));
+
+      console.log('✅ All images uploaded successfully');
+    } catch (error) {
+      console.error('❌ Error uploading images:', error);
+      alert(`Error uploading images: ${error.message}`);
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
-  const removeImage = (id) => {
+  const removeImage = async (id) => {
+    const imageToRemove = formData.images.find(img => img.id === id);
+    
+    if (imageToRemove && imageToRemove.uploaded && imageToRemove.storagePath) {
+      try {
+        console.log('🗑️ Removing image from storage:', imageToRemove.storagePath);
+        
+        const { error } = await supabase.storage
+          .from('matchmymeals-images')
+          .remove([imageToRemove.storagePath]);
+
+        if (error) {
+          console.error('❌ Error removing image from storage:', error);
+        } else {
+          console.log('✅ Image removed from storage successfully');
+        }
+      } catch (error) {
+        console.error('❌ Error removing image:', error);
+      }
+    }
+
+    // Clean up preview URL
+    if (imageToRemove && imageToRemove.preview && imageToRemove.preview.startsWith('blob:')) {
+      URL.revokeObjectURL(imageToRemove.preview);
+    }
+
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter(img => img.id !== id)
@@ -245,6 +323,9 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     // Convert instructions to TEXT[] format
     const instructionsForDB = formData.instructions.map(inst => inst.description.trim());
 
+    // Get the first uploaded image URL for the main image
+    const mainImageUrl = formData.images.find(img => img.uploaded)?.publicUrl || null;
+
     const baseRecipeData = {
       creator_id: user.id,
       title: formData.title.trim(),
@@ -254,8 +335,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       servings: parseInt(formData.servings),
       ingredients: ingredientsForDB,
       instructions: instructionsForDB,
-      // Default values for fields that might not be analyzed
-      image_path: null,
+      image_path: mainImageUrl, // Store the main image URL
       health_tags: null,
       dietary_tags: null,
       health_benefits: null,
@@ -411,6 +491,13 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   };
 
   const resetForm = () => {
+    // Clean up any blob URLs
+    formData.images.forEach(img => {
+      if (img.preview && img.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(img.preview);
+      }
+    });
+
     setFormData({
       title: '',
       description: '',
@@ -425,6 +512,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     setErrors({});
     setAnalyzingRecipe(false);
     setAnalysisComplete(false);
+    setUploadingImages(false);
   };
 
   const handleClose = () => {
@@ -644,12 +732,22 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                   onChange={handleImageUpload}
                   className="hidden"
                   id="image-upload"
-                  disabled={loading}
+                  disabled={loading || uploadingImages}
                 />
-                <label htmlFor="image-upload" className={`cursor-pointer ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-lg text-gray-600 mb-2">Click to upload images or drag and drop</p>
-                  <p className="text-sm text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+                <label htmlFor="image-upload" className={`cursor-pointer ${loading || uploadingImages ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  {uploadingImages ? (
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
+                      <p className="text-lg text-primary-600 mb-2">Uploading images...</p>
+                      <p className="text-sm text-gray-500">Please wait while we upload your images</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-lg text-gray-600 mb-2">Click to upload images or drag and drop</p>
+                      <p className="text-sm text-gray-500">PNG, JPG, GIF up to 5MB each</p>
+                    </>
+                  )}
                 </label>
               </div>
 
@@ -662,14 +760,22 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                         alt={image.name}
                         className="w-full h-32 object-cover rounded-lg border border-gray-200"
                       />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(image.id)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                        disabled={loading}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => removeImage(image.id)}
+                          className="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                          disabled={loading}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {image.uploaded && (
+                        <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
+                          <Check className="w-3 h-3" />
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-600 mt-1 truncate">{image.name}</p>
                     </div>
                   ))}
                 </div>
