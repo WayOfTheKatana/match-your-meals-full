@@ -23,9 +23,7 @@ interface RecipeData {
 
 interface RequestPayload {
   recipeData: RecipeData;
-  recipeId?: string;
-  openaiApiKey: string;
-  geminiApiKey: string;
+  recipeId: string;
 }
 
 interface AnalysisResult {
@@ -47,14 +45,23 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-async function testOpenAIConnection(apiKey: string): Promise<boolean> {
+// Get API keys from environment variables
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+
+async function testOpenAIConnection(): Promise<boolean> {
   try {
     console.log('🔍 Testing OpenAI connection...')
+    
+    if (!OPENAI_API_KEY) {
+      console.error('❌ OpenAI API key not found in environment variables')
+      return false
+    }
     
     const response = await fetch('https://api.openai.com/v1/models', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
     })
@@ -72,11 +79,16 @@ async function testOpenAIConnection(apiKey: string): Promise<boolean> {
   }
 }
 
-async function testGeminiConnection(apiKey: string): Promise<boolean> {
+async function testGeminiConnection(): Promise<boolean> {
   try {
     console.log('🔍 Testing Gemini connection...')
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`, {
+    if (!GEMINI_API_KEY) {
+      console.error('❌ Gemini API key not found in environment variables')
+      return false
+    }
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -96,14 +108,14 @@ async function testGeminiConnection(apiKey: string): Promise<boolean> {
   }
 }
 
-async function generateEmbedding(text: string, apiKey: string): Promise<number[]> {
+async function generateEmbedding(text: string): Promise<number[]> {
   try {
     console.log('🔄 Generating OpenAI embedding...')
     
     const response = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -132,7 +144,7 @@ async function generateEmbedding(text: string, apiKey: string): Promise<number[]
   }
 }
 
-async function analyzeRecipeWithGemini(recipeData: RecipeData, apiKey: string): Promise<AnalysisResult> {
+async function analyzeRecipeWithGemini(recipeData: RecipeData): Promise<AnalysisResult> {
   try {
     console.log('🔄 Analyzing recipe with Gemini 2.5 Flash...')
     
@@ -185,7 +197,7 @@ Expected JSON format:
 }
 `
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -293,6 +305,15 @@ Deno.serve(async (req: Request) => {
       throw new Error('Only POST method is allowed')
     }
 
+    // Check if API keys are available
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured in environment variables')
+    }
+
+    if (!GEMINI_API_KEY) {
+      throw new Error('Gemini API key not configured in environment variables')
+    }
+
     // Parse request body
     const payload: RequestPayload = await req.json()
     
@@ -300,25 +321,22 @@ Deno.serve(async (req: Request) => {
       throw new Error('Recipe data is required')
     }
 
-    if (!payload.openaiApiKey) {
-      throw new Error('OpenAI API key is required')
-    }
-
-    if (!payload.geminiApiKey) {
-      throw new Error('Gemini API key is required')
+    if (!payload.recipeId) {
+      throw new Error('Recipe ID is required')
     }
 
     console.log('📋 Recipe data received:', {
       title: payload.recipeData.title,
       ingredients: payload.recipeData.ingredients.length,
-      instructions: payload.recipeData.instructions.length
+      instructions: payload.recipeData.instructions.length,
+      recipeId: payload.recipeId
     })
 
     // Test API connections
     console.log('🔍 Testing API connections...')
     const [openaiConnected, geminiConnected] = await Promise.all([
-      testOpenAIConnection(payload.openaiApiKey),
-      testGeminiConnection(payload.geminiApiKey)
+      testOpenAIConnection(),
+      testGeminiConnection()
     ])
 
     const connectionStatus = {
@@ -329,11 +347,11 @@ Deno.serve(async (req: Request) => {
     console.log('📊 Connection status:', connectionStatus)
 
     if (!openaiConnected) {
-      throw new Error('Failed to connect to OpenAI API. Please check your API key.')
+      throw new Error('Failed to connect to OpenAI API. Please check environment configuration.')
     }
 
     if (!geminiConnected) {
-      throw new Error('Failed to connect to Gemini API. Please check your API key.')
+      throw new Error('Failed to connect to Gemini API. Please check environment configuration.')
     }
 
     // Prepare text for embedding
@@ -346,27 +364,24 @@ Deno.serve(async (req: Request) => {
     // Generate embedding and analyze recipe in parallel
     console.log('🔄 Starting parallel processing...')
     const [embedding, analysisResult] = await Promise.all([
-      generateEmbedding(embeddingText, payload.openaiApiKey),
-      analyzeRecipeWithGemini(payload.recipeData, payload.geminiApiKey)
+      generateEmbedding(embeddingText),
+      analyzeRecipeWithGemini(payload.recipeData)
     ])
 
-    // Update database if recipe ID is provided
-    let databaseResult = null
-    if (payload.recipeId) {
-      databaseResult = await updateRecipeInDatabase(payload.recipeId, embedding, analysisResult)
-    }
+    // Update database with results
+    const databaseResult = await updateRecipeInDatabase(payload.recipeId, embedding, analysisResult)
 
     // Prepare response
     const responseData = {
       success: true,
-      message: 'Recipe analyzed successfully',
+      message: 'Recipe analyzed and updated successfully',
       connectionStatus,
       analysisResult,
       embedding: {
         dimensions: embedding.length,
         preview: embedding.slice(0, 5) // Show first 5 dimensions for debugging
       },
-      databaseUpdated: !!databaseResult,
+      databaseUpdated: true,
       timestamp: new Date().toISOString(),
       processingTime: {
         embedding: 'Generated with OpenAI text-embedding-3-small',
