@@ -857,7 +857,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               ) : (
                 <>
                   <Database className="w-4 h-4" />
-                  <span>Publish with AI Analysis</span>
+                  <span>Publish Recipe</span>
                 </>
               )}
             </Button>
