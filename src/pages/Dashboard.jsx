@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { 
@@ -23,11 +23,19 @@ import {
   Filter,
   Calendar,
   Award,
-  Activity
+  Activity,
+  BarChart3,
+  DollarSign,
+  Eye,
+  FileText,
+  CheckCircle,
+  UserCheck,
+  Monitor
 } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, userProfile, signOut, isConnected } = useAuth();
+  const [isCreatorMode, setIsCreatorMode] = useState(false);
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
@@ -39,11 +47,24 @@ const Dashboard = () => {
     await signOut();
   };
 
-  const stats = [
+  const toggleMode = () => {
+    setIsCreatorMode(!isCreatorMode);
+  };
+
+  // Consumer Mode Data
+  const consumerStats = [
     { label: 'Recipes Saved', value: '24', icon: BookOpen, color: 'text-blue-600' },
     { label: 'Favorites', value: '12', icon: Heart, color: 'text-red-500' },
     { label: 'Searches Today', value: '8', icon: Search, color: 'text-green-600' },
     { label: 'Cooking Time', value: '2.5h', icon: Clock, color: 'text-purple-600' }
+  ];
+
+  // Creator Mode Data
+  const creatorStats = [
+    { label: 'Published Recipes', value: '18', icon: FileText, color: 'text-blue-600' },
+    { label: 'Total Followers', value: '1.2k', icon: Users, color: 'text-green-600' },
+    { label: 'Monthly Views', value: '5.8k', icon: Eye, color: 'text-purple-600' },
+    { label: 'Revenue', value: '$234', icon: DollarSign, color: 'text-emerald-600' }
   ];
 
   const recentRecipes = [
@@ -54,12 +75,30 @@ const Dashboard = () => {
     { name: 'Mediterranean Salad', time: '15 min', rating: 4.8, image: 'https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg?auto=compress&cs=tinysrgb&w=300' }
   ];
 
-  const navigationItems = [
+  // Creator's published recipes
+  const publishedRecipes = [
+    { name: 'Ultimate Protein Bowl', time: '30 min', rating: 4.9, views: '2.1k', status: 'Published', image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300' },
+    { name: 'Keto Salmon Delight', time: '25 min', rating: 4.8, views: '1.8k', status: 'Published', image: 'https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=300' },
+    { name: 'Morning Energy Toast', time: '15 min', rating: 4.7, views: '1.5k', status: 'Under Review', image: 'https://images.pexels.com/photos/566566/pexels-photo-566566.jpeg?auto=compress&cs=tinysrgb&w=300' },
+    { name: 'Green Power Smoothie', time: '10 min', rating: 4.6, views: '1.2k', status: 'Published', image: 'https://images.pexels.com/photos/775032/pexels-photo-775032.jpeg?auto=compress&cs=tinysrgb&w=300' }
+  ];
+
+  const consumerNavigationItems = [
     { name: 'Home / Feed', icon: Home, active: true },
     { name: 'Saved Recipes', icon: Bookmark },
     { name: 'By Categories', icon: Grid3X3 },
     { name: 'Recipe Search History', icon: History },
     { name: 'Followings', icon: Users },
+    { name: 'Help & Support', icon: HelpCircle }
+  ];
+
+  const creatorNavigationItems = [
+    { name: 'Dashboard Overview', icon: Home, active: true },
+    { name: 'Published Recipes', icon: FileText },
+    { name: 'Followers', icon: UserCheck },
+    { name: 'Recipe Vetting', icon: CheckCircle },
+    { name: 'Analytics', icon: BarChart3 },
+    { name: 'Revenue', icon: DollarSign },
     { name: 'Help & Support', icon: HelpCircle }
   ];
 
@@ -77,6 +116,15 @@ const Dashboard = () => {
     { title: 'New Year Meal Prep', date: 'Jan 1', time: '10:00 AM' }
   ];
 
+  const creatorInsights = [
+    { title: 'Top Performing Recipe', value: 'Ultimate Protein Bowl', change: '+15%' },
+    { title: 'Engagement Rate', value: '8.4%', change: '+2.1%' },
+    { title: 'New Followers', value: '47', change: '+12%' }
+  ];
+
+  const currentStats = isCreatorMode ? creatorStats : consumerStats;
+  const currentNavigation = isCreatorMode ? creatorNavigationItems : consumerNavigationItems;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -89,14 +137,24 @@ const Dashboard = () => {
             </div>
             
             <div className="flex items-center space-x-12">
-              {/* Creator Mode Button */}
+              {/* Mode Toggle Button */}
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={toggleMode}
                 className="text-white hover:bg-white/10 hover:text-white border border-white/20 hover:border-white/30 transition-all duration-200"
               >
-                <PenTool className="w-4 h-4 mr-2" />
-                Creator Mode
+                {isCreatorMode ? (
+                  <>
+                    <Monitor className="w-4 h-4 mr-2" />
+                    Consumer Mode
+                  </>
+                ) : (
+                  <>
+                    <PenTool className="w-4 h-4 mr-2" />
+                    Creator Mode
+                  </>
+                )}
               </Button>
 
               <div className="flex items-center space-x-5">
@@ -109,7 +167,7 @@ const Dashboard = () => {
                       {userProfile?.full_name || user?.email || 'User'}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {userProfile?.subscription_status || 'Free Plan'}
+                      {isCreatorMode ? 'Creator' : userProfile?.subscription_status || 'Free Plan'}
                     </p>
                   </div>
                 </div>
@@ -135,7 +193,7 @@ const Dashboard = () => {
         <aside className="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-0">
           <div className="p-4">
             <nav className="space-y-2">
-              {navigationItems.map((item, index) => (
+              {currentNavigation.map((item, index) => (
                 <button
                   key={index}
                   className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
@@ -169,55 +227,97 @@ const Dashboard = () => {
             {/* Welcome Section */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border">
               <h2 className="text-2xl font-serif text-gray-900 mb-2">
-                Welcome back, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 👋
+                {isCreatorMode ? (
+                  <>Welcome to Creator Dashboard, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 🎨</>
+                ) : (
+                  <>Welcome back, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 👋</>
+                )}
               </h2>
               <p className="text-gray-600 mb-4">
-                Ready to discover some amazing recipes today?
+                {isCreatorMode ? (
+                  'Manage your recipes, track performance, and grow your audience.'
+                ) : (
+                  'Ready to discover some amazing recipes today?'
+                )}
               </p>
               {user && (
                 <p className="text-sm text-gray-500">
-                  Logged in as: {user.email}
+                  Logged in as: {user.email} • {isCreatorMode ? 'Creator Mode' : 'Consumer Mode'}
                 </p>
               )}
             </div>
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <Search className="w-8 h-8" />
-                  <span className="text-primary-100 text-sm">Quick Action</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Find New Recipes</h3>
-                <p className="text-primary-100 mb-4">Search by ingredients or voice</p>
-                <Button variant="secondary" size="sm" className="bg-white text-primary-600 hover:bg-gray-100">
-                  Start Searching
-                </Button>
-              </div>
+              {isCreatorMode ? (
+                <>
+                  <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <PenTool className="w-8 h-8" />
+                      <span className="text-primary-100 text-sm">Create</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">New Recipe</h3>
+                    <p className="text-primary-100 mb-4">Share your culinary creation</p>
+                    <Button variant="secondary" size="sm" className="bg-white text-primary-600 hover:bg-gray-100">
+                      Create Recipe
+                    </Button>
+                  </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm border">
-                <div className="flex items-center justify-between mb-4">
-                  <Heart className="w-8 h-8 text-red-500" />
-                  <span className="text-gray-400 text-sm">Favorites</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Your Favorites</h3>
-                <p className="text-gray-600 mb-4">View saved recipes</p>
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </div>
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border">
+                    <div className="flex items-center justify-between mb-4">
+                      <BarChart3 className="w-8 h-8 text-blue-500" />
+                      <span className="text-gray-400 text-sm">Analytics</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">View Analytics</h3>
+                    <p className="text-gray-600 mb-4">Track your performance</p>
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <Search className="w-8 h-8" />
+                      <span className="text-primary-100 text-sm">Quick Action</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">Find New Recipes</h3>
+                    <p className="text-primary-100 mb-4">Search by ingredients or voice</p>
+                    <Button variant="secondary" size="sm" className="bg-white text-primary-600 hover:bg-gray-100">
+                      Start Searching
+                    </Button>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border">
+                    <div className="flex items-center justify-between mb-4">
+                      <Heart className="w-8 h-8 text-red-500" />
+                      <span className="text-gray-400 text-sm">Favorites</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Your Favorites</h3>
+                    <p className="text-gray-600 mb-4">View saved recipes</p>
+                    <Button variant="outline" size="sm">
+                      View All
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Recipe Feed */}
+            {/* Recipe Feed / Creator Content */}
             <div className="bg-white rounded-2xl shadow-sm border">
               <div className="p-6 border-b">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-gray-900">Recipe Feed</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {isCreatorMode ? 'Your Published Recipes' : 'Recipe Feed'}
+                  </h3>
                   <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter
-                    </Button>
+                    {!isCreatorMode && (
+                      <Button variant="ghost" size="sm">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Filter
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" className="text-primary-600">
                       View All
                     </Button>
@@ -226,7 +326,7 @@ const Dashboard = () => {
               </div>
               
               <div className="p-6 space-y-6">
-                {recentRecipes.map((recipe, index) => (
+                {(isCreatorMode ? publishedRecipes : recentRecipes).map((recipe, index) => (
                   <div key={index} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
                     <div className="relative overflow-hidden rounded-xl w-24 h-24 flex-shrink-0">
                       <img
@@ -240,20 +340,49 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 mb-1">{recipe.name}</h4>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {recipe.time}
-                      </div>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <button className="flex items-center space-x-1 hover:text-red-500 transition-colors">
-                          <Heart className="w-4 h-4" />
-                          <span>Save</span>
-                        </button>
-                        <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                          <BookOpen className="w-4 h-4" />
-                          <span>View Recipe</span>
-                        </button>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 mb-1">{recipe.name}</h4>
+                          <div className="flex items-center text-sm text-gray-600 mb-2">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {recipe.time}
+                            {isCreatorMode && recipe.views && (
+                              <>
+                                <span className="mx-2">•</span>
+                                <Eye className="w-4 h-4 mr-1" />
+                                {recipe.views} views
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            {isCreatorMode ? (
+                              <>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  recipe.status === 'Published' 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {recipe.status}
+                                </span>
+                                <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                  <BarChart3 className="w-4 h-4" />
+                                  <span>Analytics</span>
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button className="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                  <Heart className="w-4 h-4" />
+                                  <span>Save</span>
+                                </button>
+                                <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                  <BookOpen className="w-4 h-4" />
+                                  <span>View Recipe</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -270,10 +399,10 @@ const Dashboard = () => {
             <div className="bg-gray-50 rounded-2xl p-4">
               <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
                 <Activity className="w-5 h-5 mr-2 text-primary-600" />
-                Your Stats
+                {isCreatorMode ? 'Creator Stats' : 'Your Stats'}
               </h4>
               <div className="grid grid-cols-2 gap-3">
-                {stats.map((stat, index) => (
+                {currentStats.map((stat, index) => (
                   <div key={index} className="bg-white rounded-xl p-3 text-center">
                     <stat.icon className={`w-5 h-5 ${stat.color} mx-auto mb-1`} />
                     <p className="text-lg font-bold text-gray-900">{stat.value}</p>
@@ -283,29 +412,49 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Trending Topics Widget */}
-            <div className="bg-gray-50 rounded-2xl p-4">
-              <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
-                Trending Topics
-              </h4>
-              <div className="space-y-2">
-                {trendingTopics.map((topic, index) => (
-                  <button
-                    key={index}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-white transition-colors text-sm text-gray-700 hover:text-primary-600"
-                  >
-                    #{topic.replace(/\s+/g, '')}
-                  </button>
-                ))}
+            {/* Creator Insights or Trending Topics */}
+            {isCreatorMode ? (
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                  Performance Insights
+                </h4>
+                <div className="space-y-3">
+                  {creatorInsights.map((insight, index) => (
+                    <div key={index} className="bg-white rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <h5 className="font-medium text-gray-900 text-sm">{insight.title}</h5>
+                        <span className="text-xs text-green-600 font-medium">{insight.change}</span>
+                      </div>
+                      <p className="text-sm text-gray-600">{insight.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                  Trending Topics
+                </h4>
+                <div className="space-y-2">
+                  {trendingTopics.map((topic, index) => (
+                    <button
+                      key={index}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-white transition-colors text-sm text-gray-700 hover:text-primary-600"
+                    >
+                      #{topic.replace(/\s+/g, '')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Upcoming Events Widget */}
             <div className="bg-gray-50 rounded-2xl p-4">
               <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
                 <Calendar className="w-5 h-5 mr-2 text-blue-500" />
-                Upcoming Events
+                {isCreatorMode ? 'Creator Events' : 'Upcoming Events'}
               </h4>
               <div className="space-y-3">
                 {upcomingEvents.map((event, index) => (
@@ -331,8 +480,12 @@ const Dashboard = () => {
                 <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
                   <ChefHat className="w-6 h-6 text-white" />
                 </div>
-                <p className="font-medium text-gray-900 text-sm">Recipe Explorer</p>
-                <p className="text-xs text-gray-600">Saved 25 recipes this month!</p>
+                <p className="font-medium text-gray-900 text-sm">
+                  {isCreatorMode ? 'Rising Creator' : 'Recipe Explorer'}
+                </p>
+                <p className="text-xs text-gray-600">
+                  {isCreatorMode ? 'Reached 1K followers!' : 'Saved 25 recipes this month!'}
+                </p>
               </div>
             </div>
           </div>
