@@ -1023,7 +1023,7 @@ Recipe published successfully!
               ) : (
                 <>
                   <Brain className="w-4 h-4" />
-                  <span>Publish Recipe</span>
+                  <span>Publish with AI Analysis</span>
                 </>
               )}
             </Button>
