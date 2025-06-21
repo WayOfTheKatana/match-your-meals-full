@@ -282,7 +282,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                       type="button"
                       onClick={handleEnhanceDescription}
                       disabled={enhancingDescription}
-                      className="absolute bottom-2 right-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="absolute bottom-3 right-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Enhance description with AI"
                     >
                       {enhancingDescription ? (
