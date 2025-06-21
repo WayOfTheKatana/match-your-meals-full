@@ -11,29 +11,16 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     cookTime: '',
     servings: '',
     difficulty: 'easy',
-    category: '',
-    tags: [],
     ingredients: [{ id: 1, item: '', amount: '', unit: 'cups' }],
-    instructions: [{ id: 1, step: '', description: '' }],
-    images: [],
-    nutritionInfo: {
-      calories: '',
-      protein: '',
-      carbs: '',
-      fat: '',
-      fiber: ''
-    }
+    instructions: [{ id: 1, step: '1', description: '' }],
+    images: []
   });
 
-  const [currentTag, setCurrentTag] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [draggedIngredient, setDraggedIngredient] = useState(null);
-  const [draggedInstruction, setDraggedInstruction] = useState(null);
 
   const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces', 'cloves', 'slices'];
   const difficulties = ['easy', 'medium', 'hard'];
-  const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert', 'Appetizer', 'Beverage', 'Salad', 'Soup'];
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -44,16 +31,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
-  };
-
-  const handleNutritionChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      nutritionInfo: {
-        ...prev.nutritionInfo,
-        [field]: value
-      }
-    }));
   };
 
   // Ingredient Management
@@ -111,24 +88,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     }));
   };
 
-  // Tag Management
-  const addTag = () => {
-    if (currentTag.trim() && !formData.tags.includes(currentTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, currentTag.trim()]
-      }));
-      setCurrentTag('');
-    }
-  };
-
-  const removeTag = (tagToRemove) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
-  };
-
   // Image Management
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -167,7 +126,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     if (!formData.prepTime) newErrors.prepTime = 'Prep time is required';
     if (!formData.cookTime) newErrors.cookTime = 'Cook time is required';
     if (!formData.servings) newErrors.servings = 'Servings is required';
-    if (!formData.category) newErrors.category = 'Category is required';
     
     // Validate ingredients
     const invalidIngredients = formData.ingredients.some(ing => !ing.item.trim() || !ing.amount.trim());
@@ -218,21 +176,11 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       cookTime: '',
       servings: '',
       difficulty: 'easy',
-      category: '',
-      tags: [],
       ingredients: [{ id: 1, item: '', amount: '', unit: 'cups' }],
       instructions: [{ id: 1, step: '1', description: '' }],
-      images: [],
-      nutritionInfo: {
-        calories: '',
-        protein: '',
-        carbs: '',
-        fat: '',
-        fiber: ''
-      }
+      images: []
     });
     setErrors({});
-    setCurrentTag('');
   };
 
   const handleClose = () => {
@@ -301,8 +249,8 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Describe your recipe..."
-                    rows={3}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.description ? 'border-red-300' : 'border-gray-300'}`}
+                    rows={4}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none ${errors.description ? 'border-red-300' : 'border-gray-300'}`}
                   />
                   {errors.description && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -371,7 +319,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Difficulty
+                    Difficulty Level
                   </label>
                   <select
                     value={formData.difficulty}
@@ -385,67 +333,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                     ))}
                   </select>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category *
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => handleInputChange('category', e.target.value)}
-                    className={`w-full h-12 px-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.category ? 'border-red-300' : 'border-gray-300'}`}
-                  >
-                    <option value="">Select category</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  {errors.category && (
-                    <p className="mt-1 text-sm text-red-600">{errors.category}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags
-                  </label>
-                  <div className="flex space-x-2">
-                    <Input
-                      value={currentTag}
-                      onChange={(e) => setCurrentTag(e.target.value)}
-                      placeholder="Add tag"
-                      className="h-12"
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                    />
-                    <Button
-                      type="button"
-                      onClick={addTag}
-                      variant="outline"
-                      className="h-12 px-4"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  {formData.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {formData.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800"
-                        >
-                          {tag}
-                          <button
-                            type="button"
-                            onClick={() => removeTag(tag)}
-                            className="ml-2 hover:text-primary-600"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -456,7 +343,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                 Recipe Images
               </h3>
               
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary-400 transition-colors">
                 <input
                   type="file"
                   multiple
@@ -466,9 +353,9 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                   id="image-upload"
                 />
                 <label htmlFor="image-upload" className="cursor-pointer">
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB each</p>
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-lg text-gray-600 mb-2">Click to upload images or drag and drop</p>
+                  <p className="text-sm text-gray-500">PNG, JPG, GIF up to 10MB each</p>
                 </label>
               </div>
 
@@ -479,14 +366,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                       <img
                         src={image.preview}
                         alt={image.name}
-                        className="w-full h-24 object-cover rounded-lg"
+                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
                       />
                       <button
                         type="button"
                         onClick={() => removeImage(image.id)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
@@ -506,7 +393,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                   onClick={addIngredient}
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-1"
+                  className="flex items-center space-x-1 hover:bg-primary-50 hover:border-primary-300"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Ingredient</span>
@@ -522,7 +409,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
               <div className="space-y-3">
                 {formData.ingredients.map((ingredient, index) => (
-                  <div key={ingredient.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={ingredient.id} className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="cursor-move">
                       <GripVertical className="w-4 h-4 text-gray-400" />
                     </div>
@@ -568,14 +455,14 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                   <ChefHat className="w-5 h-5 mr-2 text-primary-600" />
-                  Instructions
+                  Cooking Instructions
                 </h3>
                 <Button
                   type="button"
                   onClick={addInstruction}
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-1"
+                  className="flex items-center space-x-1 hover:bg-primary-50 hover:border-primary-300"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Step</span>
@@ -591,12 +478,12 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
               <div className="space-y-4">
                 {formData.instructions.map((instruction, index) => (
-                  <div key={instruction.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
+                  <div key={instruction.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center space-x-3">
                       <div className="cursor-move">
                         <GripVertical className="w-4 h-4 text-gray-400" />
                       </div>
-                      <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                      <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
                         {instruction.step}
                       </div>
                     </div>
@@ -604,93 +491,22 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
                       <textarea
                         value={instruction.description}
                         onChange={(e) => updateInstruction(instruction.id, 'description', e.target.value)}
-                        placeholder="Describe this step..."
-                        rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Describe this cooking step in detail..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                       />
                     </div>
                     {formData.instructions.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeInstruction(instruction.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Nutrition Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <ChefHat className="w-5 h-5 mr-2 text-primary-600" />
-                Nutrition Information (Optional)
-              </h3>
-              
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Calories
-                  </label>
-                  <Input
-                    type="number"
-                    value={formData.nutritionInfo.calories}
-                    onChange={(e) => handleNutritionChange('calories', e.target.value)}
-                    placeholder="250"
-                    className="h-10"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Protein (g)
-                  </label>
-                  <Input
-                    type="number"
-                    value={formData.nutritionInfo.protein}
-                    onChange={(e) => handleNutritionChange('protein', e.target.value)}
-                    placeholder="15"
-                    className="h-10"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Carbs (g)
-                  </label>
-                  <Input
-                    type="number"
-                    value={formData.nutritionInfo.carbs}
-                    onChange={(e) => handleNutritionChange('carbs', e.target.value)}
-                    placeholder="30"
-                    className="h-10"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fat (g)
-                  </label>
-                  <Input
-                    type="number"
-                    value={formData.nutritionInfo.fat}
-                    onChange={(e) => handleNutritionChange('fat', e.target.value)}
-                    placeholder="10"
-                    className="h-10"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fiber (g)
-                  </label>
-                  <Input
-                    type="number"
-                    value={formData.nutritionInfo.fiber}
-                    onChange={(e) => handleNutritionChange('fiber', e.target.value)}
-                    placeholder="5"
-                    className="h-10"
-                  />
-                </div>
               </div>
             </div>
           </form>
@@ -703,6 +519,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
             variant="ghost"
             onClick={handleClose}
             disabled={loading}
+            className="text-gray-600 hover:text-gray-800"
           >
             Cancel
           </Button>
@@ -713,7 +530,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               variant="outline"
               onClick={handleSaveDraft}
               disabled={loading}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -727,7 +544,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               type="button"
               onClick={handlePublish}
               disabled={loading}
-              className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
+              className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
