@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles, Loader2, Key, Brain, Database } from 'lucide-react';
+import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles, Loader2, Database } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,11 +17,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     ingredients: [{ id: 1, item: '', amount: '', unit: 'cups' }],
     instructions: [{ id: 1, step: '1', description: '' }],
     images: []
-  });
-
-  const [apiKeys, setApiKeys] = useState({
-    openai: '',
-    gemini: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -48,13 +43,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
-  };
-
-  const handleApiKeyChange = (provider, value) => {
-    setApiKeys(prev => ({
-      ...prev,
-      [provider]: value
-    }));
   };
 
   // Simple AI Enhancement (no Edge Function call)
@@ -187,18 +175,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateApiKeys = () => {
-    if (!apiKeys.openai.trim()) {
-      alert('OpenAI API key is required for recipe analysis');
-      return false;
-    }
-    if (!apiKeys.gemini.trim()) {
-      alert('Gemini API key is required for recipe analysis');
-      return false;
-    }
-    return true;
-  };
-
   // Prepare data for recipe analyzer
   const prepareAnalyzerPayload = () => {
     const ingredientsForAnalysis = formData.ingredients.map(ing => ({
@@ -231,9 +207,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       
       const payload = {
         recipeData: recipeData,
-        recipeId: recipeId,
-        openaiApiKey: apiKeys.openai.trim(),
-        geminiApiKey: apiKeys.gemini.trim()
+        recipeId: recipeId
       };
 
       const { data, error } = await supabase.functions.invoke('recipe-analyzer', {
@@ -400,7 +374,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
   const handlePublish = async () => {
     if (!validateForm()) return;
-    if (!validateApiKeys()) return;
     
     setLoading(true);
     setAnalyzingRecipe(true);
@@ -472,10 +445,6 @@ Recipe published successfully!
         errorMessage = 'Please check all required fields are filled correctly.';
       } else if (error.message?.includes('Function not found') || error.message?.includes('recipe-analyzer')) {
         errorMessage = 'Recipe analyzer function not found. Please ensure the recipe-analyzer function is deployed in Supabase.';
-      } else if (error.message?.includes('OpenAI API key')) {
-        errorMessage = 'Invalid OpenAI API key. Please check your API key and try again.';
-      } else if (error.message?.includes('Gemini API key')) {
-        errorMessage = 'Invalid Gemini API key. Please check your API key and try again.';
       } else if (error.message?.includes('Failed to connect')) {
         errorMessage = `API Connection failed: ${error.message}`;
       } else if (error.message?.includes('Recipe analyzer failed')) {
@@ -501,10 +470,6 @@ Recipe published successfully!
       ingredients: [{ id: 1, item: '', amount: '', unit: 'cups' }],
       instructions: [{ id: 1, step: '1', description: '' }],
       images: []
-    });
-    setApiKeys({
-      openai: '',
-      gemini: ''
     });
     setErrors({});
     setAnalyzingRecipe(false);
@@ -595,55 +560,6 @@ Recipe published successfully!
         {/* Form Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6">
           <form className="space-y-8">
-            {/* API Keys Section */}
-            <div className="space-y-6 bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Key className="w-5 h-5 mr-2 text-yellow-600" />
-                AI API Keys (Required for Publishing)
-              </h3>
-              <p className="text-sm text-gray-600">
-                These keys are required to analyze your recipe with OpenAI embeddings and Gemini analysis.
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    OpenAI API Key *
-                  </label>
-                  <div className="relative">
-                    <Brain className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="password"
-                      value={apiKeys.openai}
-                      onChange={(e) => handleApiKeyChange('openai', e.target.value)}
-                      placeholder="sk-..."
-                      className="pl-10 h-12"
-                      disabled={loading}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">For text-embedding-3-small model</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Gemini API Key *
-                  </label>
-                  <div className="relative">
-                    <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="password"
-                      value={apiKeys.gemini}
-                      onChange={(e) => handleApiKeyChange('gemini', e.target.value)}
-                      placeholder="AI..."
-                      className="pl-10 h-12"
-                      disabled={loading}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">For Gemini 2.5 Flash analysis</p>
-                </div>
-              </div>
-            </div>
-
             {/* Basic Information */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -1005,8 +921,8 @@ Recipe published successfully!
             <Button
               type="button"
               onClick={handlePublish}
-              disabled={loading || !apiKeys.openai.trim() || !apiKeys.gemini.trim()}
-              className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+              disabled={loading}
+              className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
             >
               {loading ? (
                 analyzingRecipe ? (
@@ -1022,7 +938,7 @@ Recipe published successfully!
                 )
               ) : (
                 <>
-                  <Brain className="w-4 h-4" />
+                  <Database className="w-4 h-4" />
                   <span>Publish with AI Analysis</span>
                 </>
               )}
