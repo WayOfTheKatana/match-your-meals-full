@@ -23,13 +23,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   const [loading, setLoading] = useState(false);
   const [enhancingDescription, setEnhancingDescription] = useState(false);
   const [analyzingRecipe, setAnalyzingRecipe] = useState(false);
-  const [analysisStatus, setAnalysisStatus] = useState({
-    openaiConnected: null,
-    geminiConnected: null,
-    embeddingGenerated: false,
-    analysisCompleted: false,
-    databaseUpdated: false
-  });
+  const [analysisComplete, setAnalysisComplete] = useState(false);
 
   const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces', 'cloves', 'slices'];
   const difficulties = ['easy', 'medium', 'hard'];
@@ -203,15 +197,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       console.log('🚀 Calling recipe-analyzer Edge Function...');
       console.log('📋 Recipe data being sent:', recipeData);
       
-      setAnalysisStatus(prev => ({ 
-        ...prev, 
-        openaiConnected: null, 
-        geminiConnected: null,
-        embeddingGenerated: false,
-        analysisCompleted: false,
-        databaseUpdated: false
-      }));
-      
       const payload = {
         recipeData: recipeData,
         recipeId: recipeId
@@ -227,18 +212,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       }
 
       console.log('✅ Edge Function response:', data);
-      
-      // Update analysis status based on response
-      if (data.connectionStatus) {
-        setAnalysisStatus(prev => ({
-          ...prev,
-          openaiConnected: data.connectionStatus.openai,
-          geminiConnected: data.connectionStatus.gemini,
-          embeddingGenerated: !!data.embedding,
-          analysisCompleted: !!data.analysisResult,
-          databaseUpdated: data.databaseUpdated
-        }));
-      }
 
       if (!data.success) {
         throw new Error(data.message || 'Recipe analysis failed');
@@ -256,14 +229,6 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       };
     } catch (error) {
       console.error('❌ Error calling recipe analyzer:', error);
-      
-      // Update status to show failure
-      setAnalysisStatus(prev => ({
-        ...prev,
-        openaiConnected: false,
-        geminiConnected: false
-      }));
-      
       throw error;
     }
   };
@@ -384,15 +349,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     
     setLoading(true);
     setAnalyzingRecipe(true);
-    
-    // Reset analysis status
-    setAnalysisStatus({
-      openaiConnected: null,
-      geminiConnected: null,
-      embeddingGenerated: false,
-      analysisCompleted: false,
-      databaseUpdated: false
-    });
+    setAnalysisComplete(false);
     
     try {
       console.log('🚀 Starting recipe publishing process...');
@@ -413,20 +370,22 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       console.log('✅ Recipe analysis completed:', analyzedData);
       
       setAnalyzingRecipe(false);
-      
-      // Show success message
-      alert('Recipe published successfully with AI analysis!');
+      setAnalysisComplete(true);
       
       // Call parent handler if provided
       if (onPublish) {
         await onPublish({ ...formData, id: recipeId, ...analyzedData });
       }
       
-      // Close modal and reset form
-      handleClose();
+      // Auto-close modal after 2 seconds
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
+      
     } catch (error) {
       console.error('❌ Error publishing recipe:', error);
       setAnalyzingRecipe(false);
+      setAnalysisComplete(false);
       
       // Show user-friendly error message
       let errorMessage = 'Failed to publish recipe. Please try again.';
@@ -465,13 +424,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     });
     setErrors({});
     setAnalyzingRecipe(false);
-    setAnalysisStatus({
-      openaiConnected: null,
-      geminiConnected: null,
-      embeddingGenerated: false,
-      analysisCompleted: false,
-      databaseUpdated: false
-    });
+    setAnalysisComplete(false);
   };
 
   const handleClose = () => {
@@ -505,70 +458,26 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         </div>
 
         {/* Analysis Status */}
-        {analyzingRecipe && (
+        {(analyzingRecipe || analysisComplete) && (
           <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                <div>
-                  <p className="text-sm font-medium text-blue-900">Analyzing Your Recipe</p>
-                  <p className="text-xs text-blue-700">Creating automatic health tags for your recipe</p>
-                </div>
-              </div>
-              
-              {/* Progress Steps */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  {analysisStatus.openaiConnected === true ? (
-                    <Check className="w-4 h-4 text-green-600" />
-                  ) : analysisStatus.openaiConnected === false ? (
-                    <X className="w-4 h-4 text-red-500" />
-                  ) : (
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  )}
-                  <span className={`text-sm ${
-                    analysisStatus.openaiConnected === true ? 'text-green-700' :
-                    analysisStatus.openaiConnected === false ? 'text-red-700' :
-                    'text-blue-700'
-                  }`}>
-                    {analysisStatus.openaiConnected === true ? 'Health tags analyzed ✓' :
-                     analysisStatus.openaiConnected === false ? 'Health tag analysis failed' :
-                     'Analyzing health tags...'}
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  {analysisStatus.geminiConnected === true ? (
-                    <Check className="w-4 h-4 text-green-600" />
-                  ) : analysisStatus.geminiConnected === false ? (
-                    <X className="w-4 h-4 text-red-500" />
-                  ) : (
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  )}
-                  <span className={`text-sm ${
-                    analysisStatus.geminiConnected === true ? 'text-green-700' :
-                    analysisStatus.geminiConnected === false ? 'text-red-700' :
-                    'text-blue-700'
-                  }`}>
-                    {analysisStatus.geminiConnected === true ? 'Nutritional info generated ✓' :
-                     analysisStatus.geminiConnected === false ? 'Nutritional analysis failed' :
-                     'Generating nutritional info...'}
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  {analysisStatus.databaseUpdated ? (
-                    <Check className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  )}
-                  <span className={`text-sm ${
-                    analysisStatus.databaseUpdated ? 'text-green-700' : 'text-blue-700'
-                  }`}>
-                    {analysisStatus.databaseUpdated ? 'Recipe published successfully ✓' : 'Publishing recipe...'}
-                  </span>
-                </div>
-              </div>
+            <div className="flex items-center space-x-3">
+              {analyzingRecipe ? (
+                <>
+                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">Analyzing Recipe</p>
+                    <p className="text-xs text-blue-700">Please wait while we analyze your recipe...</p>
+                  </div>
+                </>
+              ) : analysisComplete ? (
+                <>
+                  <Check className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-900">Recipe Published Successfully!</p>
+                    <p className="text-xs text-green-700">Your recipe has been analyzed and published with AI insights</p>
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
         )}
@@ -941,17 +850,10 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
             >
               {loading ? (
-                analyzingRecipe ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Analyzing with AI...</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Publishing...</span>
-                  </>
-                )
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Publishing...</span>
+                </>
               ) : (
                 <>
                   <Database className="w-4 h-4" />
