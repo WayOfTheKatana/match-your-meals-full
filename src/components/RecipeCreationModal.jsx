@@ -519,8 +519,8 @@ Recipe published successfully!
               <div className="flex items-center space-x-3">
                 <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
                 <div>
-                  <p className="text-sm font-medium text-blue-900">Analyzing recipe with AI models...</p>
-                  <p className="text-xs text-blue-700">OpenAI Embeddings + Gemini 2.5 Flash Analysis</p>
+                  <p className="text-sm font-medium text-blue-900">Analyzing Your Recipe</p>
+                  <p className="text-xs text-blue-700">Creating automatic health-tags for your recipe</p>
                 </div>
               </div>
               
@@ -531,26 +531,14 @@ Recipe published successfully!
                     analysisStatus.openaiConnected === null ? 'bg-gray-400' :
                     analysisStatus.openaiConnected ? 'bg-green-500' : 'bg-red-500'
                   }`} />
-                  <span className="text-gray-700">OpenAI</span>
+                  <span className="text-gray-700">Analyzing health tags</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className={`w-2 h-2 rounded-full ${
                     analysisStatus.geminiConnected === null ? 'bg-gray-400' :
                     analysisStatus.geminiConnected ? 'bg-green-500' : 'bg-red-500'
                   }`} />
-                  <span className="text-gray-700">Gemini</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    analysisStatus.embeddingGenerated ? 'bg-green-500' : 'bg-gray-400'
-                  }`} />
-                  <span className="text-gray-700">Embedding</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    analysisStatus.databaseUpdated ? 'bg-green-500' : 'bg-gray-400'
-                  }`} />
-                  <span className="text-gray-700">Database</span>
+                  <span className="text-gray-700">Updating health tags</span>
                 </div>
               </div>
             </div>
