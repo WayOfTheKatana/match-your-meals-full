@@ -137,7 +137,7 @@ const Dashboard = () => {
     return (recipe.prep_time || 0) + (recipe.cook_time || 0);
   };
 
-  const handleSaveRecipe = async (recipeId) => {
+  const handleSaveSearchedRecipe = async (recipeId) => {
     console.log('Saving recipe:', recipeId);
     // Implement save functionality
   };
@@ -522,7 +522,7 @@ const Dashboard = () => {
                                     variant="outline"
                                     size="sm"
                                     className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
-                                    onClick={() => handleSaveRecipe(recipe.id)}
+                                    onClick={() => handleSaveSearchedRecipe(recipe.id)}
                                   >
                                     <Heart className="w-4 h-4" />
                                     <span>Save</span>
