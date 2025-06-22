@@ -88,7 +88,7 @@ DO $$
 BEGIN
   -- This will only enable RLS if it's not already enabled
   -- and we have the necessary permissions
-  IF NOT (SELECT row_security FROM pg_tables WHERE schemaname = 'storage' AND tablename = 'objects') THEN
+  IF NOT (SELECT rowsecurity FROM pg_tables WHERE schemaname = 'storage' AND tablename = 'objects') THEN
     ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
   END IF;
 EXCEPTION
