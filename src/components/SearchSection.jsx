@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Mic, TrendingUp } from 'lucide-react';
-import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -57,6 +56,12 @@ const SearchSection = () => {
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   const handleLoginSuccess = () => {
     // After successful login, proceed with search
     console.log('Search after login:', searchQuery);
@@ -65,7 +70,7 @@ const SearchSection = () => {
 
   return (
     <>
-      <div className="flex flex-col items-center justify-center text-center px-6 max-w-4xl mx-auto">
+      <div className="flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto w-full">
         {/* Badge */}
         <div className="mb-8 animate-fade-in">
           <span className="inline-flex items-center px-4 py-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white text-sm font-medium">
@@ -83,45 +88,75 @@ const SearchSection = () => {
           </h1>
         </div>
 
-        {/* Search Bar */}
-        <div className="w-full max-w-2xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          <div className="relative flex items-center bg-white rounded-full shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl focus-within:shadow-xl focus-within:scale-[1.02]">
-            <div className="flex items-center pl-4 pr-4">
-              <Mic 
-                className={`w-5 h-5 cursor-pointer transition-colors duration-300 ${
-                  isListening ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-primary-600'
-                }`}
+        {/* Full-Width Search Bar */}
+        <div className="w-full max-w-4xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="relative flex items-center bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-3xl focus-within:shadow-3xl focus-within:scale-[1.01] border border-white/20">
+            {/* Voice/Mic Icon */}
+            <div className="flex items-center pl-6 pr-4">
+              <button
                 onClick={handleVoiceSearch}
+                className={`p-3 rounded-full transition-all duration-300 hover:scale-110 ${
+                  isListening 
+                    ? 'bg-red-50 text-red-500 animate-pulse shadow-lg' 
+                    : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'
+                }`}
+                aria-label="Voice search"
+              >
+                <Mic className="w-6 h-6" />
+              </button>
+            </div>
+            
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <Input
+                type="text"
+                placeholder={isFocused ? "Type your recipe search..." : "pre-workout banana milkshake and suggest me post workout"}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                onKeyPress={handleKeyPress}
+                className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-16 text-lg bg-transparent px-0 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-50"
               />
             </div>
             
-            <Input
-              type="text"
-              placeholder={isFocused ? "" : "pre-workout banana milkshake and suggest me post workout"}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="flex-1 border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-12 text-sm lg:w-[450px] placeholder:opacity-100 focus:placeholder:opacity-0"
-            />
-            
-            <Button 
-              className="m-2 h-10 w-10 rounded-full bg-primary-600 hover:bg-primary-700 p-0 transition-all duration-300 ease-in-out hover:scale-105"
-              onClick={handleSearch}
-            >
-              <Search className="w-5 h-5" />
-            </Button>
+            {/* Search Icon/Button */}
+            <div className="flex items-center pr-6 pl-4">
+              <button
+                onClick={handleSearch}
+                className="p-3 rounded-full bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-110 shadow-lg hover:shadow-xl group"
+                aria-label="Search recipes"
+              >
+                <Search className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
+              </button>
+            </div>
           </div>
+
+          {/* Search Suggestions/Quick Actions */}
+          {isFocused && (
+            <div className="mt-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-4 animate-fade-in">
+              <div className="flex flex-wrap gap-2">
+                {['Healthy breakfast', 'Quick dinner', 'Vegan protein', 'Low carb', 'Meal prep'].map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSearchQuery(suggestion)}
+                    className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Trending Section */}
-        <div className="flex items-center space-x-4 text-white/80 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+        <div className="flex items-center justify-center space-x-6 text-white/80 animate-slide-up max-w-2xl" style={{ animationDelay: '0.4s' }}>
           <div className="flex items-center space-x-2">
-            <TrendingUp className="w-4 h-4 text-green-400" />
+            <TrendingUp className="w-5 h-5 text-green-400" />
             <span className="text-sm font-medium">Trending recipes</span>
           </div>
-          <div className="relative h-6 w-64 overflow-hidden">
+          <div className="relative h-6 flex-1 overflow-hidden">
             <div 
               className="absolute inset-0 transition-transform duration-700 ease-in-out"
               style={{ 
@@ -131,9 +166,9 @@ const SearchSection = () => {
               {trendingRecipes.map((recipe, index) => (
                 <div
                   key={index}
-                  className="h-6 flex items-center justify-start"
+                  className="h-6 flex items-center justify-center"
                 >
-                  <span className="text-sm whitespace-nowrap">
+                  <span className="text-sm whitespace-nowrap text-center">
                     {recipe}
                   </span>
                 </div>

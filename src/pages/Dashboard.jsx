@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import RecipeCreationModal from '../components/RecipeCreationModal';
 import { 
   User, 
@@ -31,13 +32,16 @@ import {
   FileText,
   CheckCircle,
   UserCheck,
-  Monitor
+  Monitor,
+  Mic
 } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, userProfile, signOut, isConnected } = useAuth();
   const [isCreatorMode, setIsCreatorMode] = useState(false);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isListening, setIsListening] = useState(false);
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
@@ -67,6 +71,22 @@ const Dashboard = () => {
     console.log('Recipe published:', recipeData);
     // The actual publishing is handled in the modal component
     // You can add additional logic here if needed (e.g., refresh data, show notifications)
+  };
+
+  const handleVoiceSearch = () => {
+    setIsListening(!isListening);
+    // Voice search functionality will be implemented later
+  };
+
+  const handleSearch = () => {
+    console.log('Search:', searchQuery);
+    // Implement search functionality
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   // Consumer Mode Data
@@ -265,55 +285,101 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {isCreatorMode ? (
-                <>
-                  <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
-                    <div className="flex items-center justify-between mb-4">
-                      <PenTool className="w-8 h-8" />
-                      <span className="text-primary-100 text-sm">Create</span>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">New Recipe</h3>
-                    <p className="text-primary-100 mb-4">Share your culinary creation</p>
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      className="bg-white text-primary-600 hover:bg-gray-100"
-                      onClick={handleCreateRecipe}
-                    >
-                      Create Recipe
-                    </Button>
-                  </div>
-
-                  <div className="bg-white rounded-2xl p-6 shadow-sm border">
-                    <div className="flex items-center justify-between mb-4">
-                      <BarChart3 className="w-8 h-8 text-blue-500" />
-                      <span className="text-gray-400 text-sm">Analytics</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">View Analytics</h3>
-                    <p className="text-gray-600 mb-4">Track your performance</p>
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
-                    <div className="flex items-center justify-between mb-4">
-                      <Search className="w-8 h-8" />
-                      <span className="text-primary-100 text-sm">Quick Action</span>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">Find New Recipes</h3>
-                    <p className="text-primary-100 mb-4">Search by ingredients or voice</p>
-                    <Button variant="secondary" size="sm" className="bg-white text-primary-600 hover:bg-gray-100">
-                      Start Searching
-                    </Button>
-                  </div>
-
+            {/* Full-Width Search Bar */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Search className="w-5 h-5 mr-2 text-primary-600" />
+                {isCreatorMode ? 'Search Your Recipes' : 'Find New Recipes'}
+              </h3>
+              
+              <div className="relative flex items-center bg-gray-50 rounded-xl overflow-hidden transition-all duration-300 ease-in-out hover:bg-gray-100 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-opacity-20 border border-gray-200 focus-within:border-primary-300">
+                {/* Voice/Mic Icon */}
+                <div className="flex items-center pl-4 pr-3">
+                  <button
+                    onClick={handleVoiceSearch}
+                    className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
+                      isListening 
+                        ? 'bg-red-50 text-red-500 animate-pulse shadow-md' 
+                        : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'
+                    }`}
+                    aria-label="Voice search"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </button>
+                </div>
                 
-                </>
+                {/* Search Input */}
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    placeholder={isCreatorMode ? "Search your published recipes..." : "Search for recipes by ingredients, cuisine, or dietary needs..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-12 text-base bg-transparent px-0"
+                  />
+                </div>
+                
+                {/* Search Icon/Button */}
+                <div className="flex items-center pr-4 pl-3">
+                  <button
+                    onClick={handleSearch}
+                    className="p-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-110 shadow-md hover:shadow-lg group"
+                    aria-label="Search recipes"
+                  >
+                    <Search className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Search Tags */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(isCreatorMode 
+                  ? ['My Popular', 'Recent', 'Drafts', 'High Rated'] 
+                  : ['Healthy', 'Quick & Easy', 'Vegetarian', 'Low Carb', 'High Protein']
+                ).map((tag, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSearchQuery(tag.toLowerCase())}
+                    className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 gap-4">
+              {isCreatorMode ? (
+                <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <PenTool className="w-8 h-8" />
+                    <span className="text-primary-100 text-sm">Create</span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">New Recipe</h3>
+                  <p className="text-primary-100 mb-4">Share your culinary creation</p>
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="bg-white text-primary-600 hover:bg-gray-100"
+                    onClick={handleCreateRecipe}
+                  >
+                    Create Recipe
+                  </Button>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <Search className="w-8 h-8" />
+                    <span className="text-primary-100 text-sm">Quick Action</span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">Find New Recipes</h3>
+                  <p className="text-primary-100 mb-4">Search by ingredients or voice</p>
+                  <Button variant="secondary" size="sm" className="bg-white text-primary-600 hover:bg-gray-100">
+                    Start Searching
+                  </Button>
+                </div>
               )}
             </div>
 
