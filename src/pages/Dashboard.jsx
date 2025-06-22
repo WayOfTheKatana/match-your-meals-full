@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import RecipeCreationModal from '../components/RecipeCreationModal';
-import RecipeSearchResults from '../components/RecipeSearchResults';
 import { 
   User, 
   Settings, 
@@ -34,8 +33,10 @@ import {
   CheckCircle,
   UserCheck,
   Monitor,
-  Mic
+  Mic,
+  Loader2
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const Dashboard = () => {
   const { user, userProfile, signOut, isConnected } = useAuth();
@@ -43,8 +44,10 @@ const Dashboard = () => {
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const [activeSearchQuery, setActiveSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
@@ -64,28 +67,51 @@ const Dashboard = () => {
     setShowRecipeModal(true);
   };
 
-  const handleSaveRecipe = async (recipeData) => {
-    console.log('Recipe saved as draft:', recipeData);
-    // The actual saving is handled in the modal component
-    // You can add additional logic here if needed (e.g., refresh data, show notifications)
-  };
-
-  const handlePublishRecipe = async (recipeData) => {
-    console.log('Recipe published:', recipeData);
-    // The actual publishing is handled in the modal component
-    // You can add additional logic here if needed (e.g., refresh data, show notifications)
-  };
-
   const handleVoiceSearch = () => {
     setIsListening(!isListening);
     // Voice search functionality will be implemented later
   };
 
+  const performSearch = async (query) => {
+    if (!query.trim()) return;
+
+    setSearchLoading(true);
+    setSearchError('');
+    setSearchResults([]);
+    setHasSearched(true);
+
+    try {
+      console.log('🔍 Starting semantic search for:', query);
+
+      const { data, error: searchError } = await supabase.functions.invoke('recipe-semantic-search', {
+        body: {
+          query: query.trim()
+        }
+      });
+
+      if (searchError) {
+        console.error('❌ Search function error:', searchError);
+        throw new Error(`Search failed: ${searchError.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Search failed');
+      }
+
+      console.log('✅ Search completed:', data);
+      setSearchResults(data.results || []);
+
+    } catch (err) {
+      console.error('❌ Search error:', err);
+      setSearchError(err.message || 'Failed to search recipes. Please try again.');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      console.log('Search:', searchQuery);
-      setActiveSearchQuery(searchQuery.trim());
-      setShowSearchResults(true);
+      performSearch(searchQuery.trim());
     }
   };
 
@@ -97,8 +123,35 @@ const Dashboard = () => {
 
   const handleQuickSearch = (query) => {
     setSearchQuery(query);
-    setActiveSearchQuery(query);
-    setShowSearchResults(true);
+    performSearch(query);
+  };
+
+  const formatTime = (minutes) => {
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  const getTotalTime = (recipe) => {
+    return (recipe.prep_time || 0) + (recipe.cook_time || 0);
+  };
+
+  const handleSaveRecipe = async (recipeId) => {
+    console.log('Saving recipe:', recipeId);
+    // Implement save functionality
+  };
+
+  const handleSaveRecipe = async (recipeData) => {
+    console.log('Recipe saved as draft:', recipeData);
+    // The actual saving is handled in the modal component
+    // You can add additional logic here if needed (e.g., refresh data, show notifications)
+  };
+
+  const handlePublishRecipe = async (recipeData) => {
+    console.log('Recipe published:', recipeData);
+    // The actual publishing is handled in the modal component
+    // You can add additional logic here if needed (e.g., refresh data, show notifications)
   };
 
   // Consumer Mode Data
@@ -336,10 +389,15 @@ const Dashboard = () => {
                 <div className="flex items-center pr-4 pl-3">
                   <button
                     onClick={handleSearch}
-                    className="p-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-110 shadow-md hover:shadow-lg group"
+                    disabled={searchLoading}
+                    className="p-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-110 shadow-md hover:shadow-lg group disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Search recipes"
                   >
-                    <Search className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                    {searchLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Search className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -353,13 +411,166 @@ const Dashboard = () => {
                   <button
                     key={index}
                     onClick={() => handleQuickSearch(tag.toLowerCase())}
-                    className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300"
+                    disabled={searchLoading}
+                    className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {tag}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Search Results Section */}
+            {hasSearched && (
+              <div className="bg-white rounded-2xl shadow-sm border">
+                <div className="p-6 border-b">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {searchLoading ? 'Searching...' : 
+                     searchError ? 'Search Error' :
+                     searchResults.length > 0 ? `Found ${searchResults.length} Recipe${searchResults.length === 1 ? '' : 's'}` :
+                     'No Recipes Found'}
+                  </h3>
+                  {searchQuery && !searchLoading && (
+                    <p className="text-gray-600 mt-1">
+                      {searchError ? searchError : `Results for "${searchQuery}"`}
+                    </p>
+                  )}
+                </div>
+
+                {/* Loading State */}
+                {searchLoading && (
+                  <div className="p-12 text-center">
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="relative">
+                        <Loader2 className="w-12 h-12 text-primary-600 animate-spin" />
+                        <Search className="w-6 h-6 text-primary-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2">Searching Recipes</h4>
+                        <p className="text-gray-600 text-sm">
+                          Finding the best matches for your query...
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {searchError && !searchLoading && (
+                  <div className="p-6">
+                    <div className="flex items-center space-x-3 text-red-600 mb-4">
+                      <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium">Search Error</h4>
+                        <p className="text-sm text-red-500">{searchError}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => performSearch(searchQuery)}
+                      variant="outline"
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                )}
+
+                {/* Search Results Grid */}
+                {searchResults.length > 0 && !searchLoading && (
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 gap-6">
+                      {searchResults.map((recipe, index) => (
+                        <div key={recipe.id} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-100">
+                          {/* Recipe Image with Ranking Number */}
+                          <div className="relative overflow-hidden rounded-xl w-32 h-32 flex-shrink-0">
+                            <img
+                              src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                              alt={recipe.title}
+                              className="w-full h-full object-cover"
+                            />
+                            {/* Ranking Number Overlay */}
+                            <div className="absolute top-2 left-2">
+                              <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                                {index + 1}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Recipe Content */}
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-gray-900 mb-2 text-lg">{recipe.title}</h4>
+                                <p className="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
+                                  {recipe.description}
+                                </p>
+                                
+                                {/* Recipe Meta */}
+                                <div className="flex items-center space-x-6 text-gray-700 mb-4">
+                                  <div className="flex items-center space-x-1">
+                                    <Clock className="w-4 h-4 text-primary-600" />
+                                    <span className="text-sm font-medium">{formatTime(getTotalTime(recipe))}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Users className="w-4 h-4 text-primary-600" />
+                                    <span className="text-sm font-medium">{recipe.servings} servings</span>
+                                  </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center space-x-3">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                                    onClick={() => handleSaveRecipe(recipe.id)}
+                                  >
+                                    <Heart className="w-4 h-4" />
+                                    <span>Save</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
+                                  >
+                                    <BookOpen className="w-4 h-4" />
+                                    <span>View Recipe</span>
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Results */}
+                {!searchLoading && !searchError && searchResults.length === 0 && hasSearched && searchQuery && (
+                  <div className="p-12 text-center">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <ChefHat className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h4 className="text-xl font-semibold text-gray-900 mb-3">No Recipes Found</h4>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      We couldn't find any recipes matching "{searchQuery}". 
+                      Try adjusting your search terms or being more specific.
+                    </p>
+                    
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {['high protein chicken', 'quick vegan dinner', 'heart healthy salmon', 'keto breakfast'].map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleQuickSearch(suggestion)}
+                          className="px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300"
+                        >
+                          Try "{suggestion}"
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 gap-4">
@@ -383,91 +594,93 @@ const Dashboard = () => {
               ) : null}
             </div>
 
-            {/* Recipe Feed / Creator Content */}
-            <div className="bg-white rounded-2xl shadow-sm border">
-              <div className="p-6 border-b">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {isCreatorMode ? 'Your Published Recipes' : 'Recipe Feed'}
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    {!isCreatorMode && (
-                      <Button variant="ghost" size="sm">
-                        <Filter className="w-4 h-4 mr-2" />
-                        Filter
+            {/* Recipe Feed / Creator Content - Only show if no search results */}
+            {!hasSearched && (
+              <div className="bg-white rounded-2xl shadow-sm border">
+                <div className="p-6 border-b">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {isCreatorMode ? 'Your Published Recipes' : 'Recipe Feed'}
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      {!isCreatorMode && (
+                        <Button variant="ghost" size="sm">
+                          <Filter className="w-4 h-4 mr-2" />
+                          Filter
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" className="text-primary-600">
+                        View All
                       </Button>
-                    )}
-                    <Button variant="ghost" size="sm" className="text-primary-600">
-                      View All
-                    </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                {(isCreatorMode ? publishedRecipes : recentRecipes).map((recipe, index) => (
-                  <div key={index} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-                    <div className="relative overflow-hidden rounded-xl w-24 h-24 flex-shrink-0">
-                      <img
-                        src={recipe.image}
-                        alt={recipe.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
-                        <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                        <span className="text-xs font-medium">{recipe.rating}</span>
+                
+                <div className="p-6 space-y-6">
+                  {(isCreatorMode ? publishedRecipes : recentRecipes).map((recipe, index) => (
+                    <div key={index} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                      <div className="relative overflow-hidden rounded-xl w-24 h-24 flex-shrink-0">
+                        <img
+                          src={recipe.image}
+                          alt={recipe.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
+                          <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                          <span className="text-xs font-medium">{recipe.rating}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-1">{recipe.name}</h4>
-                          <div className="flex items-center text-sm text-gray-600 mb-2">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {recipe.time}
-                            {isCreatorMode && recipe.views && (
-                              <>
-                                <span className="mx-2">•</span>
-                                <Eye className="w-4 h-4 mr-1" />
-                                {recipe.views} views
-                              </>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            {isCreatorMode ? (
-                              <>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  recipe.status === 'Published' 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : 'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                  {recipe.status}
-                                </span>
-                                <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                                  <BarChart3 className="w-4 h-4" />
-                                  <span>Analytics</span>
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button className="flex items-center space-x-1 hover:text-red-500 transition-colors">
-                                  <Heart className="w-4 h-4" />
-                                  <span>Save</span>
-                                </button>
-                                <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                                  <BookOpen className="w-4 h-4" />
-                                  <span>View Recipe</span>
-                                </button>
-                              </>
-                            )}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-1">{recipe.name}</h4>
+                            <div className="flex items-center text-sm text-gray-600 mb-2">
+                              <Clock className="w-4 h-4 mr-1" />
+                              {recipe.time}
+                              {isCreatorMode && recipe.views && (
+                                <>
+                                  <span className="mx-2">•</span>
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  {recipe.views} views
+                                </>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              {isCreatorMode ? (
+                                <>
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    recipe.status === 'Published' 
+                                      ? 'bg-green-100 text-green-700' 
+                                      : 'bg-yellow-100 text-yellow-700'
+                                  }`}>
+                                    {recipe.status}
+                                  </span>
+                                  <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                    <BarChart3 className="w-4 h-4" />
+                                    <span>Analytics</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button className="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                    <Heart className="w-4 h-4" />
+                                    <span>Save</span>
+                                  </button>
+                                  <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                    <BookOpen className="w-4 h-4" />
+                                    <span>View Recipe</span>
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -579,14 +792,6 @@ const Dashboard = () => {
         onSave={handleSaveRecipe}
         onPublish={handlePublishRecipe}
       />
-
-      {/* Search Results Modal */}
-      {showSearchResults && (
-        <RecipeSearchResults
-          searchQuery={activeSearchQuery}
-          onClose={() => setShowSearchResults(false)}
-        />
-      )}
     </div>
   );
 };
