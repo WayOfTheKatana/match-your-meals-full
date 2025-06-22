@@ -49,18 +49,33 @@ const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
 async function extractSearchIntent(query: string): Promise<SearchIntent> {
   try {
-    console.log('🔄 Extracting search intent with Gemini...')
+    console.log('🔄 Extracting search intent with Gemini for query:', query)
     
-    const prompt = `Extract structured search intent from recipe query, return only valid JSON with these fields below and make sure do not explain anything.
-- dietary_tags (array of strings) - like ["vegetarian", "gluten-free", "dairy-free"] 
-- total_time (number in minutes) - prep_time + cook_time combined 
-- health_tags (array of strings) - like ["high-protein", "low-carb", "heart-healthy"] 
-- health_benefits (array of strings) - like ["weight-loss", "energy-boost", "immune-support"] 
-- servings (number) - how many people it serves
+    if (!GEMINI_API_KEY) {
+      console.log('⚠️ Gemini API key not found, using fallback intent extraction')
+      return createFallbackIntent(query)
+    }
+    
+    const prompt = `Extract structured search intent from recipe query. Return ONLY a valid JSON object with these exact fields:
+
+{
+  "dietary_tags": [],
+  "total_time": null,
+  "health_tags": [],
+  "health_benefits": [],
+  "servings": null
+}
+
+Rules:
+- dietary_tags: ["vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo", "low-carb"]
+- total_time: number in minutes (prep + cook time combined)
+- health_tags: ["high-protein", "low-carb", "heart-healthy", "low-sodium", "high-fiber", "antioxidant-rich"]
+- health_benefits: ["weight-loss", "energy-boost", "immune-support", "muscle-building", "heart-health"]
+- servings: number of people it serves
 
 User query: "${query}"
 
-Return only the JSON object, no explanation or additional text.`
+Return ONLY the JSON object, no explanation:`
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -77,24 +92,25 @@ Return only the JSON object, no explanation or additional text.`
           temperature: 0.1,
           topK: 1,
           topP: 0.8,
-          maxOutputTokens: 500,
+          maxOutputTokens: 300,
         }
       }),
     })
 
     if (!response.ok) {
-      const errorData = await response.text()
-      throw new Error(`Gemini API error: ${response.status} - ${errorData}`)
+      console.error('❌ Gemini API error:', response.status, response.statusText)
+      return createFallbackIntent(query)
     }
 
     const data = await response.json()
     
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      throw new Error('Invalid response from Gemini API')
+      console.error('❌ Invalid Gemini response structure')
+      return createFallbackIntent(query)
     }
 
     const generatedText = data.candidates[0].content.parts[0].text.trim()
-    console.log('📝 Gemini intent extraction response:', generatedText)
+    console.log('📝 Gemini raw response:', generatedText)
 
     // Extract JSON from the response
     let jsonMatch = generatedText.match(/\{[\s\S]*\}/)
@@ -107,32 +123,93 @@ Return only the JSON object, no explanation or additional text.`
     }
 
     if (!jsonMatch) {
-      console.log('⚠️ No JSON found, using fallback intent extraction')
-      // Fallback: basic keyword extraction
-      return {
-        dietary_tags: [],
-        health_tags: [],
-        health_benefits: []
-      }
+      console.log('⚠️ No JSON found in Gemini response, using fallback')
+      return createFallbackIntent(query)
     }
 
-    const intent = JSON.parse(jsonMatch[0])
-    console.log('✅ Search intent extracted:', intent)
-    return intent
-  } catch (error) {
-    console.error('❌ Error extracting search intent:', error)
-    // Return empty intent on error
-    return {
-      dietary_tags: [],
-      health_tags: [],
-      health_benefits: []
+    try {
+      const intent = JSON.parse(jsonMatch[0])
+      
+      // Validate and clean the intent
+      const cleanedIntent = {
+        dietary_tags: Array.isArray(intent.dietary_tags) ? intent.dietary_tags : [],
+        total_time: typeof intent.total_time === 'number' ? intent.total_time : null,
+        health_tags: Array.isArray(intent.health_tags) ? intent.health_tags : [],
+        health_benefits: Array.isArray(intent.health_benefits) ? intent.health_benefits : [],
+        servings: typeof intent.servings === 'number' ? intent.servings : null
+      }
+      
+      console.log('✅ Search intent extracted successfully:', cleanedIntent)
+      return cleanedIntent
+    } catch (parseError) {
+      console.error('❌ Error parsing Gemini JSON response:', parseError)
+      return createFallbackIntent(query)
     }
+  } catch (error) {
+    console.error('❌ Error in extractSearchIntent:', error)
+    return createFallbackIntent(query)
   }
+}
+
+function createFallbackIntent(query: string): SearchIntent {
+  console.log('🔄 Creating fallback intent for query:', query)
+  
+  const lowerQuery = query.toLowerCase()
+  const intent: SearchIntent = {
+    dietary_tags: [],
+    health_tags: [],
+    health_benefits: []
+  }
+
+  // Extract dietary tags
+  if (lowerQuery.includes('vegetarian')) intent.dietary_tags.push('vegetarian')
+  if (lowerQuery.includes('vegan')) intent.dietary_tags.push('vegan')
+  if (lowerQuery.includes('gluten-free') || lowerQuery.includes('gluten free')) intent.dietary_tags.push('gluten-free')
+  if (lowerQuery.includes('dairy-free') || lowerQuery.includes('dairy free')) intent.dietary_tags.push('dairy-free')
+  if (lowerQuery.includes('keto')) intent.dietary_tags.push('keto')
+  if (lowerQuery.includes('paleo')) intent.dietary_tags.push('paleo')
+  if (lowerQuery.includes('low carb') || lowerQuery.includes('low-carb')) intent.dietary_tags.push('low-carb')
+
+  // Extract health tags
+  if (lowerQuery.includes('healthy') || lowerQuery.includes('health')) intent.health_tags.push('heart-healthy')
+  if (lowerQuery.includes('protein') || lowerQuery.includes('high protein')) intent.health_tags.push('high-protein')
+  if (lowerQuery.includes('low carb') || lowerQuery.includes('low-carb')) intent.health_tags.push('low-carb')
+  if (lowerQuery.includes('heart')) intent.health_tags.push('heart-healthy')
+  if (lowerQuery.includes('fiber')) intent.health_tags.push('high-fiber')
+
+  // Extract health benefits
+  if (lowerQuery.includes('weight loss') || lowerQuery.includes('lose weight')) intent.health_benefits.push('weight-loss')
+  if (lowerQuery.includes('energy') || lowerQuery.includes('boost')) intent.health_benefits.push('energy-boost')
+  if (lowerQuery.includes('immune')) intent.health_benefits.push('immune-support')
+  if (lowerQuery.includes('muscle') || lowerQuery.includes('building')) intent.health_benefits.push('muscle-building')
+  if (lowerQuery.includes('heart')) intent.health_benefits.push('heart-health')
+
+  // Extract time
+  const timeMatch = lowerQuery.match(/(\d+)\s*(min|minute|minutes|hour|hours)/i)
+  if (timeMatch) {
+    const value = parseInt(timeMatch[1])
+    const unit = timeMatch[2].toLowerCase()
+    intent.total_time = unit.startsWith('hour') ? value * 60 : value
+  }
+
+  // Extract servings
+  const servingsMatch = lowerQuery.match(/(\d+)\s*(people|person|serving|servings)/i)
+  if (servingsMatch) {
+    intent.servings = parseInt(servingsMatch[1])
+  }
+
+  console.log('✅ Fallback intent created:', intent)
+  return intent
 }
 
 async function generateQueryEmbedding(query: string): Promise<number[]> {
   try {
-    console.log('🔄 Generating query embedding with OpenAI...')
+    console.log('🔄 Generating query embedding with OpenAI for:', query)
+    
+    if (!OPENAI_API_KEY) {
+      console.error('❌ OpenAI API key not found')
+      throw new Error('OpenAI API key not configured')
+    }
     
     const response = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
@@ -149,17 +226,21 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
 
     if (!response.ok) {
       const errorData = await response.text()
+      console.error('❌ OpenAI API error:', response.status, errorData)
       throw new Error(`OpenAI API error: ${response.status} - ${errorData}`)
     }
 
     const data = await response.json()
     
     if (!data.data || !data.data[0] || !data.data[0].embedding) {
+      console.error('❌ Invalid OpenAI embedding response')
       throw new Error('Invalid embedding response from OpenAI')
     }
 
-    console.log('✅ Query embedding generated successfully')
-    return data.data[0].embedding
+    const embedding = data.data[0].embedding
+    console.log('✅ Query embedding generated successfully, dimensions:', embedding.length)
+    console.log('📊 Embedding preview (first 5 values):', embedding.slice(0, 5))
+    return embedding
   } catch (error) {
     console.error('❌ Error generating query embedding:', error)
     throw error
@@ -168,9 +249,9 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
 
 async function searchRecipes(query: string, intent: SearchIntent, embedding: number[], limit: number = 20): Promise<RecipeResult[]> {
   try {
-    console.log('🔍 Searching recipes in database...')
+    console.log('🔍 Searching recipes in database with intent:', intent)
     
-    // Build the SQL query with filters and vector similarity
+    // Start with a basic query
     let sqlQuery = supabase
       .from('recipes')
       .select(`
@@ -192,36 +273,57 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
       `)
 
     // Apply filters based on extracted intent
+    let hasFilters = false
+
     // For dietary_tags (text[] array), use overlaps
     if (intent.dietary_tags && intent.dietary_tags.length > 0) {
+      console.log('🏷️ Filtering by dietary tags:', intent.dietary_tags)
       sqlQuery = sqlQuery.overlaps('dietary_tags', intent.dietary_tags)
-    }
-
-    // For health_tags (jsonb), use contains operator
-    if (intent.health_tags && intent.health_tags.length > 0) {
-      // Use cs (contains) operator for JSONB arrays
-      sqlQuery = sqlQuery.cs('health_tags', intent.health_tags)
+      hasFilters = true
     }
 
     // For health_benefits (text[] array), use overlaps
     if (intent.health_benefits && intent.health_benefits.length > 0) {
+      console.log('💪 Filtering by health benefits:', intent.health_benefits)
       sqlQuery = sqlQuery.overlaps('health_benefits', intent.health_benefits)
+      hasFilters = true
+    }
+
+    // For health_tags (jsonb), we need to use a different approach
+    if (intent.health_tags && intent.health_tags.length > 0) {
+      console.log('🏥 Filtering by health tags:', intent.health_tags)
+      // Use contains operator for JSONB - check if any of the health tags match
+      for (const tag of intent.health_tags) {
+        sqlQuery = sqlQuery.contains('health_tags', [tag])
+        hasFilters = true
+        break // For now, just use the first tag to avoid complex queries
+      }
     }
 
     if (intent.total_time) {
+      console.log('⏱️ Filtering by total time:', intent.total_time)
       // Filter by total cooking time (prep_time + cook_time)
-      sqlQuery = sqlQuery.lte('prep_time', Math.floor(intent.total_time * 0.6)) // Assume 60% for prep
-      sqlQuery = sqlQuery.lte('cook_time', Math.floor(intent.total_time * 0.8)) // Assume 80% for cook
+      sqlQuery = sqlQuery.lte('prep_time', Math.floor(intent.total_time * 0.6))
+      sqlQuery = sqlQuery.lte('cook_time', Math.floor(intent.total_time * 0.8))
+      hasFilters = true
     }
 
     if (intent.servings) {
+      console.log('👥 Filtering by servings:', intent.servings)
       // Allow some flexibility in servings (±2)
-      sqlQuery = sqlQuery.gte('servings', intent.servings - 2)
+      sqlQuery = sqlQuery.gte('servings', Math.max(1, intent.servings - 2))
       sqlQuery = sqlQuery.lte('servings', intent.servings + 2)
+      hasFilters = true
+    }
+
+    // If no specific filters, do a text search on title and description
+    if (!hasFilters) {
+      console.log('🔤 No specific filters, doing text search on title and description')
+      sqlQuery = sqlQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`)
     }
 
     // Execute the query
-    const { data: filteredRecipes, error: filterError } = await sqlQuery.limit(limit * 2) // Get more for vector similarity
+    const { data: filteredRecipes, error: filterError } = await sqlQuery.limit(limit * 2)
 
     if (filterError) {
       console.error('❌ Filter query error:', filterError)
@@ -231,13 +333,15 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
     console.log(`📊 Found ${filteredRecipes?.length || 0} recipes after filtering`)
 
     if (!filteredRecipes || filteredRecipes.length === 0) {
+      console.log('📭 No recipes found with current filters')
       return []
     }
 
-    // If we have embeddings, perform vector similarity search
-    if (embedding && embedding.length > 0) {
+    // If we have embeddings and recipes, try vector similarity search
+    if (embedding && embedding.length > 0 && filteredRecipes.length > 0) {
       try {
-        // Use RPC function for vector similarity (you'll need to create this)
+        console.log('🔍 Attempting vector similarity search...')
+        
         const { data: vectorResults, error: vectorError } = await supabase
           .rpc('search_recipes_by_similarity', {
             query_embedding: embedding,
@@ -247,14 +351,7 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
 
         if (vectorError) {
           console.log('⚠️ Vector search failed, using filtered results:', vectorError.message)
-          // Fall back to filtered results without similarity scores
-          return filteredRecipes.slice(0, limit).map(recipe => ({
-            ...recipe,
-            similarity_score: 0.5 // Default score
-          }))
-        }
-
-        if (vectorResults && vectorResults.length > 0) {
+        } else if (vectorResults && vectorResults.length > 0) {
           console.log(`✅ Vector similarity search returned ${vectorResults.length} results`)
           return vectorResults.slice(0, limit)
         }
@@ -266,7 +363,7 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
     // Return filtered results without similarity scores
     const results = filteredRecipes.slice(0, limit).map(recipe => ({
       ...recipe,
-      similarity_score: 0.5 // Default score when no vector search
+      similarity_score: 0.7 // Default score when no vector search
     }))
 
     console.log(`✅ Returning ${results.length} recipe results`)
@@ -287,7 +384,10 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    console.log('🚀 Recipe Semantic Search started')
+    console.log('🚀 Recipe Semantic Search Edge Function started')
+    console.log('📋 Request method:', req.method)
+    console.log('🔑 Environment check - OpenAI key:', OPENAI_API_KEY ? 'Present' : 'Missing')
+    console.log('🔑 Environment check - Gemini key:', GEMINI_API_KEY ? 'Present' : 'Missing')
     
     if (req.method !== 'POST') {
       throw new Error('Only POST method is allowed')
@@ -295,6 +395,7 @@ Deno.serve(async (req: Request) => {
 
     // Parse request body
     const payload: RequestPayload = await req.json()
+    console.log('📥 Request payload:', payload)
     
     if (!payload.query || payload.query.trim().length === 0) {
       throw new Error('Search query is required')
@@ -303,26 +404,46 @@ Deno.serve(async (req: Request) => {
     const query = payload.query.trim()
     const limit = payload.limit || 20
 
-    console.log('🔍 Search query:', query)
-
-    // Check if API keys are available
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured')
-    }
-
-    if (!GEMINI_API_KEY) {
-      throw new Error('Gemini API key not configured')
-    }
+    console.log('🔍 Processing search query:', query)
+    console.log('📊 Result limit:', limit)
 
     // Extract search intent and generate embedding in parallel
-    console.log('🔄 Starting parallel processing...')
-    const [intent, embedding] = await Promise.all([
-      extractSearchIntent(query),
-      generateQueryEmbedding(query)
-    ])
+    console.log('🔄 Starting parallel processing of intent extraction and embedding generation...')
+    
+    let intent: SearchIntent
+    let embedding: number[] = []
 
-    console.log('📋 Extracted intent:', intent)
-    console.log('🔢 Generated embedding dimensions:', embedding.length)
+    try {
+      // Try to run both in parallel, but handle failures gracefully
+      const [intentResult, embeddingResult] = await Promise.allSettled([
+        extractSearchIntent(query),
+        generateQueryEmbedding(query)
+      ])
+
+      // Handle intent extraction result
+      if (intentResult.status === 'fulfilled') {
+        intent = intentResult.value
+        console.log('✅ Intent extraction completed successfully')
+      } else {
+        console.error('❌ Intent extraction failed:', intentResult.reason)
+        intent = createFallbackIntent(query)
+      }
+
+      // Handle embedding generation result
+      if (embeddingResult.status === 'fulfilled') {
+        embedding = embeddingResult.value
+        console.log('✅ Embedding generation completed successfully')
+      } else {
+        console.error('❌ Embedding generation failed:', embeddingResult.reason)
+        console.log('⚠️ Continuing without embeddings (will use text search only)')
+      }
+    } catch (parallelError) {
+      console.error('❌ Error in parallel processing:', parallelError)
+      intent = createFallbackIntent(query)
+    }
+
+    console.log('📋 Final extracted intent:', intent)
+    console.log('🔢 Embedding dimensions:', embedding.length)
 
     // Search recipes using filters and vector similarity
     const results = await searchRecipes(query, intent, embedding, limit)
@@ -335,14 +456,15 @@ Deno.serve(async (req: Request) => {
       results: results,
       total_results: results.length,
       processing_info: {
-        intent_extraction: 'Gemini 2.5 Flash',
-        embedding_generation: 'OpenAI text-embedding-3-small',
-        search_method: 'Hybrid (filters + vector similarity)'
+        intent_extraction: GEMINI_API_KEY ? 'Gemini 2.5 Flash' : 'Fallback keyword extraction',
+        embedding_generation: OPENAI_API_KEY && embedding.length > 0 ? 'OpenAI text-embedding-3-small' : 'Not available',
+        search_method: embedding.length > 0 ? 'Hybrid (filters + vector similarity)' : 'Text and filter search only'
       },
       timestamp: new Date().toISOString()
     }
 
     console.log(`✅ Search completed successfully with ${results.length} results`)
+    console.log('📤 Sending response with processing info:', responseData.processing_info)
 
     return new Response(
       JSON.stringify(responseData),
@@ -356,14 +478,22 @@ Deno.serve(async (req: Request) => {
     )
 
   } catch (error) {
-    console.error('❌ Error in recipe-semantic-search function:', error)
+    console.error('❌ Critical error in recipe-semantic-search function:', error)
+    console.error('❌ Error stack:', error.stack)
 
     const errorResponse = {
       success: false,
       error: 'Recipe search failed',
       message: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      debug_info: {
+        error_type: error.constructor.name,
+        has_openai_key: !!OPENAI_API_KEY,
+        has_gemini_key: !!GEMINI_API_KEY
+      }
     }
+
+    console.log('📤 Sending error response:', errorResponse)
 
     return new Response(
       JSON.stringify(errorResponse),
