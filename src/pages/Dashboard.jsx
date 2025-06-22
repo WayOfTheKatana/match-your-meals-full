@@ -47,13 +47,20 @@ const Dashboard = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
-  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
     console.log('User Profile:', userProfile);
     console.log('Connected to Supabase:', isConnected);
   }, [user, userProfile, isConnected]);
+
+  // Clear search results when query is empty
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearchError('');
+    }
+  }, [searchQuery]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -73,12 +80,14 @@ const Dashboard = () => {
   };
 
   const performSearch = async (query) => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSearchError('');
+      return;
+    }
 
     setSearchLoading(true);
     setSearchError('');
-    setSearchResults([]);
-    setHasSearched(true);
 
     try {
       console.log('🔍 Starting semantic search for:', query);
@@ -104,6 +113,7 @@ const Dashboard = () => {
     } catch (err) {
       console.error('❌ Search error:', err);
       setSearchError(err.message || 'Failed to search recipes. Please try again.');
+      setSearchResults([]);
     } finally {
       setSearchLoading(false);
     }
@@ -227,6 +237,10 @@ const Dashboard = () => {
 
   const currentStats = isCreatorMode ? creatorStats : consumerStats;
   const currentNavigation = isCreatorMode ? creatorNavigationItems : consumerNavigationItems;
+
+  // Check if we should show search results
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  const showSearchResults = hasSearchQuery && (searchLoading || searchResults.length > 0 || searchError);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -420,8 +434,8 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Search Results Section */}
-            {hasSearched && (
+            {/* Search Results Section - Only show when there's a search query */}
+            {showSearchResults && (
               <div className="bg-white rounded-2xl shadow-sm border">
                 <div className="p-6 border-b">
                   <h3 className="text-xl font-semibold text-gray-900">
@@ -545,7 +559,7 @@ const Dashboard = () => {
                 )}
 
                 {/* No Results */}
-                {!searchLoading && !searchError && searchResults.length === 0 && hasSearched && searchQuery && (
+                {!searchLoading && !searchError && searchResults.length === 0 && hasSearchQuery && (
                   <div className="p-12 text-center">
                     <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                       <ChefHat className="w-10 h-10 text-gray-400" />
@@ -572,9 +586,9 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 gap-4">
-              {isCreatorMode ? (
+            {/* Quick Actions - Only show for creator mode */}
+            {isCreatorMode && (
+              <div className="grid grid-cols-1 gap-4">
                 <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
                   <div className="flex items-center justify-between mb-4">
                     <PenTool className="w-8 h-8" />
@@ -591,96 +605,94 @@ const Dashboard = () => {
                     Create Recipe
                   </Button>
                 </div>
-              ) : null}
-            </div>
+              </div>
+            )}
 
-            {/* Recipe Feed / Creator Content - Only show if no search results */}
-            {!hasSearched && (
-              <div className="bg-white rounded-2xl shadow-sm border">
-                <div className="p-6 border-b">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {isCreatorMode ? 'Your Published Recipes' : 'Recipe Feed'}
-                    </h3>
-                    <div className="flex items-center space-x-2">
-                      {!isCreatorMode && (
-                        <Button variant="ghost" size="sm">
-                          <Filter className="w-4 h-4 mr-2" />
-                          Filter
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="text-primary-600">
-                        View All
+            {/* Recipe Feed / Creator Content - Always show below search results */}
+            <div className="bg-white rounded-2xl shadow-sm border">
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {isCreatorMode ? 'Your Published Recipes' : 'Recipe Feed'}
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    {!isCreatorMode && (
+                      <Button variant="ghost" size="sm">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Filter
                       </Button>
-                    </div>
+                    )}
+                    <Button variant="ghost" size="sm" className="text-primary-600">
+                      View All
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="p-6 space-y-6">
-                  {(isCreatorMode ? publishedRecipes : recentRecipes).map((recipe, index) => (
-                    <div key={index} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-                      <div className="relative overflow-hidden rounded-xl w-24 h-24 flex-shrink-0">
-                        <img
-                          src={recipe.image}
-                          alt={recipe.name}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
-                          <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                          <span className="text-xs font-medium">{recipe.rating}</span>
-                        </div>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {(isCreatorMode ? publishedRecipes : recentRecipes).map((recipe, index) => (
+                  <div key={index} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                    <div className="relative overflow-hidden rounded-xl w-24 h-24 flex-shrink-0">
+                      <img
+                        src={recipe.image}
+                        alt={recipe.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
+                        <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                        <span className="text-xs font-medium">{recipe.rating}</span>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 mb-1">{recipe.name}</h4>
-                            <div className="flex items-center text-sm text-gray-600 mb-2">
-                              <Clock className="w-4 h-4 mr-1" />
-                              {recipe.time}
-                              {isCreatorMode && recipe.views && (
-                                <>
-                                  <span className="mx-2">•</span>
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  {recipe.views} views
-                                </>
-                              )}
-                            </div>
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              {isCreatorMode ? (
-                                <>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    recipe.status === 'Published' 
-                                      ? 'bg-green-100 text-green-700' 
-                                      : 'bg-yellow-100 text-yellow-700'
-                                  }`}>
-                                    {recipe.status}
-                                  </span>
-                                  <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                                    <BarChart3 className="w-4 h-4" />
-                                    <span>Analytics</span>
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button className="flex items-center space-x-1 hover:text-red-500 transition-colors">
-                                    <Heart className="w-4 h-4" />
-                                    <span>Save</span>
-                                  </button>
-                                  <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                                    <BookOpen className="w-4 h-4" />
-                                    <span>View Recipe</span>
-                                  </button>
-                                </>
-                              )}
-                            </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 mb-1">{recipe.name}</h4>
+                          <div className="flex items-center text-sm text-gray-600 mb-2">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {recipe.time}
+                            {isCreatorMode && recipe.views && (
+                              <>
+                                <span className="mx-2">•</span>
+                                <Eye className="w-4 h-4 mr-1" />
+                                {recipe.views} views
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            {isCreatorMode ? (
+                              <>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  recipe.status === 'Published' 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {recipe.status}
+                                </span>
+                                <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                  <BarChart3 className="w-4 h-4" />
+                                  <span>Analytics</span>
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button className="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                  <Heart className="w-4 h-4" />
+                                  <span>Save</span>
+                                </button>
+                                <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                  <BookOpen className="w-4 h-4" />
+                                  <span>View Recipe</span>
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
