@@ -34,7 +34,6 @@ interface RecipeResult {
   health_benefits: string[];
   nutritional_info: any;
   similarity_score: number;
-  relevance_score: number;
   creator_id: string;
   created_at: string;
 }
@@ -47,15 +46,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 // Get API keys from environment variables
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-
-// Relevance scoring configuration
-const RELEVANCE_CONFIG = {
-  MIN_SIMILARITY_SCORE: 0.75,        // Minimum vector similarity for high relevance
-  MIN_INTENT_MATCH_SCORE: 0.6,       // Minimum intent matching score
-  MAX_RESULTS: 3,                    // Maximum number of results to return
-  PERFECT_MATCH_THRESHOLD: 0.9,      // Threshold for "perfect match" label
-  HIGH_RELEVANCE_THRESHOLD: 0.8      // Threshold for high relevance
-}
 
 async function extractSearchIntent(query: string): Promise<SearchIntent> {
   try {
@@ -94,15 +84,6 @@ Rules:
 - Consider synonyms and related terms (e.g., "plant-based" and "vegan", "heart-healthy" and "cardiovascular")
 - Look for cooking methods, ingredients, and health goals in the query
 - Consider both explicit and implicit health intentions
-
-Examples:
-- "calcium rich food for strong bones" → health_tags: ["calcium-rich", "bone-healthy"], health_benefits: ["bone-health"]
-- "heart healthy Mediterranean recipe" → dietary_tags: ["mediterranean"], health_tags: ["heart-healthy"], health_benefits: ["heart-health", "cardiovascular-protection"]
-- "high protein vegan meal for muscle building" → dietary_tags: ["vegan", "plant-based"], health_tags: ["high-protein", "muscle-building"], health_benefits: ["muscle-building", "strength-building"]
-- "anti-inflammatory turmeric recipe" → health_tags: ["anti-inflammatory", "antioxidant-rich"], health_benefits: ["inflammation-reduction", "joint-health"]
-- "quick keto dinner under 30 minutes" → dietary_tags: ["keto", "low-carb"], total_time: 30
-- "gut healthy probiotic smoothie" → health_tags: ["probiotic", "gut-healthy"], health_benefits: ["digestive-health", "gut-microbiome-support"]
-- "energy boosting breakfast for athletes" → health_tags: ["high-energy", "metabolism-boosting"], health_benefits: ["energy-boost", "endurance-enhancement"]
 
 User query: "${query}"
 
@@ -377,7 +358,6 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
 
     const embedding = data.data[0].embedding
     console.log('✅ Query embedding generated successfully, dimensions:', embedding.length)
-    console.log('📊 Embedding preview (first 5 values):', embedding.slice(0, 5))
     return embedding
   } catch (error) {
     console.error('❌ Error generating query embedding:', error)
@@ -385,119 +365,25 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
   }
 }
 
-function calculateRelevanceScore(recipe: any, intent: SearchIntent, query: string): number {
-  let relevanceScore = 0
-  let maxPossibleScore = 0
-
-  // Base similarity score (40% of total relevance)
-  const similarityWeight = 0.4
-  relevanceScore += (recipe.similarity_score || 0) * similarityWeight
-  maxPossibleScore += similarityWeight
-
-  // Intent matching score (60% of total relevance)
-  const intentWeight = 0.6
-  let intentMatchScore = 0
-  let intentCriteria = 0
-
-  // Dietary tags matching (20% of intent weight)
-  if (intent.dietary_tags && intent.dietary_tags.length > 0) {
-    intentCriteria++
-    const recipeDietaryTags = recipe.dietary_tags || []
-    const matchingDietaryTags = intent.dietary_tags.filter(tag => 
-      recipeDietaryTags.includes(tag)
-    ).length
-    const dietaryMatchRatio = matchingDietaryTags / intent.dietary_tags.length
-    intentMatchScore += dietaryMatchRatio * 0.2
-  }
-
-  // Health tags matching (20% of intent weight)
-  if (intent.health_tags && intent.health_tags.length > 0) {
-    intentCriteria++
-    const recipeHealthTags = recipe.health_tags || []
-    const matchingHealthTags = intent.health_tags.filter(tag => 
-      recipeHealthTags.includes(tag)
-    ).length
-    const healthTagMatchRatio = matchingHealthTags / intent.health_tags.length
-    intentMatchScore += healthTagMatchRatio * 0.2
-  }
-
-  // Health benefits matching (15% of intent weight)
-  if (intent.health_benefits && intent.health_benefits.length > 0) {
-    intentCriteria++
-    const recipeHealthBenefits = recipe.health_benefits || []
-    const matchingHealthBenefits = intent.health_benefits.filter(benefit => 
-      recipeHealthBenefits.includes(benefit)
-    ).length
-    const healthBenefitMatchRatio = matchingHealthBenefits / intent.health_benefits.length
-    intentMatchScore += healthBenefitMatchRatio * 0.15
-  }
-
-  // Time matching (3% of intent weight)
-  if (intent.total_time) {
-    intentCriteria++
-    const recipeTime = (recipe.prep_time || 0) + (recipe.cook_time || 0)
-    const timeMatchScore = recipeTime <= intent.total_time ? 1 : Math.max(0, 1 - (recipeTime - intent.total_time) / intent.total_time)
-    intentMatchScore += timeMatchScore * 0.03
-  }
-
-  // Servings matching (2% of intent weight)
-  if (intent.servings) {
-    intentCriteria++
-    const servingsDiff = Math.abs((recipe.servings || 4) - intent.servings)
-    const servingsMatchScore = Math.max(0, 1 - servingsDiff / 4) // Allow ±4 servings difference
-    intentMatchScore += servingsMatchScore * 0.02
-  }
-
-  // Normalize intent score based on criteria present
-  if (intentCriteria > 0) {
-    relevanceScore += (intentMatchScore / intentCriteria) * intentWeight
-  }
-  maxPossibleScore += intentWeight
-
-  // Title/description keyword matching bonus (small boost for exact matches)
-  const lowerQuery = query.toLowerCase()
-  const lowerTitle = (recipe.title || '').toLowerCase()
-  const lowerDescription = (recipe.description || '').toLowerCase()
-  
-  const queryWords = lowerQuery.split(/\s+/).filter(word => word.length > 2)
-  const titleMatches = queryWords.filter(word => lowerTitle.includes(word)).length
-  const descriptionMatches = queryWords.filter(word => lowerDescription.includes(word)).length
-  
-  const keywordBonus = Math.min(0.1, (titleMatches * 0.05) + (descriptionMatches * 0.02))
-  relevanceScore += keywordBonus
-
-  // Normalize to 0-1 scale
-  const finalScore = Math.min(1, relevanceScore / maxPossibleScore)
-  
-  console.log(`📊 Relevance calculation for "${recipe.title}":`, {
-    similarity_score: recipe.similarity_score || 0,
-    intent_match_score: intentMatchScore,
-    keyword_bonus: keywordBonus,
-    final_relevance_score: finalScore
-  })
-
-  return finalScore
-}
-
 async function searchRecipes(query: string, intent: SearchIntent, embedding: number[]): Promise<RecipeResult[]> {
   try {
-    console.log('🔍 Starting high-relevance vectorized search')
+    console.log('🔍 Starting vectorized search')
     console.log('🔍 Query:', query)
     console.log('🔍 Intent:', intent)
     console.log('🔍 Has embedding:', embedding.length > 0)
     
     let results: any[] = []
 
-    // STEP 1: Try vector similarity search first (if embedding available)
+    // Try vector similarity search first (if embedding available)
     if (embedding && embedding.length > 0) {
       try {
-        console.log('🚀 STEP 1: Attempting vector similarity search...')
+        console.log('🚀 Attempting vector similarity search...')
         
         const { data: vectorResults, error: vectorError } = await supabase
           .rpc('search_recipes_by_similarity', {
             query_embedding: embedding,
-            match_threshold: RELEVANCE_CONFIG.MIN_SIMILARITY_SCORE, // Higher threshold for quality
-            match_count: 20 // Get more for relevance scoring
+            match_threshold: 0.1,
+            match_count: 20
           })
 
         if (vectorError) {
@@ -506,16 +392,16 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
           console.log(`✅ Vector search found ${vectorResults.length} results`)
           results = vectorResults
         } else {
-          console.log('📭 Vector search returned no results with high similarity threshold')
+          console.log('📭 Vector search returned no results')
         }
       } catch (vectorError) {
         console.log('⚠️ Vector search error:', vectorError)
       }
     }
 
-    // STEP 2: Fallback to text search if vector search failed or returned no results
+    // Fallback to text search if vector search failed or returned no results
     if (results.length === 0) {
-      console.log('🚀 STEP 2: Falling back to text search...')
+      console.log('🚀 Falling back to text search...')
       
       try {
         const { data: textResults, error: textError } = await supabase
@@ -561,36 +447,14 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
       }
     }
 
-    // STEP 3: Calculate relevance scores for all results
-    console.log('🚀 STEP 3: Calculating relevance scores...')
-    
-    const scoredResults = results.map(recipe => ({
-      ...recipe,
-      relevance_score: calculateRelevanceScore(recipe, intent, query)
-    }))
+    // Sort by similarity score and return only top 3
+    const sortedResults = results
+      .sort((a, b) => (b.similarity_score || 0) - (a.similarity_score || 0))
+      .slice(0, 3) // LIMIT TO 3 RESULTS ONLY
 
-    // STEP 4: Filter by minimum relevance threshold and sort
-    console.log('🚀 STEP 4: Filtering by high relevance threshold...')
+    console.log(`✅ Returning top ${sortedResults.length} results`)
     
-    const highRelevanceResults = scoredResults
-      .filter(recipe => recipe.relevance_score >= RELEVANCE_CONFIG.MIN_INTENT_MATCH_SCORE)
-      .sort((a, b) => b.relevance_score - a.relevance_score)
-
-    console.log(`📊 High relevance results: ${highRelevanceResults.length} out of ${results.length}`)
-
-    // STEP 5: Return only top results (maximum 3)
-    const finalResults = highRelevanceResults.slice(0, RELEVANCE_CONFIG.MAX_RESULTS)
-
-    console.log(`✅ Final high-relevance results: ${finalResults.length} recipes`)
-    
-    if (finalResults.length > 0) {
-      console.log('🏆 Top results:')
-      finalResults.forEach((recipe, index) => {
-        console.log(`  ${index + 1}. "${recipe.title}" - Relevance: ${recipe.relevance_score.toFixed(3)}, Similarity: ${(recipe.similarity_score || 0).toFixed(3)}`)
-      })
-    }
-    
-    return finalResults
+    return sortedResults
   } catch (error) {
     console.error('❌ Error in searchRecipes:', error)
     throw error
@@ -607,11 +471,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    console.log('🚀 High-Relevance Recipe Search Edge Function started')
-    console.log('📋 Request method:', req.method)
-    console.log('🔑 Environment check - OpenAI key:', OPENAI_API_KEY ? 'Present' : 'Missing')
-    console.log('🔑 Environment check - Gemini key:', GEMINI_API_KEY ? 'Present' : 'Missing')
-    console.log('⚙️ Relevance config:', RELEVANCE_CONFIG)
+    console.log('🚀 Recipe Search Edge Function started')
     
     if (req.method !== 'POST') {
       throw new Error('Only POST method is allowed')
@@ -619,7 +479,6 @@ Deno.serve(async (req: Request) => {
 
     // Parse request body
     const payload: RequestPayload = await req.json()
-    console.log('📥 Request payload:', payload)
     
     if (!payload.query || payload.query.trim().length === 0) {
       throw new Error('Search query is required')
@@ -627,16 +486,13 @@ Deno.serve(async (req: Request) => {
 
     const query = payload.query.trim()
 
-    console.log('🔍 Processing high-relevance search query:', query)
+    console.log('🔍 Processing search query:', query)
 
     // Extract search intent and generate embedding in parallel
-    console.log('🔄 Starting parallel processing of intent extraction and embedding generation...')
-    
     let intent: SearchIntent
     let embedding: number[] = []
 
     try {
-      // Try to run both in parallel, but handle failures gracefully
       const [intentResult, embeddingResult] = await Promise.allSettled([
         extractSearchIntent(query),
         generateQueryEmbedding(query)
@@ -665,36 +521,21 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log('📋 Final extracted intent:', intent)
-    console.log('🔢 Embedding dimensions:', embedding.length)
 
-    // Search recipes using high-relevance approach
+    // Search recipes - this will return max 3 results
     const results = await searchRecipes(query, intent, embedding)
 
-    // Prepare response with relevance insights
+    // Prepare response
     const responseData = {
       success: true,
       query: query,
       intent: intent,
       results: results,
       total_results: results.length,
-      relevance_info: {
-        max_results: RELEVANCE_CONFIG.MAX_RESULTS,
-        min_similarity_threshold: RELEVANCE_CONFIG.MIN_SIMILARITY_SCORE,
-        min_relevance_threshold: RELEVANCE_CONFIG.MIN_INTENT_MATCH_SCORE,
-        perfect_match_threshold: RELEVANCE_CONFIG.PERFECT_MATCH_THRESHOLD,
-        high_relevance_count: results.filter(r => r.relevance_score >= RELEVANCE_CONFIG.HIGH_RELEVANCE_THRESHOLD).length,
-        perfect_matches: results.filter(r => r.relevance_score >= RELEVANCE_CONFIG.PERFECT_MATCH_THRESHOLD).length
-      },
-      processing_info: {
-        intent_extraction: GEMINI_API_KEY ? 'Gemini 2.5 Flash' : 'Enhanced fallback keyword extraction',
-        embedding_generation: OPENAI_API_KEY && embedding.length > 0 ? 'OpenAI text-embedding-3-small' : 'Not available',
-        search_method: embedding.length > 0 ? 'High-relevance vector similarity + intent scoring' : 'High-relevance text search + intent scoring'
-      },
       timestamp: new Date().toISOString()
     }
 
-    console.log(`✅ High-relevance search completed with ${results.length} highly relevant results`)
-    console.log('📤 Sending response with relevance info:', responseData.relevance_info)
+    console.log(`✅ Search completed with ${results.length} results`)
 
     return new Response(
       JSON.stringify(responseData),
@@ -708,23 +549,14 @@ Deno.serve(async (req: Request) => {
     )
 
   } catch (error) {
-    console.error('❌ Critical error in high-relevance recipe search function:', error)
-    console.error('❌ Error stack:', error.stack)
+    console.error('❌ Error in recipe search function:', error)
 
     const errorResponse = {
       success: false,
-      error: 'High-relevance recipe search failed',
+      error: 'Recipe search failed',
       message: error.message,
-      timestamp: new Date().toISOString(),
-      debug_info: {
-        error_type: error.constructor.name,
-        has_openai_key: !!OPENAI_API_KEY,
-        has_gemini_key: !!GEMINI_API_KEY,
-        relevance_config: RELEVANCE_CONFIG
-      }
+      timestamp: new Date().toISOString()
     }
-
-    console.log('📤 Sending error response:', errorResponse)
 
     return new Response(
       JSON.stringify(errorResponse),
