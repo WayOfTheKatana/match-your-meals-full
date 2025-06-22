@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import RecipeCreationModal from '../components/RecipeCreationModal';
+import RecipeSearchResults from '../components/RecipeSearchResults';
 import { 
   User, 
   Settings, 
@@ -42,6 +43,8 @@ const Dashboard = () => {
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [activeSearchQuery, setActiveSearchQuery] = useState('');
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
@@ -79,14 +82,23 @@ const Dashboard = () => {
   };
 
   const handleSearch = () => {
-    console.log('Search:', searchQuery);
-    // Implement search functionality
+    if (searchQuery.trim()) {
+      console.log('Search:', searchQuery);
+      setActiveSearchQuery(searchQuery.trim());
+      setShowSearchResults(true);
+    }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
+  };
+
+  const handleQuickSearch = (query) => {
+    setSearchQuery(query);
+    setActiveSearchQuery(query);
+    setShowSearchResults(true);
   };
 
   // Consumer Mode Data
@@ -340,7 +352,7 @@ const Dashboard = () => {
                 ).map((tag, index) => (
                   <button
                     key={index}
-                    onClick={() => setSearchQuery(tag.toLowerCase())}
+                    onClick={() => handleQuickSearch(tag.toLowerCase())}
                     className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300"
                   >
                     {tag}
@@ -368,7 +380,7 @@ const Dashboard = () => {
                     Create Recipe
                   </Button>
                 </div>
-              ) :null}
+              ) : null}
             </div>
 
             {/* Recipe Feed / Creator Content */}
@@ -508,6 +520,7 @@ const Dashboard = () => {
                   {trendingTopics.map((topic, index) => (
                     <button
                       key={index}
+                      onClick={() => handleQuickSearch(topic)}
                       className="w-full text-left px-3 py-2 rounded-lg hover:bg-white transition-colors text-sm text-gray-700 hover:text-primary-600"
                     >
                       #{topic.replace(/\s+/g, '')}
@@ -566,6 +579,14 @@ const Dashboard = () => {
         onSave={handleSaveRecipe}
         onPublish={handlePublishRecipe}
       />
+
+      {/* Search Results Modal */}
+      {showSearchResults && (
+        <RecipeSearchResults
+          searchQuery={activeSearchQuery}
+          onClose={() => setShowSearchResults(false)}
+        />
+      )}
     </div>
   );
 };
