@@ -192,12 +192,20 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
       `)
 
     // Apply filters based on extracted intent
+    // For dietary_tags (text[] array), use overlaps
     if (intent.dietary_tags && intent.dietary_tags.length > 0) {
       sqlQuery = sqlQuery.overlaps('dietary_tags', intent.dietary_tags)
     }
 
+    // For health_tags (jsonb), use contains operator
     if (intent.health_tags && intent.health_tags.length > 0) {
-      sqlQuery = sqlQuery.overlaps('health_tags', intent.health_tags)
+      // Use cs (contains) operator for JSONB arrays
+      sqlQuery = sqlQuery.cs('health_tags', intent.health_tags)
+    }
+
+    // For health_benefits (text[] array), use overlaps
+    if (intent.health_benefits && intent.health_benefits.length > 0) {
+      sqlQuery = sqlQuery.overlaps('health_benefits', intent.health_benefits)
     }
 
     if (intent.total_time) {
