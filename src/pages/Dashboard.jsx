@@ -300,7 +300,7 @@ const Dashboard = () => {
                 </>
               ) : (
                 <>
-                  <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white w-full">
+                  <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
                     <div className="flex items-center justify-between mb-4">
                       <Search className="w-8 h-8" />
                       <span className="text-primary-100 text-sm">Quick Action</span>
