@@ -368,19 +368,7 @@ const Dashboard = () => {
                     Create Recipe
                   </Button>
                 </div>
-              ) : (
-                <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
-                  <div className="flex items-center justify-between mb-4">
-                    <Search className="w-8 h-8" />
-                    <span className="text-primary-100 text-sm">Quick Action</span>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">Find New Recipes</h3>
-                  <p className="text-primary-100 mb-4">Search by ingredients or voice</p>
-                  <Button variant="secondary" size="sm" className="bg-white text-primary-600 hover:bg-gray-100">
-                    Start Searching
-                  </Button>
-                </div>
-              )}
+              ) :null}
             </div>
 
             {/* Recipe Feed / Creator Content */}
