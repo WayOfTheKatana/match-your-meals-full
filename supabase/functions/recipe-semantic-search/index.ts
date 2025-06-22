@@ -367,7 +367,7 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
 
 async function searchRecipes(query: string, intent: SearchIntent, embedding: number[]): Promise<RecipeResult[]> {
   try {
-    console.log('🔍 Starting vectorized search with intent filtering')
+    console.log('🔍 Starting vectorized search')
     console.log('🔍 Query:', query)
     console.log('🔍 Intent:', intent)
     console.log('🔍 Has embedding:', embedding.length > 0)
@@ -377,32 +377,22 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
     // Try vector similarity search first (if embedding available)
     if (embedding && embedding.length > 0) {
       try {
-        console.log('🚀 Attempting vector similarity search with intent filters...')
+        console.log('🚀 Attempting vector similarity search...')
         
-        // Prepare intent parameters for the RPC call
-        const rpcParams = {
-          query_embedding: embedding,
-          match_threshold: 0.1,
-          match_count: 20,
-          dietary_tags_filter: intent.dietary_tags || [],
-          total_time_filter: intent.total_time || null,
-          health_tags_filter: intent.health_tags ? JSON.stringify(intent.health_tags) : '[]',
-          health_benefits_filter: intent.health_benefits || [],
-          servings_filter: intent.servings || null
-        }
-
-        console.log('📋 RPC parameters:', rpcParams)
-
         const { data: vectorResults, error: vectorError } = await supabase
-          .rpc('search_recipes_by_similarity', rpcParams)
+          .rpc('search_recipes_by_similarity', {
+            query_embedding: embedding,
+            match_threshold: 0.1,
+            match_count: 20
+          })
 
         if (vectorError) {
           console.log('⚠️ Vector search failed:', vectorError.message)
         } else if (vectorResults && vectorResults.length > 0) {
-          console.log(`✅ Vector search with intent filtering found ${vectorResults.length} results`)
+          console.log(`✅ Vector search found ${vectorResults.length} results`)
           results = vectorResults
         } else {
-          console.log('📭 Vector search with intent filtering returned no results')
+          console.log('📭 Vector search returned no results')
         }
       } catch (vectorError) {
         console.log('⚠️ Vector search error:', vectorError)
@@ -411,7 +401,7 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
 
     // Fallback to text search if vector search failed or returned no results
     if (results.length === 0) {
-      console.log('🚀 Falling back to text search with intent filtering...')
+      console.log('🚀 Falling back to text search...')
       
       try {
         const { data: textResults, error: textError } = await supabase
@@ -434,7 +424,7 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
             created_at
           `)
           .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-          .limit(50) // Get more results for filtering
+          .limit(20)
 
         if (textError) {
           console.error('❌ Text search error:', textError)
@@ -442,60 +432,8 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
         }
 
         if (textResults && textResults.length > 0) {
-          console.log(`✅ Text search found ${textResults.length} results, applying intent filters...`)
-          
-          // Apply intent filters in memory for text search results
-          let filteredResults = textResults
-
-          // Filter by dietary tags
-          if (intent.dietary_tags && intent.dietary_tags.length > 0) {
-            filteredResults = filteredResults.filter(recipe => 
-              recipe.dietary_tags && 
-              intent.dietary_tags.some(tag => recipe.dietary_tags.includes(tag))
-            )
-            console.log(`📋 After dietary tags filter: ${filteredResults.length} results`)
-          }
-
-          // Filter by total time
-          if (intent.total_time) {
-            filteredResults = filteredResults.filter(recipe => {
-              const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0)
-              return totalTime <= intent.total_time
-            })
-            console.log(`📋 After total time filter (≤${intent.total_time}min): ${filteredResults.length} results`)
-          }
-
-          // Filter by health tags
-          if (intent.health_tags && intent.health_tags.length > 0) {
-            filteredResults = filteredResults.filter(recipe => 
-              recipe.health_tags && 
-              intent.health_tags.some(tag => 
-                Array.isArray(recipe.health_tags) 
-                  ? recipe.health_tags.includes(tag)
-                  : recipe.health_tags.some && recipe.health_tags.some(healthTag => healthTag === tag)
-              )
-            )
-            console.log(`📋 After health tags filter: ${filteredResults.length} results`)
-          }
-
-          // Filter by health benefits
-          if (intent.health_benefits && intent.health_benefits.length > 0) {
-            filteredResults = filteredResults.filter(recipe => 
-              recipe.health_benefits && 
-              intent.health_benefits.some(benefit => recipe.health_benefits.includes(benefit))
-            )
-            console.log(`📋 After health benefits filter: ${filteredResults.length} results`)
-          }
-
-          // Filter by servings
-          if (intent.servings) {
-            filteredResults = filteredResults.filter(recipe => 
-              recipe.servings === intent.servings
-            )
-            console.log(`📋 After servings filter (=${intent.servings}): ${filteredResults.length} results`)
-          }
-
-          results = filteredResults.map(recipe => ({
+          console.log(`✅ Text search found ${textResults.length} results`)
+          results = textResults.map(recipe => ({
             ...recipe,
             similarity_score: 0.6 // Default score for text matches
           }))
@@ -514,7 +452,7 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
       .sort((a, b) => (b.similarity_score || 0) - (a.similarity_score || 0))
       .slice(0, 3) // LIMIT TO 3 RESULTS ONLY
 
-    console.log(`✅ Returning top ${sortedResults.length} filtered results`)
+    console.log(`✅ Returning top ${sortedResults.length} results`)
     
     return sortedResults
   } catch (error) {
@@ -533,7 +471,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    console.log('🚀 Recipe Search Edge Function started with intent filtering')
+    console.log('🚀 Recipe Search Edge Function started')
     
     if (req.method !== 'POST') {
       throw new Error('Only POST method is allowed')
@@ -548,7 +486,7 @@ Deno.serve(async (req: Request) => {
 
     const query = payload.query.trim()
 
-    console.log('🔍 Processing search query with intent filtering:', query)
+    console.log('🔍 Processing search query:', query)
 
     // Extract search intent and generate embedding in parallel
     let intent: SearchIntent
@@ -582,9 +520,9 @@ Deno.serve(async (req: Request) => {
       intent = createEnhancedFallbackIntent(query)
     }
 
-    console.log('📋 Final extracted intent for filtering:', intent)
+    console.log('📋 Final extracted intent:', intent)
 
-    // Search recipes with intent filtering - this will return max 3 results
+    // Search recipes - this will return max 3 results
     const results = await searchRecipes(query, intent, embedding)
 
     // Prepare response
@@ -594,18 +532,10 @@ Deno.serve(async (req: Request) => {
       intent: intent,
       results: results,
       total_results: results.length,
-      filtering_applied: {
-        dietary_tags: intent.dietary_tags?.length > 0,
-        total_time: intent.total_time !== null,
-        health_tags: intent.health_tags?.length > 0,
-        health_benefits: intent.health_benefits?.length > 0,
-        servings: intent.servings !== null
-      },
       timestamp: new Date().toISOString()
     }
 
-    console.log(`✅ Search completed with intent filtering: ${results.length} results`)
-    console.log('📊 Filtering summary:', responseData.filtering_applied)
+    console.log(`✅ Search completed with ${results.length} results`)
 
     return new Response(
       JSON.stringify(responseData),
