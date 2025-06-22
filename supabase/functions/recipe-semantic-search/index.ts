@@ -66,17 +66,33 @@ async function extractSearchIntent(query: string): Promise<SearchIntent> {
   "servings": null
 }
 
+COMPREHENSIVE TAG LISTS:
+
+dietary_tags (select multiple if applicable):
+["vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo", "low-carb", "pescatarian", "omnivore", "whole30", "mediterranean", "dash-diet", "flexitarian", "raw-food", "plant-based", "carnivore", "atkins", "south-beach", "zone-diet", "alkaline", "anti-inflammatory", "fodmap-friendly", "kosher", "halal", "sugar-free", "grain-free", "nut-free", "soy-free", "egg-free", "shellfish-free", "low-fat", "low-sodium", "diabetic-friendly", "renal-diet", "heart-healthy-diet"]
+
+health_tags (select multiple if applicable):
+["high-protein", "low-carb", "heart-healthy", "low-sodium", "high-fiber", "antioxidant-rich", "calcium-rich", "iron-rich", "vitamin-rich", "omega-3-rich", "low-fat", "high-potassium", "magnesium-rich", "zinc-rich", "vitamin-d-rich", "vitamin-c-rich", "vitamin-b12-rich", "folate-rich", "probiotic", "prebiotic", "anti-inflammatory", "low-glycemic", "high-energy", "metabolism-boosting", "detoxifying", "alkalizing", "hydrating", "collagen-boosting", "brain-food", "mood-boosting", "stress-reducing", "immune-boosting", "gut-healthy", "skin-healthy", "bone-healthy", "eye-healthy", "liver-healthy", "kidney-healthy", "thyroid-supporting", "hormone-balancing", "blood-sugar-friendly", "cholesterol-lowering", "blood-pressure-friendly", "circulation-boosting", "respiratory-supporting", "joint-healthy", "muscle-building", "recovery-enhancing", "endurance-boosting", "weight-management", "appetite-suppressing", "satiety-promoting"]
+
+health_benefits (select multiple if applicable):
+["weight-loss", "weight-gain", "muscle-building", "energy-boost", "immune-support", "heart-health", "bone-health", "brain-health", "digestive-health", "skin-health", "eye-health", "liver-health", "kidney-health", "respiratory-health", "joint-health", "mental-clarity", "mood-enhancement", "stress-reduction", "sleep-improvement", "hormone-balance", "blood-sugar-control", "cholesterol-management", "blood-pressure-control", "circulation-improvement", "detoxification", "anti-aging", "inflammation-reduction", "recovery-acceleration", "endurance-enhancement", "strength-building", "flexibility-improvement", "metabolism-boost", "appetite-control", "satiety-enhancement", "nutrient-absorption", "gut-microbiome-support", "cognitive-function", "memory-enhancement", "focus-improvement", "anxiety-relief", "depression-support", "seasonal-allergy-relief", "cold-flu-prevention", "wound-healing", "tissue-repair", "cellular-regeneration", "longevity-support", "disease-prevention", "cancer-prevention", "diabetes-prevention", "osteoporosis-prevention", "alzheimer-prevention", "cardiovascular-protection"]
+
 Rules:
-- dietary_tags: ["vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo", "low-carb"]
 - total_time: number in minutes (prep + cook time combined)
-- health_tags: ["high-protein", "low-carb", "heart-healthy", "low-sodium", "high-fiber", "antioxidant-rich", "calcium-rich", "iron-rich", "vitamin-rich", "omega-3-rich", "low-fat", "high-potassium", "magnesium-rich"]
-- health_benefits: ["weight-loss", "energy-boost", "immune-support", "muscle-building", "heart-health", "bone-health", "brain-health", "digestive-health"]
 - servings: number of people it serves
+- Be generous with tag selection - include all relevant tags that apply
+- Consider synonyms and related terms (e.g., "plant-based" and "vegan", "heart-healthy" and "cardiovascular")
+- Look for cooking methods, ingredients, and health goals in the query
+- Consider both explicit and implicit health intentions
 
 Examples:
-- "calcium rich food" → health_tags: ["calcium-rich"], health_benefits: ["bone-health"]
-- "heart healthy recipe" → health_tags: ["heart-healthy"], health_benefits: ["heart-health"]
-- "high protein meal" → health_tags: ["high-protein"], health_benefits: ["muscle-building"]
+- "calcium rich food for strong bones" → health_tags: ["calcium-rich", "bone-healthy"], health_benefits: ["bone-health"]
+- "heart healthy Mediterranean recipe" → dietary_tags: ["mediterranean"], health_tags: ["heart-healthy"], health_benefits: ["heart-health", "cardiovascular-protection"]
+- "high protein vegan meal for muscle building" → dietary_tags: ["vegan", "plant-based"], health_tags: ["high-protein", "muscle-building"], health_benefits: ["muscle-building", "strength-building"]
+- "anti-inflammatory turmeric recipe" → health_tags: ["anti-inflammatory", "antioxidant-rich"], health_benefits: ["inflammation-reduction", "joint-health"]
+- "quick keto dinner under 30 minutes" → dietary_tags: ["keto", "low-carb"], total_time: 30
+- "gut healthy probiotic smoothie" → health_tags: ["probiotic", "gut-healthy"], health_benefits: ["digestive-health", "gut-microbiome-support"]
+- "energy boosting breakfast for athletes" → health_tags: ["high-energy", "metabolism-boosting"], health_benefits: ["energy-boost", "endurance-enhancement"]
 
 User query: "${query}"
 
@@ -97,7 +113,7 @@ Return ONLY the JSON object, no explanation:`
           temperature: 0.1,
           topK: 1,
           topP: 0.8,
-          maxOutputTokens: 300,
+          maxOutputTokens: 500,
         }
       }),
     })
@@ -166,58 +182,148 @@ function createEnhancedFallbackIntent(query: string): SearchIntent {
     health_benefits: []
   }
 
-  // Enhanced dietary tags extraction
-  if (lowerQuery.includes('vegetarian')) intent.dietary_tags.push('vegetarian')
-  if (lowerQuery.includes('vegan')) intent.dietary_tags.push('vegan')
-  if (lowerQuery.includes('gluten-free') || lowerQuery.includes('gluten free')) intent.dietary_tags.push('gluten-free')
-  if (lowerQuery.includes('dairy-free') || lowerQuery.includes('dairy free')) intent.dietary_tags.push('dairy-free')
-  if (lowerQuery.includes('keto')) intent.dietary_tags.push('keto')
-  if (lowerQuery.includes('paleo')) intent.dietary_tags.push('paleo')
-  if (lowerQuery.includes('low carb') || lowerQuery.includes('low-carb')) intent.dietary_tags.push('low-carb')
-
-  // Enhanced health tags extraction with more comprehensive matching
-  if (lowerQuery.includes('healthy') || lowerQuery.includes('health')) intent.health_tags.push('heart-healthy')
-  if (lowerQuery.includes('protein') || lowerQuery.includes('high protein')) intent.health_tags.push('high-protein')
-  if (lowerQuery.includes('low carb') || lowerQuery.includes('low-carb')) intent.health_tags.push('low-carb')
-  if (lowerQuery.includes('heart')) intent.health_tags.push('heart-healthy')
-  if (lowerQuery.includes('fiber')) intent.health_tags.push('high-fiber')
-  if (lowerQuery.includes('antioxidant')) intent.health_tags.push('antioxidant-rich')
-  
-  // Specific nutrient matching
-  if (lowerQuery.includes('calcium') || lowerQuery.includes('calcium rich') || lowerQuery.includes('calcium-rich')) {
-    intent.health_tags.push('calcium-rich')
-    intent.health_benefits.push('bone-health')
-  }
-  if (lowerQuery.includes('iron') || lowerQuery.includes('iron rich')) intent.health_tags.push('iron-rich')
-  if (lowerQuery.includes('vitamin') || lowerQuery.includes('vitamin rich')) intent.health_tags.push('vitamin-rich')
-  if (lowerQuery.includes('omega') || lowerQuery.includes('omega-3')) intent.health_tags.push('omega-3-rich')
-  if (lowerQuery.includes('potassium')) intent.health_tags.push('high-potassium')
-  if (lowerQuery.includes('magnesium')) intent.health_tags.push('magnesium-rich')
-  if (lowerQuery.includes('low fat') || lowerQuery.includes('low-fat')) intent.health_tags.push('low-fat')
-  if (lowerQuery.includes('low sodium') || lowerQuery.includes('low-sodium')) intent.health_tags.push('low-sodium')
-
-  // Enhanced health benefits extraction
-  if (lowerQuery.includes('weight loss') || lowerQuery.includes('lose weight')) intent.health_benefits.push('weight-loss')
-  if (lowerQuery.includes('energy') || lowerQuery.includes('boost')) intent.health_benefits.push('energy-boost')
-  if (lowerQuery.includes('immune')) intent.health_benefits.push('immune-support')
-  if (lowerQuery.includes('muscle') || lowerQuery.includes('building')) intent.health_benefits.push('muscle-building')
-  if (lowerQuery.includes('heart')) intent.health_benefits.push('heart-health')
-  if (lowerQuery.includes('bone') || lowerQuery.includes('calcium')) intent.health_benefits.push('bone-health')
-  if (lowerQuery.includes('brain')) intent.health_benefits.push('brain-health')
-  if (lowerQuery.includes('digestive') || lowerQuery.includes('digestion')) intent.health_benefits.push('digestive-health')
-
-  // Extract time
-  const timeMatch = lowerQuery.match(/(\d+)\s*(min|minute|minutes|hour|hours)/i)
-  if (timeMatch) {
-    const value = parseInt(timeMatch[1])
-    const unit = timeMatch[2].toLowerCase()
-    intent.total_time = unit.startsWith('hour') ? value * 60 : value
+  // Enhanced dietary tags extraction with comprehensive coverage
+  const dietaryMappings = {
+    'vegetarian': ['vegetarian'],
+    'vegan': ['vegan', 'plant-based'],
+    'gluten-free': ['gluten-free', 'gluten free', 'celiac'],
+    'dairy-free': ['dairy-free', 'dairy free', 'lactose-free', 'lactose free'],
+    'keto': ['keto', 'ketogenic'],
+    'paleo': ['paleo', 'paleolithic'],
+    'low-carb': ['low carb', 'low-carb', 'low carbohydrate'],
+    'pescatarian': ['pescatarian', 'pescetarian'],
+    'mediterranean': ['mediterranean', 'med diet'],
+    'whole30': ['whole30', 'whole 30'],
+    'dash-diet': ['dash', 'dash diet'],
+    'plant-based': ['plant-based', 'plant based'],
+    'sugar-free': ['sugar-free', 'sugar free', 'no sugar'],
+    'grain-free': ['grain-free', 'grain free'],
+    'nut-free': ['nut-free', 'nut free', 'no nuts'],
+    'soy-free': ['soy-free', 'soy free'],
+    'egg-free': ['egg-free', 'egg free'],
+    'low-fat': ['low fat', 'low-fat'],
+    'low-sodium': ['low sodium', 'low-sodium', 'low salt'],
+    'diabetic-friendly': ['diabetic', 'diabetes', 'diabetic-friendly'],
+    'heart-healthy-diet': ['heart healthy', 'heart-healthy', 'cardiac']
   }
 
-  // Extract servings
-  const servingsMatch = lowerQuery.match(/(\d+)\s*(people|person|serving|servings)/i)
-  if (servingsMatch) {
-    intent.servings = parseInt(servingsMatch[1])
+  for (const [tag, keywords] of Object.entries(dietaryMappings)) {
+    if (keywords.some(keyword => lowerQuery.includes(keyword))) {
+      intent.dietary_tags.push(tag)
+    }
+  }
+
+  // Enhanced health tags extraction with comprehensive coverage
+  const healthTagMappings = {
+    'high-protein': ['protein', 'high protein', 'high-protein'],
+    'low-carb': ['low carb', 'low-carb', 'low carbohydrate'],
+    'heart-healthy': ['heart healthy', 'heart-healthy', 'cardiac', 'cardiovascular'],
+    'low-sodium': ['low sodium', 'low-sodium', 'low salt'],
+    'high-fiber': ['fiber', 'fibre', 'high fiber', 'high-fiber'],
+    'antioxidant-rich': ['antioxidant', 'antioxidants', 'antioxidant-rich'],
+    'calcium-rich': ['calcium', 'calcium rich', 'calcium-rich'],
+    'iron-rich': ['iron', 'iron rich', 'iron-rich'],
+    'vitamin-rich': ['vitamin', 'vitamins', 'vitamin rich'],
+    'omega-3-rich': ['omega', 'omega-3', 'omega 3', 'fish oil'],
+    'low-fat': ['low fat', 'low-fat'],
+    'high-potassium': ['potassium', 'high potassium'],
+    'magnesium-rich': ['magnesium', 'magnesium rich'],
+    'anti-inflammatory': ['anti-inflammatory', 'anti inflammatory', 'inflammation'],
+    'low-glycemic': ['low glycemic', 'low-glycemic', 'blood sugar'],
+    'high-energy': ['energy', 'energizing', 'high energy'],
+    'metabolism-boosting': ['metabolism', 'metabolic', 'fat burning'],
+    'immune-boosting': ['immune', 'immunity', 'immune system'],
+    'gut-healthy': ['gut', 'digestive', 'gut health'],
+    'brain-food': ['brain', 'cognitive', 'mental'],
+    'bone-healthy': ['bone', 'bones', 'bone health'],
+    'skin-healthy': ['skin', 'skin health', 'complexion'],
+    'muscle-building': ['muscle', 'muscles', 'muscle building'],
+    'weight-management': ['weight loss', 'weight management', 'diet'],
+    'probiotic': ['probiotic', 'probiotics', 'good bacteria'],
+    'detoxifying': ['detox', 'detoxifying', 'cleanse']
+  }
+
+  for (const [tag, keywords] of Object.entries(healthTagMappings)) {
+    if (keywords.some(keyword => lowerQuery.includes(keyword))) {
+      intent.health_tags.push(tag)
+    }
+  }
+
+  // Enhanced health benefits extraction with comprehensive coverage
+  const healthBenefitMappings = {
+    'weight-loss': ['weight loss', 'lose weight', 'fat loss', 'slimming'],
+    'muscle-building': ['muscle building', 'build muscle', 'gain muscle', 'strength'],
+    'energy-boost': ['energy', 'energizing', 'boost energy', 'stamina'],
+    'immune-support': ['immune', 'immunity', 'immune system', 'cold prevention'],
+    'heart-health': ['heart', 'cardiac', 'cardiovascular', 'heart health'],
+    'bone-health': ['bone', 'bones', 'bone health', 'osteoporosis'],
+    'brain-health': ['brain', 'cognitive', 'mental clarity', 'memory'],
+    'digestive-health': ['digestive', 'digestion', 'gut health', 'stomach'],
+    'skin-health': ['skin', 'complexion', 'skin health', 'anti-aging'],
+    'stress-reduction': ['stress', 'anxiety', 'relaxation', 'calm'],
+    'inflammation-reduction': ['inflammation', 'anti-inflammatory', 'joint pain'],
+    'blood-sugar-control': ['blood sugar', 'diabetes', 'glucose', 'insulin'],
+    'cholesterol-management': ['cholesterol', 'ldl', 'hdl'],
+    'blood-pressure-control': ['blood pressure', 'hypertension', 'bp'],
+    'detoxification': ['detox', 'cleanse', 'liver', 'toxins'],
+    'recovery-acceleration': ['recovery', 'post-workout', 'muscle recovery'],
+    'endurance-enhancement': ['endurance', 'stamina', 'athletic performance'],
+    'mood-enhancement': ['mood', 'depression', 'happiness', 'serotonin'],
+    'sleep-improvement': ['sleep', 'insomnia', 'rest', 'melatonin'],
+    'hormone-balance': ['hormone', 'hormonal', 'pms', 'menopause']
+  }
+
+  for (const [benefit, keywords] of Object.entries(healthBenefitMappings)) {
+    if (keywords.some(keyword => lowerQuery.includes(keyword))) {
+      intent.health_benefits.push(benefit)
+    }
+  }
+
+  // Extract time with more flexible patterns
+  const timePatterns = [
+    /(\d+)\s*(min|minute|minutes)/i,
+    /(\d+)\s*(hour|hours|hr|hrs)/i,
+    /under\s+(\d+)\s*(min|minute|minutes)/i,
+    /less\s+than\s+(\d+)\s*(min|minute|minutes)/i,
+    /quick\s+(\d+)\s*(min|minute|minutes)/i
+  ]
+
+  for (const pattern of timePatterns) {
+    const timeMatch = lowerQuery.match(pattern)
+    if (timeMatch) {
+      const value = parseInt(timeMatch[1])
+      const unit = timeMatch[2].toLowerCase()
+      intent.total_time = unit.startsWith('hour') || unit.startsWith('hr') ? value * 60 : value
+      break
+    }
+  }
+
+  // Quick meal indicators
+  if (lowerQuery.includes('quick') || lowerQuery.includes('fast') || lowerQuery.includes('easy')) {
+    if (!intent.total_time) intent.total_time = 30 // Default quick meal time
+  }
+
+  // Extract servings with more patterns
+  const servingPatterns = [
+    /(\d+)\s*(people|person|serving|servings)/i,
+    /serves?\s+(\d+)/i,
+    /for\s+(\d+)/i,
+    /(single|one)\s+(serving|person)/i,
+    /(family|large)\s+(serving|meal)/i
+  ]
+
+  for (const pattern of servingPatterns) {
+    const servingsMatch = lowerQuery.match(pattern)
+    if (servingsMatch) {
+      if (servingsMatch[1] === 'single' || servingsMatch[1] === 'one') {
+        intent.servings = 1
+      } else if (servingsMatch[1] === 'family' || servingsMatch[1] === 'large') {
+        intent.servings = 6
+      } else {
+        intent.servings = parseInt(servingsMatch[1])
+      }
+      break
+    }
   }
 
   console.log('✅ Enhanced fallback intent created:', intent)
