@@ -274,7 +274,60 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
     console.log('🔍 Searching recipes in database with intent:', intent)
     console.log('🔍 Original query:', query)
     
-    // Start with a basic query
+    // Build search conditions
+    let searchConditions: string[] = []
+    let hasSpecificFilters = false
+
+    // For dietary_tags (text[] array), use overlaps
+    if (intent.dietary_tags && intent.dietary_tags.length > 0) {
+      console.log('🏷️ Adding dietary tags filter:', intent.dietary_tags)
+      searchConditions.push(`dietary_tags.ov.{${intent.dietary_tags.join(',')}}`)
+      hasSpecificFilters = true
+    }
+
+    // For health_benefits (text[] array), use overlaps
+    if (intent.health_benefits && intent.health_benefits.length > 0) {
+      console.log('💪 Adding health benefits filter:', intent.health_benefits)
+      searchConditions.push(`health_benefits.ov.{${intent.health_benefits.join(',')}}`)
+      hasSpecificFilters = true
+    }
+
+    // For health_tags (jsonb), check if any of the tags exist in the array
+    if (intent.health_tags && intent.health_tags.length > 0) {
+      console.log('🏥 Adding health tags filter:', intent.health_tags)
+      
+      // Build individual health tag conditions using jsonb contains operator
+      const healthTagConditions = intent.health_tags.map(tag => 
+        `health_tags.cs."${tag}"`
+      )
+      
+      if (healthTagConditions.length > 0) {
+        searchConditions.push(`(${healthTagConditions.join(' or ')})`)
+        hasSpecificFilters = true
+      }
+    }
+
+    // Time-based filtering
+    if (intent.total_time) {
+      console.log('⏱️ Adding time filter:', intent.total_time)
+      // Use a more flexible time filter - allow recipes that are within 20% of the requested time
+      const maxTime = Math.floor(intent.total_time * 1.2)
+      searchConditions.push(`(prep_time + cook_time).lte.${maxTime}`)
+      hasSpecificFilters = true
+    }
+
+    // Servings filtering
+    if (intent.servings) {
+      console.log('👥 Adding servings filter:', intent.servings)
+      // Allow some flexibility in servings (±2)
+      const minServings = Math.max(1, intent.servings - 2)
+      const maxServings = intent.servings + 2
+      searchConditions.push(`servings.gte.${minServings}`)
+      searchConditions.push(`servings.lte.${maxServings}`)
+      hasSpecificFilters = true
+    }
+
+    // Start with base query
     let sqlQuery = supabase
       .from('recipes')
       .select(`
@@ -295,55 +348,16 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
         created_at
       `)
 
-    // Apply filters based on extracted intent
-    let hasFilters = false
-
-    // For dietary_tags (text[] array), use overlaps
-    if (intent.dietary_tags && intent.dietary_tags.length > 0) {
-      console.log('🏷️ Filtering by dietary tags:', intent.dietary_tags)
-      sqlQuery = sqlQuery.overlaps('dietary_tags', intent.dietary_tags)
-      hasFilters = true
-    }
-
-    // For health_benefits (text[] array), use overlaps
-    if (intent.health_benefits && intent.health_benefits.length > 0) {
-      console.log('💪 Filtering by health benefits:', intent.health_benefits)
-      sqlQuery = sqlQuery.overlaps('health_benefits', intent.health_benefits)
-      hasFilters = true
-    }
-
-    // For health_tags (jsonb), use contains operator with proper JSON formatting
-    if (intent.health_tags && intent.health_tags.length > 0) {
-      console.log('🏥 Filtering by health tags:', intent.health_tags)
+    // Apply filters if we have specific conditions
+    if (hasSpecificFilters && searchConditions.length > 0) {
+      console.log('🔍 Applying specific filters:', searchConditions)
       
-      // Build OR conditions for health tags
-      const healthTagConditions = intent.health_tags.map(tag => 
-        `health_tags.cs.${JSON.stringify([tag])}`
-      ).join(',')
-      
-      sqlQuery = sqlQuery.or(healthTagConditions)
-      hasFilters = true
-    }
-
-    if (intent.total_time) {
-      console.log('⏱️ Filtering by total time:', intent.total_time)
-      // Filter by total cooking time (prep_time + cook_time)
-      sqlQuery = sqlQuery.lte('prep_time', Math.floor(intent.total_time * 0.6))
-      sqlQuery = sqlQuery.lte('cook_time', Math.floor(intent.total_time * 0.8))
-      hasFilters = true
-    }
-
-    if (intent.servings) {
-      console.log('👥 Filtering by servings:', intent.servings)
-      // Allow some flexibility in servings (±2)
-      sqlQuery = sqlQuery.gte('servings', Math.max(1, intent.servings - 2))
-      sqlQuery = sqlQuery.lte('servings', intent.servings + 2)
-      hasFilters = true
-    }
-
-    // If no specific filters, do a text search on title and description
-    if (!hasFilters) {
+      // Combine all conditions with OR logic for broader matching
+      const combinedCondition = searchConditions.join(' or ')
+      sqlQuery = sqlQuery.or(combinedCondition)
+    } else {
       console.log('🔤 No specific filters, doing text search on title and description')
+      // Fallback to text search if no specific filters
       sqlQuery = sqlQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`)
     }
 
