@@ -377,177 +377,156 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
 
 async function searchRecipes(query: string, intent: SearchIntent, embedding: number[], limit: number = 20): Promise<RecipeResult[]> {
   try {
-    console.log('🔍 Searching recipes in database with intent:', intent)
-    console.log('🔍 Original query:', query)
+    console.log('🔍 Starting vectorized search priority approach')
+    console.log('🔍 Query:', query)
+    console.log('🔍 Intent:', intent)
+    console.log('🔍 Has embedding:', embedding.length > 0)
     
-    // Build search conditions
-    let searchConditions: string[] = []
-    let hasSpecificFilters = false
+    let results: RecipeResult[] = []
 
-    // For dietary_tags (text[] array), use overlaps
-    if (intent.dietary_tags && intent.dietary_tags.length > 0) {
-      console.log('🏷️ Adding dietary tags filter:', intent.dietary_tags)
-      searchConditions.push(`dietary_tags.ov.{${intent.dietary_tags.join(',')}}`)
-      hasSpecificFilters = true
-    }
-
-    // For health_benefits (text[] array), use overlaps
-    if (intent.health_benefits && intent.health_benefits.length > 0) {
-      console.log('💪 Adding health benefits filter:', intent.health_benefits)
-      searchConditions.push(`health_benefits.ov.{${intent.health_benefits.join(',')}}`)
-      hasSpecificFilters = true
-    }
-
-    // For health_tags (jsonb), check if any of the tags exist in the array
-    if (intent.health_tags && intent.health_tags.length > 0) {
-      console.log('🏥 Adding health tags filter:', intent.health_tags)
-      
-      // Add individual health tag conditions directly to searchConditions array
-      intent.health_tags.forEach(tag => {
-        searchConditions.push(`health_tags.cs."${tag}"`)
-      })
-      hasSpecificFilters = true
-    }
-
-    // Time-based filtering
-    if (intent.total_time) {
-      console.log('⏱️ Adding time filter:', intent.total_time)
-      // Use a more flexible time filter - allow recipes that are within 20% of the requested time
-      const maxTime = Math.floor(intent.total_time * 1.2)
-      searchConditions.push(`(prep_time + cook_time).lte.${maxTime}`)
-      hasSpecificFilters = true
-    }
-
-    // Servings filtering
-    if (intent.servings) {
-      console.log('👥 Adding servings filter:', intent.servings)
-      // Allow some flexibility in servings (±2)
-      const minServings = Math.max(1, intent.servings - 2)
-      const maxServings = intent.servings + 2
-      searchConditions.push(`servings.gte.${minServings}`)
-      searchConditions.push(`servings.lte.${maxServings}`)
-      hasSpecificFilters = true
-    }
-
-    // Start with base query
-    let sqlQuery = supabase
-      .from('recipes')
-      .select(`
-        id,
-        title,
-        description,
-        prep_time,
-        cook_time,
-        servings,
-        image_path,
-        ingredients,
-        instructions,
-        health_tags,
-        dietary_tags,
-        health_benefits,
-        nutritional_info,
-        creator_id,
-        created_at
-      `)
-
-    // Apply filters if we have specific conditions
-    if (hasSpecificFilters && searchConditions.length > 0) {
-      console.log('🔍 Applying specific filters:', searchConditions)
-      
-      // Use comma-separated conditions for the .or() method
-      const combinedCondition = searchConditions.join(',')
-      sqlQuery = sqlQuery.or(combinedCondition)
-    } else {
-      console.log('🔤 No specific filters, doing text search on title and description')
-      // Fallback to text search if no specific filters
-      sqlQuery = sqlQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-    }
-
-    // Execute the query
-    const { data: filteredRecipes, error: filterError } = await sqlQuery.limit(limit * 2)
-
-    if (filterError) {
-      console.error('❌ Filter query error:', filterError)
-      throw filterError
-    }
-
-    console.log(`📊 Found ${filteredRecipes?.length || 0} recipes after filtering`)
-
-    if (!filteredRecipes || filteredRecipes.length === 0) {
-      console.log('📭 No recipes found with current filters, trying broader search...')
-      
-      // Try a broader search with just text matching
-      const { data: broadResults, error: broadError } = await supabase
-        .from('recipes')
-        .select(`
-          id,
-          title,
-          description,
-          prep_time,
-          cook_time,
-          servings,
-          image_path,
-          ingredients,
-          instructions,
-          health_tags,
-          dietary_tags,
-          health_benefits,
-          nutritional_info,
-          creator_id,
-          created_at
-        `)
-        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-        .limit(limit)
-
-      if (broadError) {
-        console.error('❌ Broad search error:', broadError)
-        return []
-      }
-
-      if (broadResults && broadResults.length > 0) {
-        console.log(`📊 Broad search found ${broadResults.length} recipes`)
-        return broadResults.map(recipe => ({
-          ...recipe,
-          similarity_score: 0.5 // Lower score for broad matches
-        }))
-      }
-
-      return []
-    }
-
-    // If we have embeddings and recipes, try vector similarity search
-    if (embedding && embedding.length > 0 && filteredRecipes.length > 0) {
+    // STEP 1: Try vector similarity search first (if embedding available)
+    if (embedding && embedding.length > 0) {
       try {
-        console.log('🔍 Attempting vector similarity search...')
+        console.log('🚀 STEP 1: Attempting vector similarity search...')
         
         const { data: vectorResults, error: vectorError } = await supabase
           .rpc('search_recipes_by_similarity', {
             query_embedding: embedding,
             match_threshold: 0.1,
-            match_count: limit
+            match_count: limit * 2 // Get more results for refinement
           })
 
         if (vectorError) {
-          console.log('⚠️ Vector search failed, using filtered results:', vectorError.message)
+          console.log('⚠️ Vector search failed:', vectorError.message)
         } else if (vectorResults && vectorResults.length > 0) {
-          console.log(`✅ Vector similarity search returned ${vectorResults.length} results`)
-          return vectorResults.slice(0, limit)
+          console.log(`✅ Vector search found ${vectorResults.length} results`)
+          results = vectorResults
+        } else {
+          console.log('📭 Vector search returned no results')
         }
       } catch (vectorError) {
-        console.log('⚠️ Vector search error, using filtered results:', vectorError)
+        console.log('⚠️ Vector search error:', vectorError)
       }
     }
 
-    // Return filtered results without similarity scores
-    const results = filteredRecipes.slice(0, limit).map(recipe => ({
-      ...recipe,
-      similarity_score: 0.7 // Default score when no vector search
-    }))
+    // STEP 2: Fallback to text search if vector search failed or returned no results
+    if (results.length === 0) {
+      console.log('🚀 STEP 2: Falling back to text search...')
+      
+      try {
+        const { data: textResults, error: textError } = await supabase
+          .from('recipes')
+          .select(`
+            id,
+            title,
+            description,
+            prep_time,
+            cook_time,
+            servings,
+            image_path,
+            ingredients,
+            instructions,
+            health_tags,
+            dietary_tags,
+            health_benefits,
+            nutritional_info,
+            creator_id,
+            created_at
+          `)
+          .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+          .limit(limit * 2)
 
-    console.log(`✅ Returning ${results.length} recipe results`)
-    return results
+        if (textError) {
+          console.error('❌ Text search error:', textError)
+          throw textError
+        }
+
+        if (textResults && textResults.length > 0) {
+          console.log(`✅ Text search found ${textResults.length} results`)
+          results = textResults.map(recipe => ({
+            ...recipe,
+            similarity_score: 0.5 // Default score for text matches
+          }))
+        } else {
+          console.log('📭 Text search returned no results')
+          return []
+        }
+      } catch (textError) {
+        console.error('❌ Text search failed:', textError)
+        return []
+      }
+    }
+
+    // STEP 3: Refine results using extracted intent
+    console.log('🚀 STEP 3: Refining results with intent filters...')
+    
+    let refinedResults = results
+
+    // Apply intent-based refinement
+    if (intent.dietary_tags && intent.dietary_tags.length > 0) {
+      console.log('🏷️ Applying dietary tags refinement:', intent.dietary_tags)
+      refinedResults = refinedResults.filter(recipe => {
+        if (!recipe.dietary_tags || !Array.isArray(recipe.dietary_tags)) return false
+        return intent.dietary_tags.some(tag => recipe.dietary_tags.includes(tag))
+      })
+      console.log(`📊 After dietary tags filter: ${refinedResults.length} results`)
+    }
+
+    if (intent.health_benefits && intent.health_benefits.length > 0) {
+      console.log('💪 Applying health benefits refinement:', intent.health_benefits)
+      refinedResults = refinedResults.filter(recipe => {
+        if (!recipe.health_benefits || !Array.isArray(recipe.health_benefits)) return false
+        return intent.health_benefits.some(benefit => recipe.health_benefits.includes(benefit))
+      })
+      console.log(`📊 After health benefits filter: ${refinedResults.length} results`)
+    }
+
+    if (intent.health_tags && intent.health_tags.length > 0) {
+      console.log('🏥 Applying health tags refinement:', intent.health_tags)
+      refinedResults = refinedResults.filter(recipe => {
+        if (!recipe.health_tags || !Array.isArray(recipe.health_tags)) return false
+        return intent.health_tags.some(tag => recipe.health_tags.includes(tag))
+      })
+      console.log(`📊 After health tags filter: ${refinedResults.length} results`)
+    }
+
+    if (intent.total_time) {
+      console.log('⏱️ Applying time refinement:', intent.total_time)
+      const maxTime = Math.floor(intent.total_time * 1.2) // 20% flexibility
+      refinedResults = refinedResults.filter(recipe => {
+        const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0)
+        return totalTime <= maxTime
+      })
+      console.log(`📊 After time filter: ${refinedResults.length} results`)
+    }
+
+    if (intent.servings) {
+      console.log('👥 Applying servings refinement:', intent.servings)
+      const minServings = Math.max(1, intent.servings - 2)
+      const maxServings = intent.servings + 2
+      refinedResults = refinedResults.filter(recipe => {
+        return recipe.servings >= minServings && recipe.servings <= maxServings
+      })
+      console.log(`📊 After servings filter: ${refinedResults.length} results`)
+    }
+
+    // If refinement filtered out too many results, fall back to original results
+    if (refinedResults.length === 0 && results.length > 0) {
+      console.log('⚠️ Refinement filtered out all results, using original results')
+      refinedResults = results
+    }
+
+    // Sort by similarity score (if available) and limit results
+    const finalResults = refinedResults
+      .sort((a, b) => (b.similarity_score || 0) - (a.similarity_score || 0))
+      .slice(0, limit)
+
+    console.log(`✅ Final results: ${finalResults.length} recipes`)
+    console.log('📊 Search method used:', embedding.length > 0 ? 'Vector similarity + intent refinement' : 'Text search + intent refinement')
+    
+    return finalResults
   } catch (error) {
-    console.error('❌ Error searching recipes:', error)
+    console.error('❌ Error in searchRecipes:', error)
     throw error
   }
 }
@@ -623,7 +602,7 @@ Deno.serve(async (req: Request) => {
     console.log('📋 Final extracted intent:', intent)
     console.log('🔢 Embedding dimensions:', embedding.length)
 
-    // Search recipes using filters and vector similarity
+    // Search recipes using vectorized priority approach
     const results = await searchRecipes(query, intent, embedding, limit)
 
     // Prepare response
@@ -636,7 +615,7 @@ Deno.serve(async (req: Request) => {
       processing_info: {
         intent_extraction: GEMINI_API_KEY ? 'Gemini 2.5 Flash' : 'Enhanced fallback keyword extraction',
         embedding_generation: OPENAI_API_KEY && embedding.length > 0 ? 'OpenAI text-embedding-3-small' : 'Not available',
-        search_method: embedding.length > 0 ? 'Hybrid (filters + vector similarity)' : 'Text and filter search only'
+        search_method: embedding.length > 0 ? 'Vector similarity priority + intent refinement' : 'Text search + intent refinement'
       },
       timestamp: new Date().toISOString()
     }
