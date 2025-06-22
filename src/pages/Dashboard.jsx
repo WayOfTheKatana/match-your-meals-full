@@ -312,17 +312,7 @@ const Dashboard = () => {
                     </Button>
                   </div>
 
-                  <div className="bg-white rounded-2xl p-6 shadow-sm border">
-                    <div className="flex items-center justify-between mb-4">
-                      <Heart className="w-8 h-8 text-red-500" />
-                      <span className="text-gray-400 text-sm">Favorites</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Your Favorites</h3>
-                    <p className="text-gray-600 mb-4">View saved recipes</p>
-                    <Button variant="outline" size="sm">
-                      View All
-                    </Button>
-                  </div>
+                
                 </>
               )}
             </div>
