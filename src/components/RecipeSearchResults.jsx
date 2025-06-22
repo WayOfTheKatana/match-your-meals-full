@@ -142,13 +142,20 @@ const RecipeSearchResults = ({ searchQuery, onClose }) => {
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {results.map((recipe, index) => (
                 <div key={recipe.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
-                  {/* Recipe Image */}
+                  {/* Recipe Image with Ranking Number */}
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400'}
                       alt={recipe.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
+                    
+                    {/* Ranking Number Overlay */}
+                    <div className="absolute top-4 left-4">
+                      <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
+                        {index + 1}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Recipe Content */}
