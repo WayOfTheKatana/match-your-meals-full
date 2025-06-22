@@ -289,12 +289,12 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
       hasFilters = true
     }
 
-    // For health_tags (jsonb), we need to use a different approach
+    // For health_tags (jsonb), convert to JSON string format
     if (intent.health_tags && intent.health_tags.length > 0) {
       console.log('🏥 Filtering by health tags:', intent.health_tags)
-      // Use contains operator for JSONB - check if any of the health tags match
+      // Use contains operator for JSONB - convert array to JSON string
       for (const tag of intent.health_tags) {
-        sqlQuery = sqlQuery.contains('health_tags', [tag])
+        sqlQuery = sqlQuery.contains('health_tags', JSON.stringify([tag]))
         hasFilters = true
         break // For now, just use the first tag to avoid complex queries
       }
