@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Users, Star, Heart, BookOpen, ChefHat, Loader2, Search, X, AlertCircle } from 'lucide-react';
+import { Clock, Users, Heart, BookOpen, ChefHat, Loader2, Search, X, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { supabase } from '../lib/supabase';
 
@@ -114,43 +114,6 @@ const RecipeSearchResults = ({ searchQuery, onClose }) => {
                   <X className="w-6 h-6 text-gray-500" />
                 </button>
               </div>
-
-              {/* Search Intent Display */}
-              {searchIntent && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <ChefHat className="w-4 h-4 mr-2" />
-                    AI Understanding:
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {searchIntent.dietary_tags?.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                        {tag}
-                      </span>
-                    ))}
-                    {searchIntent.health_tags?.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                        {tag}
-                      </span>
-                    ))}
-                    {searchIntent.health_benefits?.map((benefit, index) => (
-                      <span key={index} className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                        {benefit}
-                      </span>
-                    ))}
-                    {searchIntent.total_time && (
-                      <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                        Under {searchIntent.total_time} minutes
-                      </span>
-                    )}
-                    {searchIntent.servings && (
-                      <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs font-medium">
-                        Serves {searchIntent.servings}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -178,81 +141,46 @@ const RecipeSearchResults = ({ searchQuery, onClose }) => {
           {results.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {results.map((recipe, index) => (
-                <div key={recipe.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border-2 border-transparent hover:border-primary-200">
+                <div key={recipe.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
                   {/* Recipe Image */}
-                  <div className="relative h-56 overflow-hidden">
+                  <div className="relative h-48 overflow-hidden">
                     <img
                       src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400'}
                       alt={recipe.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    
-                    {/* Similarity Score */}
-                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
-                      <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                      <span className="text-xs font-medium">
-                        {(recipe.similarity_score * 5).toFixed(1)}
-                      </span>
-                    </div>
-
-                    {/* Ranking Badge */}
-                    <div className="absolute bottom-3 left-3 bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg">
-                      <span className="text-sm font-bold">#{index + 1}</span>
-                    </div>
                   </div>
 
                   {/* Recipe Content */}
                   <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
+                    {/* Recipe Title */}
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-2">
                       {recipe.title}
                     </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    
+                    {/* Recipe Description */}
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
                       {recipe.description}
                     </p>
 
-                    {/* Recipe Meta */}
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{formatTime(getTotalTime(recipe))}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Users className="w-4 h-4" />
-                          <span>{recipe.servings}</span>
-                        </div>
+                    {/* Recipe Meta - Total Time and Servings */}
+                    <div className="flex items-center justify-between text-gray-700 mb-6">
+                      <div className="flex items-center space-x-1">
+                        <Clock className="w-5 h-5 text-primary-600" />
+                        <span className="font-medium">{formatTime(getTotalTime(recipe))}</span>
                       </div>
-                      <div className="flex items-center space-x-1 text-primary-600">
-                        <Star className="w-4 h-4" />
-                        <span className="text-xs font-medium">{(recipe.similarity_score * 100).toFixed(0)}%</span>
+                      <div className="flex items-center space-x-1">
+                        <Users className="w-5 h-5 text-primary-600" />
+                        <span className="font-medium">{recipe.servings} servings</span>
                       </div>
-                    </div>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {recipe.dietary_tags?.slice(0, 2).map((tag, tagIndex) => (
-                        <span key={tagIndex} className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">
-                          {tag}
-                        </span>
-                      ))}
-                      {recipe.health_tags?.slice(0, 2).map((tag, tagIndex) => (
-                        <span key={tagIndex} className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">
-                          {tag}
-                        </span>
-                      ))}
-                      {recipe.health_benefits?.slice(0, 1).map((benefit, benefitIndex) => (
-                        <span key={benefitIndex} className="px-2 py-1 bg-purple-50 text-purple-700 rounded-full text-xs">
-                          {benefit}
-                        </span>
-                      ))}
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 flex items-center justify-center space-x-1 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                        className="flex-1 flex items-center justify-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
                         onClick={() => handleSaveRecipe(recipe.id)}
                       >
                         <Heart className="w-4 h-4" />
@@ -260,7 +188,7 @@ const RecipeSearchResults = ({ searchQuery, onClose }) => {
                       </Button>
                       <Button
                         size="sm"
-                        className="flex-1 flex items-center justify-center space-x-1 bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                        className="flex-1 flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-700"
                       >
                         <BookOpen className="w-4 h-4" />
                         <span>View Recipe</span>
