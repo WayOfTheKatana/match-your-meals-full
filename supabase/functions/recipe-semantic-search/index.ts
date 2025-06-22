@@ -52,8 +52,8 @@ async function extractSearchIntent(query: string): Promise<SearchIntent> {
     console.log('🔄 Extracting search intent with Gemini for query:', query)
     
     if (!GEMINI_API_KEY) {
-      console.log('⚠️ Gemini API key not found, using fallback intent extraction')
-      return createFallbackIntent(query)
+      console.log('⚠️ Gemini API key not found, using enhanced fallback intent extraction')
+      return createEnhancedFallbackIntent(query)
     }
     
     const prompt = `Extract structured search intent from recipe query. Return ONLY a valid JSON object with these exact fields:
@@ -69,9 +69,14 @@ async function extractSearchIntent(query: string): Promise<SearchIntent> {
 Rules:
 - dietary_tags: ["vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo", "low-carb"]
 - total_time: number in minutes (prep + cook time combined)
-- health_tags: ["high-protein", "low-carb", "heart-healthy", "low-sodium", "high-fiber", "antioxidant-rich"]
-- health_benefits: ["weight-loss", "energy-boost", "immune-support", "muscle-building", "heart-health"]
+- health_tags: ["high-protein", "low-carb", "heart-healthy", "low-sodium", "high-fiber", "antioxidant-rich", "calcium-rich", "iron-rich", "vitamin-rich", "omega-3-rich", "low-fat", "high-potassium", "magnesium-rich"]
+- health_benefits: ["weight-loss", "energy-boost", "immune-support", "muscle-building", "heart-health", "bone-health", "brain-health", "digestive-health"]
 - servings: number of people it serves
+
+Examples:
+- "calcium rich food" → health_tags: ["calcium-rich"], health_benefits: ["bone-health"]
+- "heart healthy recipe" → health_tags: ["heart-healthy"], health_benefits: ["heart-health"]
+- "high protein meal" → health_tags: ["high-protein"], health_benefits: ["muscle-building"]
 
 User query: "${query}"
 
@@ -99,14 +104,14 @@ Return ONLY the JSON object, no explanation:`
 
     if (!response.ok) {
       console.error('❌ Gemini API error:', response.status, response.statusText)
-      return createFallbackIntent(query)
+      return createEnhancedFallbackIntent(query)
     }
 
     const data = await response.json()
     
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
       console.error('❌ Invalid Gemini response structure')
-      return createFallbackIntent(query)
+      return createEnhancedFallbackIntent(query)
     }
 
     const generatedText = data.candidates[0].content.parts[0].text.trim()
@@ -123,8 +128,8 @@ Return ONLY the JSON object, no explanation:`
     }
 
     if (!jsonMatch) {
-      console.log('⚠️ No JSON found in Gemini response, using fallback')
-      return createFallbackIntent(query)
+      console.log('⚠️ No JSON found in Gemini response, using enhanced fallback')
+      return createEnhancedFallbackIntent(query)
     }
 
     try {
@@ -143,16 +148,16 @@ Return ONLY the JSON object, no explanation:`
       return cleanedIntent
     } catch (parseError) {
       console.error('❌ Error parsing Gemini JSON response:', parseError)
-      return createFallbackIntent(query)
+      return createEnhancedFallbackIntent(query)
     }
   } catch (error) {
     console.error('❌ Error in extractSearchIntent:', error)
-    return createFallbackIntent(query)
+    return createEnhancedFallbackIntent(query)
   }
 }
 
-function createFallbackIntent(query: string): SearchIntent {
-  console.log('🔄 Creating fallback intent for query:', query)
+function createEnhancedFallbackIntent(query: string): SearchIntent {
+  console.log('🔄 Creating enhanced fallback intent for query:', query)
   
   const lowerQuery = query.toLowerCase()
   const intent: SearchIntent = {
@@ -161,7 +166,7 @@ function createFallbackIntent(query: string): SearchIntent {
     health_benefits: []
   }
 
-  // Extract dietary tags
+  // Enhanced dietary tags extraction
   if (lowerQuery.includes('vegetarian')) intent.dietary_tags.push('vegetarian')
   if (lowerQuery.includes('vegan')) intent.dietary_tags.push('vegan')
   if (lowerQuery.includes('gluten-free') || lowerQuery.includes('gluten free')) intent.dietary_tags.push('gluten-free')
@@ -170,19 +175,36 @@ function createFallbackIntent(query: string): SearchIntent {
   if (lowerQuery.includes('paleo')) intent.dietary_tags.push('paleo')
   if (lowerQuery.includes('low carb') || lowerQuery.includes('low-carb')) intent.dietary_tags.push('low-carb')
 
-  // Extract health tags
+  // Enhanced health tags extraction with more comprehensive matching
   if (lowerQuery.includes('healthy') || lowerQuery.includes('health')) intent.health_tags.push('heart-healthy')
   if (lowerQuery.includes('protein') || lowerQuery.includes('high protein')) intent.health_tags.push('high-protein')
   if (lowerQuery.includes('low carb') || lowerQuery.includes('low-carb')) intent.health_tags.push('low-carb')
   if (lowerQuery.includes('heart')) intent.health_tags.push('heart-healthy')
   if (lowerQuery.includes('fiber')) intent.health_tags.push('high-fiber')
+  if (lowerQuery.includes('antioxidant')) intent.health_tags.push('antioxidant-rich')
+  
+  // Specific nutrient matching
+  if (lowerQuery.includes('calcium') || lowerQuery.includes('calcium rich') || lowerQuery.includes('calcium-rich')) {
+    intent.health_tags.push('calcium-rich')
+    intent.health_benefits.push('bone-health')
+  }
+  if (lowerQuery.includes('iron') || lowerQuery.includes('iron rich')) intent.health_tags.push('iron-rich')
+  if (lowerQuery.includes('vitamin') || lowerQuery.includes('vitamin rich')) intent.health_tags.push('vitamin-rich')
+  if (lowerQuery.includes('omega') || lowerQuery.includes('omega-3')) intent.health_tags.push('omega-3-rich')
+  if (lowerQuery.includes('potassium')) intent.health_tags.push('high-potassium')
+  if (lowerQuery.includes('magnesium')) intent.health_tags.push('magnesium-rich')
+  if (lowerQuery.includes('low fat') || lowerQuery.includes('low-fat')) intent.health_tags.push('low-fat')
+  if (lowerQuery.includes('low sodium') || lowerQuery.includes('low-sodium')) intent.health_tags.push('low-sodium')
 
-  // Extract health benefits
+  // Enhanced health benefits extraction
   if (lowerQuery.includes('weight loss') || lowerQuery.includes('lose weight')) intent.health_benefits.push('weight-loss')
   if (lowerQuery.includes('energy') || lowerQuery.includes('boost')) intent.health_benefits.push('energy-boost')
   if (lowerQuery.includes('immune')) intent.health_benefits.push('immune-support')
   if (lowerQuery.includes('muscle') || lowerQuery.includes('building')) intent.health_benefits.push('muscle-building')
   if (lowerQuery.includes('heart')) intent.health_benefits.push('heart-health')
+  if (lowerQuery.includes('bone') || lowerQuery.includes('calcium')) intent.health_benefits.push('bone-health')
+  if (lowerQuery.includes('brain')) intent.health_benefits.push('brain-health')
+  if (lowerQuery.includes('digestive') || lowerQuery.includes('digestion')) intent.health_benefits.push('digestive-health')
 
   // Extract time
   const timeMatch = lowerQuery.match(/(\d+)\s*(min|minute|minutes|hour|hours)/i)
@@ -198,7 +220,7 @@ function createFallbackIntent(query: string): SearchIntent {
     intent.servings = parseInt(servingsMatch[1])
   }
 
-  console.log('✅ Fallback intent created:', intent)
+  console.log('✅ Enhanced fallback intent created:', intent)
   return intent
 }
 
@@ -250,6 +272,7 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
 async function searchRecipes(query: string, intent: SearchIntent, embedding: number[], limit: number = 20): Promise<RecipeResult[]> {
   try {
     console.log('🔍 Searching recipes in database with intent:', intent)
+    console.log('🔍 Original query:', query)
     
     // Start with a basic query
     let sqlQuery = supabase
@@ -289,15 +312,17 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
       hasFilters = true
     }
 
-    // For health_tags (jsonb), convert to JSON string format
+    // For health_tags (jsonb), use contains operator with proper JSON formatting
     if (intent.health_tags && intent.health_tags.length > 0) {
       console.log('🏥 Filtering by health tags:', intent.health_tags)
-      // Use contains operator for JSONB - convert array to JSON string
-      for (const tag of intent.health_tags) {
-        sqlQuery = sqlQuery.contains('health_tags', JSON.stringify([tag]))
-        hasFilters = true
-        break // For now, just use the first tag to avoid complex queries
-      }
+      
+      // Build OR conditions for health tags
+      const healthTagConditions = intent.health_tags.map(tag => 
+        `health_tags.cs.${JSON.stringify([tag])}`
+      ).join(',')
+      
+      sqlQuery = sqlQuery.or(healthTagConditions)
+      hasFilters = true
     }
 
     if (intent.total_time) {
@@ -333,7 +358,44 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
     console.log(`📊 Found ${filteredRecipes?.length || 0} recipes after filtering`)
 
     if (!filteredRecipes || filteredRecipes.length === 0) {
-      console.log('📭 No recipes found with current filters')
+      console.log('📭 No recipes found with current filters, trying broader search...')
+      
+      // Try a broader search with just text matching
+      const { data: broadResults, error: broadError } = await supabase
+        .from('recipes')
+        .select(`
+          id,
+          title,
+          description,
+          prep_time,
+          cook_time,
+          servings,
+          image_path,
+          ingredients,
+          instructions,
+          health_tags,
+          dietary_tags,
+          health_benefits,
+          nutritional_info,
+          creator_id,
+          created_at
+        `)
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+        .limit(limit)
+
+      if (broadError) {
+        console.error('❌ Broad search error:', broadError)
+        return []
+      }
+
+      if (broadResults && broadResults.length > 0) {
+        console.log(`📊 Broad search found ${broadResults.length} recipes`)
+        return broadResults.map(recipe => ({
+          ...recipe,
+          similarity_score: 0.5 // Lower score for broad matches
+        }))
+      }
+
       return []
     }
 
@@ -426,7 +488,7 @@ Deno.serve(async (req: Request) => {
         console.log('✅ Intent extraction completed successfully')
       } else {
         console.error('❌ Intent extraction failed:', intentResult.reason)
-        intent = createFallbackIntent(query)
+        intent = createEnhancedFallbackIntent(query)
       }
 
       // Handle embedding generation result
@@ -439,7 +501,7 @@ Deno.serve(async (req: Request) => {
       }
     } catch (parallelError) {
       console.error('❌ Error in parallel processing:', parallelError)
-      intent = createFallbackIntent(query)
+      intent = createEnhancedFallbackIntent(query)
     }
 
     console.log('📋 Final extracted intent:', intent)
@@ -456,7 +518,7 @@ Deno.serve(async (req: Request) => {
       results: results,
       total_results: results.length,
       processing_info: {
-        intent_extraction: GEMINI_API_KEY ? 'Gemini 2.5 Flash' : 'Fallback keyword extraction',
+        intent_extraction: GEMINI_API_KEY ? 'Gemini 2.5 Flash' : 'Enhanced fallback keyword extraction',
         embedding_generation: OPENAI_API_KEY && embedding.length > 0 ? 'OpenAI text-embedding-3-small' : 'Not available',
         search_method: embedding.length > 0 ? 'Hybrid (filters + vector similarity)' : 'Text and filter search only'
       },
