@@ -50,11 +50,19 @@ const Dashboard = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [recentRecipes, setRecentRecipes] = useState([]);
+  const [recipesLoading, setRecipesLoading] = useState(false);
+  const [recipesError, setRecipesError] = useState('');
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
     console.log('User Profile:', userProfile);
     console.log('Connected to Supabase:', isConnected);
+    
+    // Fetch recent recipes when component mounts
+    if (isConnected) {
+      fetchRecentRecipes();
+    }
   }, [user, userProfile, isConnected]);
 
   // Clear search results when query is empty
@@ -64,6 +72,51 @@ const Dashboard = () => {
       setSearchError('');
     }
   }, [searchQuery]);
+
+  // Fetch recent recipes from database
+  const fetchRecentRecipes = async () => {
+    setRecipesLoading(true);
+    setRecipesError('');
+
+    try {
+      console.log('🔄 Fetching recent recipes from database...');
+      
+      const { data, error } = await supabase
+        .from('recipes')
+        .select(`
+          id,
+          title,
+          description,
+          prep_time,
+          cook_time,
+          servings,
+          image_path,
+          ingredients,
+          instructions,
+          health_tags,
+          dietary_tags,
+          health_benefits,
+          nutritional_info,
+          creator_id,
+          created_at
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('❌ Error fetching recipes:', error);
+        throw error;
+      }
+
+      console.log('✅ Fetched recipes successfully:', data?.length || 0);
+      setRecentRecipes(data || []);
+    } catch (err) {
+      console.error('❌ Error in fetchRecentRecipes:', err);
+      setRecipesError(err.message || 'Failed to load recipes');
+    } finally {
+      setRecipesLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -140,6 +193,7 @@ const Dashboard = () => {
   };
 
   const formatTime = (minutes) => {
+    if (!minutes) return 'N/A';
     if (minutes < 60) return `${minutes}m`;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -169,12 +223,18 @@ const Dashboard = () => {
     console.log('Recipe saved as draft:', recipeData);
     // The actual saving is handled in the modal component
     // You can add additional logic here if needed (e.g., refresh data, show notifications)
+    
+    // Refresh the recent recipes list to include the new recipe
+    await fetchRecentRecipes();
   };
 
   const handlePublishRecipe = async (recipeData) => {
     console.log('Recipe published:', recipeData);
     // The actual publishing is handled in the modal component
     // You can add additional logic here if needed (e.g., refresh data, show notifications)
+    
+    // Refresh the recent recipes list to include the new recipe
+    await fetchRecentRecipes();
   };
 
   // Consumer Mode Data
@@ -191,14 +251,6 @@ const Dashboard = () => {
     { label: 'Total Followers', value: '1.2k', icon: Users, color: 'text-green-600' },
     { label: 'Monthly Views', value: '5.8k', icon: Eye, color: 'text-purple-600' },
     { label: 'Revenue', value: '$234', icon: DollarSign, color: 'text-emerald-600' }
-  ];
-
-  const recentRecipes = [
-    { name: 'Healthy Quinoa Bowl', time: '25 min', rating: 4.8, image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300' },
-    { name: 'Grilled Salmon', time: '20 min', rating: 4.9, image: 'https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=300' },
-    { name: 'Avocado Toast', time: '10 min', rating: 4.7, image: 'https://images.pexels.com/photos/566566/pexels-photo-566566.jpeg?auto=compress&cs=tinysrgb&w=300' },
-    { name: 'Protein Smoothie', time: '5 min', rating: 4.6, image: 'https://images.pexels.com/photos/775032/pexels-photo-775032.jpeg?auto=compress&cs=tinysrgb&w=300' },
-    { name: 'Mediterranean Salad', time: '15 min', rating: 4.8, image: 'https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg?auto=compress&cs=tinysrgb&w=300' }
   ];
 
   // Creator's published recipes
@@ -656,37 +708,131 @@ const Dashboard = () => {
               </div>
               
               <div className="p-6 space-y-6">
-                {(isCreatorMode ? publishedRecipes : recentRecipes).map((recipe, index) => (
-                  <div key={index} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-                    <div className="relative overflow-hidden rounded-xl w-24 h-24 flex-shrink-0">
-                      <img
-                        src={recipe.image}
-                        alt={recipe.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
-                        <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                        <span className="text-xs font-medium">{recipe.rating}</span>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
+                {/* Loading State */}
+                {recipesLoading && (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
+                    <p className="text-gray-600">Loading recipes...</p>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {recipesError && !recipesLoading && (
+                  <div className="text-center py-8">
+                    <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-4" />
+                    <p className="text-red-600 mb-4">{recipesError}</p>
+                    <Button onClick={fetchRecentRecipes} variant="outline">
+                      Try Again
+                    </Button>
+                  </div>
+                )}
+
+                {/* Real Recipes from Database */}
+                {!recipesLoading && !recipesError && recentRecipes.length > 0 && (
+                  <>
+                    {recentRecipes.map((recipe, index) => (
+                      <div key={recipe.id} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                        <div className="relative overflow-hidden rounded-xl w-24 h-24 flex-shrink-0">
+                          <img
+                            src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                            alt={recipe.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
+                            <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                            <span className="text-xs font-medium">4.8</span>
+                          </div>
+                        </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-1">{recipe.name}</h4>
-                          <div className="flex items-center text-sm text-gray-600 mb-2">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {recipe.time}
-                            {isCreatorMode && recipe.views && (
-                              <>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 mb-1">{recipe.title}</h4>
+                              <p className="text-gray-600 text-sm mb-2 line-clamp-2">{recipe.description}</p>
+                              <div className="flex items-center text-sm text-gray-600 mb-2">
+                                <Clock className="w-4 h-4 mr-1" />
+                                {formatTime(getTotalTime(recipe))}
+                                <span className="mx-2">•</span>
+                                <Users className="w-4 h-4 mr-1" />
+                                {recipe.servings} servings
+                              </div>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                {isCreatorMode ? (
+                                  <>
+                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                      Published
+                                    </span>
+                                    <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                      <BarChart3 className="w-4 h-4" />
+                                      <span>Analytics</span>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className={`flex items-center space-x-1 transition-colors ${
+                                        isRecipeSaved(recipe.id)
+                                          ? 'text-red-600 hover:text-red-700'
+                                          : 'text-gray-500 hover:text-red-500'
+                                      }`}
+                                      onClick={() => handleSaveSearchedRecipe(recipe.id)}
+                                    >
+                                      {isRecipeSaved(recipe.id) ? (
+                                        <>
+                                          <Check className="w-4 h-4" />
+                                          <span>Saved</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Heart className="w-4 h-4" />
+                                          <span>Save</span>
+                                        </>
+                                      )}
+                                    </Button>
+                                    <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                      <BookOpen className="w-4 h-4" />
+                                      <span>View Recipe</span>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* Creator Mode Fallback */}
+                {isCreatorMode && !recipesLoading && !recipesError && recentRecipes.length === 0 && (
+                  <>
+                    {publishedRecipes.map((recipe, index) => (
+                      <div key={index} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                        <div className="relative overflow-hidden rounded-xl w-24 h-24 flex-shrink-0">
+                          <img
+                            src={recipe.image}
+                            alt={recipe.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
+                            <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                            <span className="text-xs font-medium">{recipe.rating}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 mb-1">{recipe.name}</h4>
+                              <div className="flex items-center text-sm text-gray-600 mb-2">
+                                <Clock className="w-4 h-4 mr-1" />
+                                {recipe.time}
                                 <span className="mx-2">•</span>
                                 <Eye className="w-4 h-4 mr-1" />
                                 {recipe.views} views
-                              </>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            {isCreatorMode ? (
-                              <>
+                              </div>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                   recipe.status === 'Published' 
                                     ? 'bg-green-100 text-green-700' 
@@ -698,25 +844,26 @@ const Dashboard = () => {
                                   <BarChart3 className="w-4 h-4" />
                                   <span>Analytics</span>
                                 </button>
-                              </>
-                            ) : (
-                              <>
-                                <button className="flex items-center space-x-1 hover:text-red-500 transition-colors">
-                                  <Heart className="w-4 h-4" />
-                                  <span>Save</span>
-                                </button>
-                                <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                                  <BookOpen className="w-4 h-4" />
-                                  <span>View Recipe</span>
-                                </button>
-                              </>
-                            )}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
+                  </>
+                )}
+
+                {/* No Recipes State */}
+                {!isCreatorMode && !recipesLoading && !recipesError && recentRecipes.length === 0 && (
+                  <div className="text-center py-12">
+                    <ChefHat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">No Recipes Yet</h4>
+                    <p className="text-gray-600 mb-4">Be the first to discover amazing recipes!</p>
+                    <Button onClick={() => handleQuickSearch('healthy breakfast')} className="bg-primary-600 hover:bg-primary-700">
+                      Explore Recipes
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
