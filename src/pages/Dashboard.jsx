@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import RecipeCreationModal from '../components/RecipeCreationModal';
+import { useSavedRecipes } from '../hooks/useSavedRecipes';
 import { 
   User, 
   Settings, 
@@ -34,12 +35,14 @@ import {
   UserCheck,
   Monitor,
   Mic,
-  Loader2
+  Loader2,
+  Check
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const Dashboard = () => {
   const { user, userProfile, signOut, isConnected } = useAuth();
+  const { saveRecipe, removeSavedRecipe, isRecipeSaved } = useSavedRecipes();
   const [isCreatorMode, setIsCreatorMode] = useState(false);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -148,11 +151,21 @@ const Dashboard = () => {
   };
 
   const handleSaveSearchedRecipe = async (recipeId) => {
-    console.log('Saving recipe:', recipeId);
-    // Implement save functionality
+    try {
+      if (isRecipeSaved(recipeId)) {
+        await removeSavedRecipe(recipeId);
+        console.log('Recipe removed from saved list:', recipeId);
+      } else {
+        await saveRecipe(recipeId);
+        console.log('Recipe saved successfully:', recipeId);
+      }
+    } catch (error) {
+      console.error('Error toggling recipe save status:', error);
+      alert(error.message || 'Failed to save recipe. Please try again.');
+    }
   };
 
-  const handleSaveRecipe = async (recipeData) => {
+  const handleRecipeSave = async (recipeData) => {
     console.log('Recipe saved as draft:', recipeData);
     // The actual saving is handled in the modal component
     // You can add additional logic here if needed (e.g., refresh data, show notifications)
@@ -535,11 +548,24 @@ const Dashboard = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                                    className={`flex items-center space-x-2 transition-colors ${
+                                      isRecipeSaved(recipe.id)
+                                        ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+                                        : 'hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                                    }`}
                                     onClick={() => handleSaveSearchedRecipe(recipe.id)}
                                   >
-                                    <Heart className="w-4 h-4" />
-                                    <span>Save</span>
+                                    {isRecipeSaved(recipe.id) ? (
+                                      <>
+                                        <Check className="w-4 h-4" />
+                                        <span>Saved</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Heart className="w-4 h-4" />
+                                        <span>Save</span>
+                                      </>
+                                    )}
                                   </Button>
                                   <Button
                                     size="sm"
@@ -801,7 +827,7 @@ const Dashboard = () => {
       <RecipeCreationModal
         isOpen={showRecipeModal}
         onClose={() => setShowRecipeModal(false)}
-        onSave={handleSaveRecipe}
+        onSave={handleRecipeSave}
         onPublish={handlePublishRecipe}
       />
     </div>
