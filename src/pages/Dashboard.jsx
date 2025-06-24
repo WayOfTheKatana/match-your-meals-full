@@ -784,7 +784,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
         <button
           key={index}
           onClick={() => fetchRecipesByCategory(tag, 'dietary_tags')}
-          className={`p-3 rounded-xl text-left transition-all duration-200 border ${
+          className={`p-2 rounded-xl text-left transition-all duration-200 border ${
             selectedCategory?.name === tag && selectedCategory?.type === 'dietary_tags'
               ? 'bg-green-50 border-green-200 text-green-700'
               : 'bg-gray-50 border-gray-200 hover:bg-green-50 hover:border-green-200 hover:text-green-600'
@@ -792,7 +792,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
         >
           <div className="flex items-center space-x-2">
             <Tag className="w-4 h-4 flex-shrink-0" />
-            <span className="text-sm font-medium capitalize">
+            <span className="text-xs capitalize">
               {tag.replace(/-/g, ' ')}
             </span>
           </div>
