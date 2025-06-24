@@ -1387,7 +1387,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
         <div className="bg-white rounded-2xl shadow-sm border">
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-xl font-semibold text-gray-900 font-sans">
                 {isCreatorMode ? 'Your Published Recipes' : 'Recipe Feed'}
               </h3>
               <div className="flex items-center space-x-2">
