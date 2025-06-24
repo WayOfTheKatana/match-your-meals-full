@@ -1128,7 +1128,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
 
         {/* Full-Width Search Bar */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center font-serif">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center font-sans">
             <Search className="w-5 h-5 mr-2 text-primary-600" />
             {isCreatorMode ? 'Search Your Recipes' : 'Find New Recipes'}
           </h3>
