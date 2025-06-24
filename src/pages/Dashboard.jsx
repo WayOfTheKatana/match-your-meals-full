@@ -741,35 +741,6 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
           {!categoriesLoading && !categoriesError && categories && (
             <div className="space-y-6">
               {/* Health Tags Section */}
-              {/* {categories.health_tags && categories.health_tags.length > 0 && (
-                <div className="bg-white rounded-2xl p-6 shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Heart className="w-5 h-5 mr-2 text-red-500" />
-                    Health Benefits
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {categories.health_tags.map((tag, index) => (
-                      <button
-                        key={index}
-                        onClick={() => fetchRecipesByCategory(tag, 'health_tags')}
-                        className={`p-3 rounded-xl text-left transition-all duration-200 border ${
-                          selectedCategory?.name === tag && selectedCategory?.type === 'health_tags'
-                            ? 'bg-red-50 border-red-200 text-red-700'
-                            : 'bg-gray-50 border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Tag className="w-4 h-4 flex-shrink-0" />
-                          <span className="text-sm font-medium capitalize">
-                            {tag.replace(/-/g, ' ')}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )} */}
-
               {categories.health_tags && categories.health_tags.length > 0 && (
   <div className="bg-white rounded-2xl p-6 shadow-sm border">
     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
