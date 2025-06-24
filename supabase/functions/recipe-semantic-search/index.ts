@@ -21,6 +21,7 @@ interface RequestPayload {
 
 interface RecipeResult {
   id: string;
+  slug: string;
   title: string;
   description: string;
   prep_time: number;
@@ -408,6 +409,7 @@ async function searchRecipes(query: string, intent: SearchIntent, embedding: num
           .from('recipes')
           .select(`
             id,
+            slug,
             title,
             description,
             prep_time,

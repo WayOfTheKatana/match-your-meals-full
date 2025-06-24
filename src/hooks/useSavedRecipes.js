@@ -24,6 +24,7 @@ export const useSavedRecipes = () => {
           created_at,
           recipes (
             id,
+            slug,
             title,
             description,
             prep_time,

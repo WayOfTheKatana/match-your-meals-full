@@ -91,6 +91,7 @@ const Dashboard = () => {
         .from('recipes')
         .select(`
           id,
+          slug,
           title,
           description,
           prep_time,
@@ -166,6 +167,7 @@ const Dashboard = () => {
         .from('recipes')
         .select(`
           id,
+          slug,
           title,
           description,
           prep_time,
