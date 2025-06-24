@@ -203,7 +203,7 @@ const Dashboard = () => {
 
       // Apply different filters based on category type
       if (categoryType === 'health_tags') {
-        // For JSONB array, use @> operator to check if array contains the tag
+        // For JSONB array, use @> operator with proper JSON array syntax
         query = query.contains('health_tags', [categoryName]);
       } else if (categoryType === 'dietary_tags') {
         // For text array, use && operator to check for overlap
