@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { generateSlug } from '../lib/utils';
 
 const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   const { user } = useAuth();
@@ -326,9 +327,13 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     // Get the first uploaded image URL for the main image
     const mainImageUrl = formData.images.find(img => img.uploaded)?.publicUrl || null;
 
+    // Generate slug from title
+    const slug = generateSlug(formData.title.trim());
+
     const baseRecipeData = {
       creator_id: user.id,
       title: formData.title.trim(),
+      slug: slug,
       description: formData.description.trim(),
       prep_time: parseInt(formData.prepTime),
       cook_time: parseInt(formData.cookTime),
@@ -402,7 +407,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       
       // Call parent handler if provided
       if (onSave) {
-        await onSave({ ...formData, id: savedRecipe.id });
+        await onSave({ ...formData, id: savedRecipe.id, slug: savedRecipe.slug });
       }
       
       // Close modal and reset form
@@ -454,7 +459,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       
       // Call parent handler if provided
       if (onPublish) {
-        await onPublish({ ...formData, id: recipeId, ...analyzedData });
+        await onPublish({ ...formData, id: recipeId, slug: savedRecipe.slug, ...analyzedData });
       }
       
       // Auto-close modal after 2 seconds

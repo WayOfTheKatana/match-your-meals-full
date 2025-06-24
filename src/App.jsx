@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import RecipeDetail from './pages/RecipeDetail';
 import BoltBadge from './components/BoltBadge';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route path="/recipes/:slug" element={<RecipeDetail />} />
           </Routes>
           
           {/* Built on Bolt Badge */}
