@@ -752,7 +752,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
         <button
           key={index}
           onClick={() => fetchRecipesByCategory(tag, 'health_tags')}
-          className={`p-3 rounded-xl text-left transition-all duration-200 border ${
+          className={`p-2 rounded-xl text-left transition-all duration-200 border ${
             selectedCategory?.name === tag && selectedCategory?.type === 'health_tags'
               ? 'bg-red-50 border-red-200 text-red-700'
               : 'bg-gray-50 border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
