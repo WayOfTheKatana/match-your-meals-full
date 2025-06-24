@@ -1188,7 +1188,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
                 key={index}
                 onClick={() => handleQuickSearch(tag.toLowerCase())}
                 disabled={searchLoading}
-                className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
               >
                 {tag}
               </button>
