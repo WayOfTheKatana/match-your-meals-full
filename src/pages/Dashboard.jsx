@@ -742,7 +742,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
             <div className="space-y-6">
               {/* Health Tags Section */}
               {categories.health_tags && categories.health_tags.length > 0 && (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border">
+  <div className="bg-white rounded-2xl p-6 shadow-sm border text-xs">
     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
       <Heart className="w-5 h-5 mr-2 text-red-500" />
       Health Benefits
