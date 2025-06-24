@@ -1179,7 +1179,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
           </div>
 
           {/* Quick Search Tags */}
-          <div className="mt-4 flex flex-wrap gap-2 font-sans">
+          <div className="mt-4 flex flex-wrap gap-2 font-sans text-xs">
             {(isCreatorMode 
               ? ['My Popular', 'Recent', 'Drafts', 'High Rated'] 
               : ['Healthy', 'Quick & Easy', 'Vegetarian', 'Low Carb', 'High Protein']
