@@ -1866,14 +1866,14 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
                 <button
                   key={index}
                   onClick={() => handleNavigationClick(item.view)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors font-sans ${
+                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
                     item.active 
                       ? 'bg-primary-50 text-primary-700 border border-primary-200' 
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <item.icon className={`w-5 h-5 ${item.active ? 'text-primary-600' : 'text-gray-500'}`} />
-                  <span className="text-sm font-medium">{item.name}</span>
+                  <span className="text-sm font-medium font-sans">{item.name}</span>
                 </button>
               ))}
             </nav>
