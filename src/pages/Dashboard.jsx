@@ -759,7 +759,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
           }`}
         >
           <div className="flex items-center space-x-2">
-            <Tag className="w-2 h-2 flex-shrink-0" />
+            <Tag className="w-3 h-3 flex-shrink-0" />
             <span className="text-xs capitalize text-wrap">
               {tag.replace(/-/g, ' ')}
             </span>
