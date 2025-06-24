@@ -173,61 +173,115 @@ const Dashboard = () => {
   };
 
   // Fetch recipes by category
-  const fetchRecipesByCategory = async (categoryName, categoryType) => {
-    setCategoryRecipesLoading(true);
-    setCategoryRecipesError('');
-    setSelectedCategory({ name: categoryName, type: categoryType });
+  // const fetchRecipesByCategory = async (categoryName, categoryType) => {
+  //   setCategoryRecipesLoading(true);
+  //   setCategoryRecipesError('');
+  //   setSelectedCategory({ name: categoryName, type: categoryType });
 
-    try {
-      console.log('🔄 Fetching recipes for category:', categoryName, 'type:', categoryType);
+  //   try {
+  //     console.log('🔄 Fetching recipes for category:', categoryName, 'type:', categoryType);
       
-      let query = supabase
-        .from('recipes')
-        .select(`
-          id,
-          title,
-          description,
-          prep_time,
-          cook_time,
-          servings,
-          image_path,
-          ingredients,
-          instructions,
-          health_tags,
-          dietary_tags,
-          health_benefits,
-          nutritional_info,
-          creator_id,
-          created_at
-        `);
+  //     let query = supabase
+  //       .from('recipes')
+  //       .select(`
+  //         id,
+  //         title,
+  //         description,
+  //         prep_time,
+  //         cook_time,
+  //         servings,
+  //         image_path,
+  //         ingredients,
+  //         instructions,
+  //         health_tags,
+  //         dietary_tags,
+  //         health_benefits,
+  //         nutritional_info,
+  //         creator_id,
+  //         created_at
+  //       `);
 
-      // Apply different filters based on category type
-      if (categoryType === 'health_tags') {
-        // For JSONB array, use @> operator with proper JSON array syntax
-        query = query.contains('health_tags', [categoryName]);
-      } else if (categoryType === 'dietary_tags') {
-        // For text array, use && operator to check for overlap
-        query = query.overlaps('dietary_tags', [categoryName]);
-      }
+  //     // Apply different filters based on category type
+  //     if (categoryType === 'health_tags') {
+  //       // For JSONB array, use @> operator with proper JSON array syntax
+  //       query = query.contains('health_tags', [categoryName]);
+  //     } else if (categoryType === 'dietary_tags') {
+  //       // For text array, use && operator to check for overlap
+  //       query = query.overlaps('dietary_tags', [categoryName]);
+  //     }
 
-      const { data, error } = await query
-        .order('created_at', { ascending: false })
-        .limit(20);
+  //     const { data, error } = await query
+  //       .order('created_at', { ascending: false })
+  //       .limit(20);
 
-      if (error) {
-        console.error('❌ Error fetching recipes by category:', error);
-        throw error;
-      }
+  //     if (error) {
+  //       console.error('❌ Error fetching recipes by category:', error);
+  //       throw error;
+  //     }
 
-      console.log('✅ Fetched recipes for category successfully:', data?.length || 0);
-      setCategoryRecipes(data || []);
-    } catch (err) {
-      console.error('❌ Error in fetchRecipesByCategory:', err);
-      setCategoryRecipesError(err.message || 'Failed to load recipes for this category');
-    } finally {
-      setCategoryRecipesLoading(false);
+  //     console.log('✅ Fetched recipes for category successfully:', data?.length || 0);
+  //     setCategoryRecipes(data || []);
+  //   } catch (err) {
+  //     console.error('❌ Error in fetchRecipesByCategory:', err);
+  //     setCategoryRecipesError(err.message || 'Failed to load recipes for this category');
+  //   } finally {
+  //     setCategoryRecipesLoading(false);
+  //   }
+  // };
+
+  async function fetchRecipesByCategory(categoryName, categoryType) {
+  try {
+    console.log(`🔍 Fetching recipes by ${categoryType}:`, categoryName);
+    
+    let query = supabase
+      .from('recipes')
+      .select(`
+        id,
+        title,
+        description,
+        prep_time,
+        cook_time,
+        servings,
+        image_path,
+        ingredients,
+        instructions,
+        health_tags,
+        dietary_tags,
+        health_benefits,
+        nutritional_info,
+        creator_id,
+        created_at
+      `);
+
+    // Apply the correct filter based on column type
+    if (categoryType === 'health_tags') {
+      // For JSONB array - use contains with JSON string
+      query = query.contains('health_tags', JSON.stringify([categoryName]));
+    } else if (categoryType === 'dietary_tags') {
+      // For text array - use overlaps
+      query = query.overlaps('dietary_tags', [categoryName]);
+    } else if (categoryType === 'health_benefits') {
+      // For text array - use overlaps
+      query = query.overlaps('health_benefits', [categoryName]);
+    } else {
+      throw new Error(`Unsupported category type: ${categoryType}`);
     }
-  };
+
+    const { data, error } = await query.limit(20);
+
+    if (error) {
+      console.error('❌ Database query error:', error);
+      throw error;
+    }
+
+    console.log(`✅ Found ${data?.length || 0} recipes for ${categoryType}: ${categoryName}`);
+    return data || [];
+
+  } catch (error) {
+    console.error('❌ Error in fetchRecipesByCategory:', error);
+    throw error;
+  }
+}
 
   // Fetch recent recipes from database
   const fetchRecentRecipes = async () => {
