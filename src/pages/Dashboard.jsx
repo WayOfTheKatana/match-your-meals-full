@@ -1112,7 +1112,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
               <>Welcome back, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 👋</>
             )}
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-4 text-sm">
             {isCreatorMode ? (
               'Manage your recipes, track performance, and grow your audience.'
             ) : (
