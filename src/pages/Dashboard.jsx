@@ -1150,7 +1150,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
             </div>
             
             {/* Search Input */}
-            <div className="flex-1">
+            <div className="flex-1 font-sans">
               <Input
                 type="text"
                 placeholder={isCreatorMode ? "Search your published recipes..." : "Search for recipes by ingredients, cuisine, or dietary needs..."}
