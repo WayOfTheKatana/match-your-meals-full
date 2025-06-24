@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Mic, TrendingUp } from 'lucide-react';
+import { Search, Mic, TrendingUp, MicOff, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import LoginModal from './LoginModal';
 
 const SearchSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isListening, setIsListening] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Speech recognition hook
+  const {
+    isListening,
+    transcript,
+    error: speechError,
+    isSupported: speechSupported,
+    toggleListening,
+    resetTranscript,
+    clearError
+  } = useSpeechRecognition();
 
   const trendingRecipes = [
     "Tuna with Salads Epic Recipe",
@@ -31,9 +42,38 @@ const SearchSection = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Update search query when transcript changes
+  useEffect(() => {
+    if (transcript) {
+      setSearchQuery(transcript);
+    }
+  }, [transcript]);
+
+  // Clear speech error after 5 seconds
+  useEffect(() => {
+    if (speechError) {
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [speechError, clearError]);
+
   const handleVoiceSearch = () => {
-    setIsListening(!isListening);
-    // Voice search functionality will be implemented later
+    if (!speechSupported) {
+      alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    if (isListening) {
+      // Stop listening and clear transcript if needed
+      toggleListening();
+    } else {
+      // Start listening and reset previous transcript
+      resetTranscript();
+      setSearchQuery('');
+      toggleListening();
+    }
   };
 
   const handleFocus = () => {
@@ -68,6 +108,33 @@ const SearchSection = () => {
     navigate('/dashboard');
   };
 
+  const getPlaceholderText = () => {
+    if (isListening) {
+      return "Listening... Speak your recipe request";
+    } else if (isFocused) {
+      return "Type your recipe search...";
+    } else {
+      return "pre-workout banana milkshake and suggest me post workout";
+    }
+  };
+
+  const getMicrophoneIcon = () => {
+    if (!speechSupported) {
+      return <MicOff className="w-6 h-6" />;
+    }
+    return <Mic className="w-6 h-6" />;
+  };
+
+  const getMicrophoneButtonClass = () => {
+    if (!speechSupported) {
+      return 'text-gray-300 cursor-not-allowed opacity-50';
+    } else if (isListening) {
+      return 'bg-red-50 text-red-500 animate-pulse shadow-lg border-2 border-red-200';
+    } else {
+      return 'text-gray-400 hover:text-primary-600 hover:bg-primary-50';
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto w-full">
@@ -88,6 +155,43 @@ const SearchSection = () => {
           </h1>
         </div>
 
+        {/* Speech Error Alert */}
+        {speechError && (
+          <div className="w-full max-w-4xl mb-4 animate-slide-up">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center space-x-3">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm text-red-700 font-medium">Speech Recognition Error</p>
+                <p className="text-xs text-red-600">{speechError}</p>
+              </div>
+              <button
+                onClick={clearError}
+                className="text-red-400 hover:text-red-600 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Voice Status Indicator */}
+        {isListening && (
+          <div className="w-full max-w-4xl mb-4 animate-slide-up">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-blue-700 font-medium text-sm">Listening for your voice...</span>
+              </div>
+              <button
+                onClick={handleVoiceSearch}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                Stop
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Full-Width Search Bar */}
         <div className="w-full max-w-4xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <div className="relative flex items-center bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-3xl focus-within:shadow-3xl focus-within:scale-[1.01] border border-white/20">
@@ -95,14 +199,18 @@ const SearchSection = () => {
             <div className="flex items-center pl-6 pr-4">
               <button
                 onClick={handleVoiceSearch}
-                className={`p-3 rounded-full transition-all duration-300 hover:scale-110 ${
-                  isListening 
-                    ? 'bg-red-50 text-red-500 animate-pulse shadow-lg' 
-                    : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'
-                }`}
-                aria-label="Voice search"
+                disabled={!speechSupported}
+                className={`p-3 rounded-full transition-all duration-300 hover:scale-110 ${getMicrophoneButtonClass()}`}
+                aria-label={isListening ? "Stop voice search" : "Start voice search"}
+                title={
+                  !speechSupported 
+                    ? "Speech recognition not supported in this browser" 
+                    : isListening 
+                      ? "Stop listening" 
+                      : "Start voice search"
+                }
               >
-                <Mic className="w-6 h-6" />
+                {getMicrophoneIcon()}
               </button>
             </div>
             
@@ -110,7 +218,7 @@ const SearchSection = () => {
             <div className="flex-1 relative">
               <Input
                 type="text"
-                placeholder={isFocused ? "Type your recipe search..." : "pre-workout banana milkshake and suggest me post workout"}
+                placeholder={getPlaceholderText()}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={handleFocus}
@@ -118,6 +226,17 @@ const SearchSection = () => {
                 onKeyPress={handleKeyPress}
                 className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-16 text-lg bg-transparent px-0 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-50"
               />
+              
+              {/* Voice Input Indicator */}
+              {isListening && (
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-1 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                    <div className="w-1 h-6 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Search Icon/Button */}
@@ -146,6 +265,16 @@ const SearchSection = () => {
                   </button>
                 ))}
               </div>
+              
+              {/* Voice Search Tip */}
+              {speechSupported && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-600 flex items-center">
+                    <Mic className="w-3 h-3 mr-1" />
+                    Tip: Click the microphone icon or press and hold to search with your voice
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
