@@ -355,12 +355,6 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
 
 // And update your category button onClick handlers to this simple version:
 
-// For health_tags buttons:
-onClick={() => fetchRecipesByCategory(tag, 'health_tags')}
-
-// For dietary_tags buttons:
-onClick={() => fetchRecipesByCategory(tag, 'dietary_tags')}
-
   // Fetch recent recipes from database
   const fetchRecentRecipes = async () => {
     setRecipesLoading(true);
