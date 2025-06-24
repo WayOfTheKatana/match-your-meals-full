@@ -38,9 +38,7 @@ import {
   Loader2,
   Check,
   Trash2,
-  ArrowRight,
-  Tag,
-  Utensils
+  ArrowRight
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -60,15 +58,10 @@ const Dashboard = () => {
   const [currentView, setCurrentView] = useState('home'); // 'home', 'saved', 'categories', etc.
   const [relatedRecipes, setRelatedRecipes] = useState([]);
   const [relatedRecipesLoading, setRelatedRecipesLoading] = useState(false);
-
-  // New state variables for categories section
-  const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [categoriesError, setCategoriesError] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [categoryRecipes, setCategoryRecipes] = useState([]);
-  const [categoryRecipesLoading, setCategoryRecipesLoading] = useState(false);
-  const [categoryRecipesError, setCategoryRecipesError] = useState('');
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryError, setCategoryError] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
@@ -95,265 +88,6 @@ const Dashboard = () => {
       fetchRelatedRecipes();
     }
   }, [currentView, savedRecipes]);
-
-  // Fetch categories when entering categories view
-  useEffect(() => {
-    if (currentView === 'categories' && isConnected) {
-      fetchCategories();
-      // Reset category selection when entering categories view
-      setSelectedCategory(null);
-      setCategoryRecipes([]);
-      setCategoryRecipesError('');
-    }
-  }, [currentView, isConnected]);
-
-  // Fetch categories from database
-  const fetchCategories = async () => {
-    setCategoriesLoading(true);
-    setCategoriesError('');
-
-    try {
-      console.log('🔄 Fetching categories from database...');
-      
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('health_tags, dietary_tags')
-        .not('health_tags', 'is', null)
-        .not('dietary_tags', 'is', null);
-
-      if (error) {
-        console.error('❌ Error fetching categories:', error);
-        throw error;
-      }
-
-      console.log('✅ Fetched recipe data for categories:', data?.length || 0);
-
-      // Process the data to extract unique categories
-      const healthTagsSet = new Set();
-      const dietaryTagsSet = new Set();
-
-      data.forEach(recipe => {
-        // Process health_tags (JSONB array)
-        if (recipe.health_tags && Array.isArray(recipe.health_tags)) {
-          recipe.health_tags.forEach(tag => {
-            if (tag && typeof tag === 'string') {
-              healthTagsSet.add(tag.trim());
-            }
-          });
-        }
-
-        // Process dietary_tags (text array)
-        if (recipe.dietary_tags && Array.isArray(recipe.dietary_tags)) {
-          recipe.dietary_tags.forEach(tag => {
-            if (tag && typeof tag === 'string') {
-              dietaryTagsSet.add(tag.trim());
-            }
-          });
-        }
-      });
-
-      // Create categories object with both types
-      const categoriesData = {
-        health_tags: Array.from(healthTagsSet).sort(),
-        dietary_tags: Array.from(dietaryTagsSet).sort()
-      };
-
-      console.log('📊 Processed categories:', {
-        health_tags: categoriesData.health_tags.length,
-        dietary_tags: categoriesData.dietary_tags.length
-      });
-
-      setCategories(categoriesData);
-    } catch (err) {
-      console.error('❌ Error in fetchCategories:', err);
-      setCategoriesError(err.message || 'Failed to load categories');
-    } finally {
-      setCategoriesLoading(false);
-    }
-  };
-
-  // Fetch recipes by category
-  // const fetchRecipesByCategory = async (categoryName, categoryType) => {
-  //   setCategoryRecipesLoading(true);
-  //   setCategoryRecipesError('');
-  //   setSelectedCategory({ name: categoryName, type: categoryType });
-
-  //   try {
-  //     console.log('🔄 Fetching recipes for category:', categoryName, 'type:', categoryType);
-      
-  //     let query = supabase
-  //       .from('recipes')
-  //       .select(`
-  //         id,
-  //         title,
-  //         description,
-  //         prep_time,
-  //         cook_time,
-  //         servings,
-  //         image_path,
-  //         ingredients,
-  //         instructions,
-  //         health_tags,
-  //         dietary_tags,
-  //         health_benefits,
-  //         nutritional_info,
-  //         creator_id,
-  //         created_at
-  //       `);
-
-  //     // Apply different filters based on category type
-  //     if (categoryType === 'health_tags') {
-  //       // For JSONB array, use @> operator with proper JSON array syntax
-  //       query = query.contains('health_tags', [categoryName]);
-  //     } else if (categoryType === 'dietary_tags') {
-  //       // For text array, use && operator to check for overlap
-  //       query = query.overlaps('dietary_tags', [categoryName]);
-  //     }
-
-  //     const { data, error } = await query
-  //       .order('created_at', { ascending: false })
-  //       .limit(20);
-
-  //     if (error) {
-  //       console.error('❌ Error fetching recipes by category:', error);
-  //       throw error;
-  //     }
-
-  //     console.log('✅ Fetched recipes for category successfully:', data?.length || 0);
-  //     setCategoryRecipes(data || []);
-  //   } catch (err) {
-  //     console.error('❌ Error in fetchRecipesByCategory:', err);
-  //     setCategoryRecipesError(err.message || 'Failed to load recipes for this category');
-  //   } finally {
-  //     setCategoryRecipesLoading(false);
-  //   }
-  // };
-
-//   async function fetchRecipesByCategory(categoryName, categoryType) {
-//   try {
-//     console.log(`🔍 Fetching recipes by ${categoryType}:`, categoryName);
-    
-//     let query = supabase
-//       .from('recipes')
-//       .select(`
-//         id,
-//         title,
-//         description,
-//         prep_time,
-//         cook_time,
-//         servings,
-//         image_path,
-//         ingredients,
-//         instructions,
-//         health_tags,
-//         dietary_tags,
-//         health_benefits,
-//         nutritional_info,
-//         creator_id,
-//         created_at
-//       `);
-
-//     // Apply the correct filter based on column type
-//     if (categoryType === 'health_tags') {
-//       // For JSONB array - use contains with JSON string
-//       query = query.contains('health_tags', JSON.stringify([categoryName]));
-//     } else if (categoryType === 'dietary_tags') {
-//       // For text array - use overlaps
-//       query = query.overlaps('dietary_tags', [categoryName]);
-//     } else if (categoryType === 'health_benefits') {
-//       // For text array - use overlaps
-//       query = query.overlaps('health_benefits', [categoryName]);
-//     } else {
-//       throw new Error(`Unsupported category type: ${categoryType}`);
-//     }
-
-//     const { data, error } = await query.limit(20);
-
-//     if (error) {
-//       console.error('❌ Database query error:', error);
-//       throw error;
-//     }
-
-//     console.log(`✅ Found ${data?.length || 0} recipes for ${categoryType}: ${categoryName}`);
-//     return data || [];
-
-//   } catch (error) {
-//     console.error('❌ Error in fetchRecipesByCategory:', error);
-//     throw error;
-//   }
-// }
-
-  // Replace your current fetchRecipesByCategory function with this complete version:
-
-const fetchRecipesByCategory = async (categoryName, categoryType) => {
-  setCategoryRecipesLoading(true);
-  setCategoryRecipesError('');
-  setSelectedCategory({ name: categoryName, type: categoryType });
-
-  try {
-    console.log(`🔍 Fetching recipes by ${categoryType}:`, categoryName);
-    
-    let query = supabase
-      .from('recipes')
-      .select(`
-        id,
-        title,
-        description,
-        prep_time,
-        cook_time,
-        servings,
-        image_path,
-        ingredients,
-        instructions,
-        health_tags,
-        dietary_tags,
-        health_benefits,
-        nutritional_info,
-        creator_id,
-        created_at
-      `);
-
-    // Apply the correct filter based on column type
-    if (categoryType === 'health_tags') {
-      // For JSONB array - use contains with JSON string
-      query = query.contains('health_tags', JSON.stringify([categoryName]));
-    } else if (categoryType === 'dietary_tags') {
-      // For text array - use overlaps
-      query = query.overlaps('dietary_tags', [categoryName]);
-    } else if (categoryType === 'health_benefits') {
-      // For text array - use overlaps
-      query = query.overlaps('health_benefits', [categoryName]);
-    } else {
-      throw new Error(`Unsupported category type: ${categoryType}`);
-    }
-
-    const { data, error } = await query
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    if (error) {
-      console.error('❌ Database query error:', error);
-      throw error;
-    }
-
-    console.log(`✅ Found ${data?.length || 0} recipes for ${categoryType}: ${categoryName}`);
-    
-    // Set the recipes to state
-    setCategoryRecipes(data || []);
-    
-    return data || [];
-
-  } catch (error) {
-    console.error('❌ Error in fetchRecipesByCategory:', error);
-    setCategoryRecipesError(error.message || 'Failed to load recipes for this category');
-    setCategoryRecipes([]);
-    throw error;
-  } finally {
-    setCategoryRecipesLoading(false);
-  }
-};
-
-// And update your category button onClick handlers to this simple version:
 
   // Fetch recent recipes from database
   const fetchRecentRecipes = async () => {
@@ -482,6 +216,63 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
       // Don't show error to user for related recipes, just log it
     } finally {
       setRelatedRecipesLoading(false);
+    }
+  };
+
+  // Fetch recipes by category
+  const fetchRecipesByCategory = async (categoryName, categoryType) => {
+    setCategoryLoading(true);
+    setCategoryError('');
+    setSelectedCategory({ name: categoryName, type: categoryType });
+
+    try {
+      console.log('🔄 Fetching recipes for category:', categoryName, 'type:', categoryType);
+      
+      let query = supabase
+        .from('recipes')
+        .select(`
+          id,
+          title,
+          description,
+          prep_time,
+          cook_time,
+          servings,
+          image_path,
+          ingredients,
+          instructions,
+          health_tags,
+          dietary_tags,
+          health_benefits,
+          nutritional_info,
+          creator_id,
+          created_at
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Apply filter based on category type
+      if (categoryType === 'health') {
+        // For health_tags (JSONB), use contains with proper JSON array syntax
+        query = query.contains('health_tags', [categoryName]);
+      } else if (categoryType === 'dietary') {
+        // For dietary_tags (text array), use overlaps
+        query = query.overlaps('dietary_tags', [categoryName]);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ Error in fetchRecipesByCategory:', error);
+        throw error;
+      }
+
+      console.log('✅ Fetched category recipes successfully:', data?.length || 0);
+      setCategoryRecipes(data || []);
+    } catch (err) {
+      console.error('❌ Error in fetchRecipesByCategory:', err);
+      setCategoryError(err.message || 'Failed to load category recipes');
+    } finally {
+      setCategoryLoading(false);
     }
   };
 
@@ -691,7 +482,30 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
     setSearchQuery('');
     setSearchResults([]);
     setSearchError('');
+    // Clear category data when switching views
+    setCategoryRecipes([]);
+    setSelectedCategory(null);
+    setCategoryError('');
   };
+
+  // Categories data
+  const healthCategories = [
+    { name: 'high-protein', label: 'High Protein', icon: '💪', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+    { name: 'heart-healthy', label: 'Heart Healthy', icon: '❤️', color: 'bg-red-50 text-red-700 border-red-200' },
+    { name: 'low-carb', label: 'Low Carb', icon: '🥬', color: 'bg-green-50 text-green-700 border-green-200' },
+    { name: 'high-fiber', label: 'High Fiber', icon: '🌾', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+    { name: 'antioxidant-rich', label: 'Antioxidant Rich', icon: '🫐', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+    { name: 'immune-boosting', label: 'Immune Boosting', icon: '🛡️', color: 'bg-orange-50 text-orange-700 border-orange-200' }
+  ];
+
+  const dietaryCategories = [
+    { name: 'vegetarian', label: 'Vegetarian', icon: '🥕', color: 'bg-green-50 text-green-700 border-green-200' },
+    { name: 'vegan', label: 'Vegan', icon: '🌱', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    { name: 'gluten-free', label: 'Gluten Free', icon: '🌾', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+    { name: 'keto', label: 'Keto', icon: '🥑', color: 'bg-lime-50 text-lime-700 border-lime-200' },
+    { name: 'paleo', label: 'Paleo', icon: '🥩', color: 'bg-stone-50 text-stone-700 border-stone-200' },
+    { name: 'dairy-free', label: 'Dairy Free', icon: '🥛', color: 'bg-sky-50 text-sky-700 border-sky-200' }
+  ];
 
   // Render main content based on current view
   const renderMainContent = () => {
@@ -707,257 +521,194 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
                   Browse by Categories
                 </h2>
                 <p className="text-gray-600">
-                  Discover recipes organized by health benefits and dietary preferences
+                  Discover recipes by health benefits and dietary preferences
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Categories Loading State */}
-          {categoriesLoading && (
-            <div className="bg-white rounded-2xl p-12 shadow-sm border text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
-              <p className="text-gray-600">Loading categories...</p>
+          {/* Health Categories */}
+          <div className="bg-white rounded-2xl shadow-sm border">
+            <div className="p-6 border-b">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Health Benefits</h3>
+              <p className="text-gray-600">Find recipes that support your health goals</p>
             </div>
-          )}
-
-          {/* Categories Error State */}
-          {categoriesError && !categoriesLoading && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border">
-              <div className="flex items-center space-x-3 text-red-600 mb-4">
-                <AlertCircle className="w-6 h-6 flex-shrink-0" />
-                <div>
-                  <h3 className="font-medium">Error Loading Categories</h3>
-                  <p className="text-sm text-red-500">{categoriesError}</p>
-                </div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {healthCategories.map((category) => (
+                  <button
+                    key={category.name}
+                    onClick={() => fetchRecipesByCategory(category.name, 'health')}
+                    disabled={categoryLoading}
+                    className={`p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-md ${category.color} disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <div className="text-2xl mb-2">{category.icon}</div>
+                    <div className="font-medium text-sm">{category.label}</div>
+                  </button>
+                ))}
               </div>
-              <Button onClick={fetchCategories} variant="outline">
-                Try Again
-              </Button>
             </div>
-          )}
-
-          {/* Categories Content */}
-          {!categoriesLoading && !categoriesError && categories && (
-            <div className="space-y-6">
-              {/* Health Tags Section */}
-              {categories.health_tags && categories.health_tags.length > 0 && (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border">
-    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-      <Heart className="w-5 h-5 mr-2 text-red-500" />
-      Health Benefits
-    </h3>
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {categories.health_tags.map((tag, index) => (
-        <button
-          key={index}
-          onClick={() => fetchRecipesByCategory(tag, 'health_tags')}
-          className={`p-1.5 rounded-xl text-left transition-all duration-200 border ${
-            selectedCategory?.name === tag && selectedCategory?.type === 'health_tags'
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-gray-50 border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-          }`}
-        >
-          <div className="flex items-center space-x-2">
-            <Tag className="w-3 h-3 flex-shrink-0" />
-            <span className="text-xs capitalize text-wrap">
-              {tag.replace(/-/g, ' ')}
-            </span>
           </div>
-        </button>
-      ))}
-    </div>
-  </div>
-)}
 
-              {/* Dietary Tags Section */}
-
-
-              {categories.dietary_tags && categories.dietary_tags.length > 0 && (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border">
-    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-      <Utensils className="w-5 h-5 mr-2 text-green-500" />
-      Dietary Preferences
-    </h3>
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {categories.dietary_tags.map((tag, index) => (
-        <button
-          key={index}
-          onClick={() => fetchRecipesByCategory(tag, 'dietary_tags')}
-          className={`p-1.5 rounded-xl text-left transition-all duration-200 border ${
-            selectedCategory?.name === tag && selectedCategory?.type === 'dietary_tags'
-              ? 'bg-green-50 border-green-200 text-green-700'
-              : 'bg-gray-50 border-gray-200 hover:bg-green-50 hover:border-green-200 hover:text-green-600'
-          }`}
-        >
-          <div className="flex items-center space-x-2">
-            <Tag className="w-3 h-3 flex-shrink-0" />
-            <span className="text-xs capitalize text-wrap">
-              {tag.replace(/-/g, ' ')}
-            </span>
+          {/* Dietary Categories */}
+          <div className="bg-white rounded-2xl shadow-sm border">
+            <div className="p-6 border-b">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Dietary Preferences</h3>
+              <p className="text-gray-600">Filter recipes by your dietary needs</p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {dietaryCategories.map((category) => (
+                  <button
+                    key={category.name}
+                    onClick={() => fetchRecipesByCategory(category.name, 'dietary')}
+                    disabled={categoryLoading}
+                    className={`p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-md ${category.color} disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <div className="text-2xl mb-2">{category.icon}</div>
+                    <div className="font-medium text-sm">{category.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </button>
-      ))}
-    </div>
-  </div>
-)}
 
-              {/* Selected Category Recipes */}
-              {selectedCategory && (
-                <div className="bg-white rounded-2xl shadow-sm border">
-                  <div className="p-6 border-b">
-                    <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                      <Tag className="w-5 h-5 mr-2 text-primary-600" />
-                      {selectedCategory.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Recipes
-                      {!categoryRecipesLoading && categoryRecipes.length > 0 && (
-                        <span className="ml-2 text-sm text-gray-500">({categoryRecipes.length} found)</span>
-                      )}
-                    </h3>
-                  </div>
+          {/* Category Results */}
+          {(categoryLoading || categoryRecipes.length > 0 || categoryError) && (
+            <div className="bg-white rounded-2xl shadow-sm border">
+              <div className="p-6 border-b">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {categoryLoading ? 'Loading...' : 
+                   categoryError ? 'Error Loading Recipes' :
+                   selectedCategory ? `${selectedCategory.name.charAt(0).toUpperCase() + selectedCategory.name.slice(1)} Recipes (${categoryRecipes.length})` :
+                   'Category Recipes'}
+                </h3>
+                {selectedCategory && !categoryLoading && !categoryError && (
+                  <p className="text-gray-600 mt-1">
+                    Recipes matching "{selectedCategory.name}" criteria
+                  </p>
+                )}
+              </div>
 
-                  {/* Category Recipes Loading */}
-                  {categoryRecipesLoading && (
-                    <div className="p-12 text-center">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
-                      <p className="text-gray-600">Loading recipes...</p>
-                    </div>
-                  )}
-
-                  {/* Category Recipes Error */}
-                  {categoryRecipesError && !categoryRecipesLoading && (
-                    <div className="p-6">
-                      <div className="flex items-center space-x-3 text-red-600 mb-4">
-                        <AlertCircle className="w-6 h-6 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-medium">Error Loading Recipes</h4>
-                          <p className="text-sm text-red-500">{categoryRecipesError}</p>
-                        </div>
-                      </div>
-                      <Button 
-                        onClick={() => fetchRecipesByCategory(selectedCategory.name, selectedCategory.type)} 
-                        variant="outline"
-                      >
-                        Try Again
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Category Recipes List */}
-                  {!categoryRecipesLoading && !categoryRecipesError && categoryRecipes.length > 0 && (
-                    <div className="p-6">
-                      <div className="space-y-6">
-                        {categoryRecipes.map((recipe, index) => (
-                          <div key={recipe.id} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-100">
-                            {/* Recipe Image */}
-                            <div className="relative overflow-hidden rounded-xl w-32 h-32 flex-shrink-0">
-                              <img
-                                src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300'}
-                                alt={recipe.title}
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
-                                <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                                <span className="text-xs font-medium">4.8</span>
-                              </div>
-                            </div>
-
-                            {/* Recipe Content */}
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-gray-900 mb-2 text-lg">{recipe.title}</h4>
-                                  <p className="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
-                                    {recipe.description}
-                                  </p>
-                                  
-                                  {/* Recipe Meta */}
-                                  <div className="flex items-center space-x-6 text-gray-700 mb-4">
-                                    <div className="flex items-center space-x-1">
-                                      <Clock className="w-4 h-4 text-primary-600" />
-                                      <span className="text-sm font-medium">{formatTime(getTotalTime(recipe))}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-1">
-                                      <Users className="w-4 h-4 text-primary-600" />
-                                      <span className="text-sm font-medium">{recipe.servings} servings</span>
-                                    </div>
-                                  </div>
-
-                                  {/* Actions */}
-                                  <div className="flex items-center space-x-3">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className={`flex items-center space-x-2 transition-colors ${
-                                        isRecipeSaved(recipe.id)
-                                          ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
-                                          : 'hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-                                      }`}
-                                      onClick={() => handleSaveSearchedRecipe(recipe.id)}
-                                    >
-                                      {isRecipeSaved(recipe.id) ? (
-                                        <>
-                                          <Check className="w-4 h-4" />
-                                          <span>Saved</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Heart className="w-4 h-4" />
-                                          <span>Save</span>
-                                        </>
-                                      )}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
-                                    >
-                                      <BookOpen className="w-4 h-4" />
-                                      <span>View Recipe</span>
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No Recipes Found */}
-                  {!categoryRecipesLoading && !categoryRecipesError && categoryRecipes.length === 0 && selectedCategory && (
-                    <div className="p-12 text-center">
-                      <ChefHat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h4 className="text-lg font-semibold text-gray-900 mb-2">No Recipes Found</h4>
-                      <p className="text-gray-600 mb-4">
-                        No recipes found for "{selectedCategory.name.replace(/-/g, ' ')}" category.
-                      </p>
-                      <Button 
-                        onClick={() => {
-                          setSelectedCategory(null);
-                          setCategoryRecipes([]);
-                        }}
-                        variant="outline"
-                      >
-                        Browse Other Categories
-                      </Button>
-                    </div>
-                  )}
+              {/* Loading State */}
+              {categoryLoading && (
+                <div className="p-12 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
+                  <p className="text-gray-600">Loading category recipes...</p>
                 </div>
               )}
 
-              {/* No Categories Available */}
-              {(!categories.health_tags || categories.health_tags.length === 0) && 
-               (!categories.dietary_tags || categories.dietary_tags.length === 0) && (
-                <div className="bg-white rounded-2xl p-12 shadow-sm border text-center">
-                  <Grid3X3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">No Categories Available</h4>
-                  <p className="text-gray-600 mb-4">
-                    Categories will appear here once recipes with tags are added to the database.
-                  </p>
-                  <Button onClick={() => handleNavigationClick('home')} className="bg-primary-600 hover:bg-primary-700">
-                    <Search className="w-4 h-4 mr-2" />
-                    Explore Recipes
+              {/* Error State */}
+              {categoryError && !categoryLoading && (
+                <div className="p-6">
+                  <div className="flex items-center space-x-3 text-red-600 mb-4">
+                    <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-medium">Error Loading Recipes</h4>
+                      <p className="text-sm text-red-500">{categoryError}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => selectedCategory && fetchRecipesByCategory(selectedCategory.name, selectedCategory.type)}
+                    variant="outline"
+                  >
+                    Try Again
                   </Button>
+                </div>
+              )}
+
+              {/* Category Recipes Grid */}
+              {categoryRecipes.length > 0 && !categoryLoading && (
+                <div className="p-6">
+                  <div className="grid grid-cols-1 gap-6">
+                    {categoryRecipes.map((recipe) => (
+                      <div key={recipe.id} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-100">
+                        {/* Recipe Image */}
+                        <div className="relative overflow-hidden rounded-xl w-32 h-32 flex-shrink-0">
+                          <img
+                            src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                            alt={recipe.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
+                            <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                            <span className="text-xs font-medium">4.8</span>
+                          </div>
+                        </div>
+
+                        {/* Recipe Content */}
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 mb-2 text-lg">{recipe.title}</h4>
+                              <p className="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
+                                {recipe.description}
+                              </p>
+                              
+                              {/* Recipe Meta */}
+                              <div className="flex items-center space-x-6 text-gray-700 mb-4">
+                                <div className="flex items-center space-x-1">
+                                  <Clock className="w-4 h-4 text-primary-600" />
+                                  <span className="text-sm font-medium">{formatTime(getTotalTime(recipe))}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <Users className="w-4 h-4 text-primary-600" />
+                                  <span className="text-sm font-medium">{recipe.servings} servings</span>
+                                </div>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex items-center space-x-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={`flex items-center space-x-2 transition-colors ${
+                                    isRecipeSaved(recipe.id)
+                                      ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+                                      : 'hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                                  }`}
+                                  onClick={() => handleSaveSearchedRecipe(recipe.id)}
+                                >
+                                  {isRecipeSaved(recipe.id) ? (
+                                    <>
+                                      <Check className="w-4 h-4" />
+                                      <span>Saved</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Heart className="w-4 h-4" />
+                                      <span>Save</span>
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
+                                >
+                                  <BookOpen className="w-4 h-4" />
+                                  <span>View Recipe</span>
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No Results */}
+              {!categoryLoading && !categoryError && categoryRecipes.length === 0 && selectedCategory && (
+                <div className="p-12 text-center">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <ChefHat className="w-10 h-10 text-gray-400" />
+                  </div>
+                  <h4 className="text-xl font-semibold text-gray-900 mb-3">No Recipes Found</h4>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    We couldn't find any recipes in the "{selectedCategory.name}" category. 
+                    Try exploring other categories or check back later for new recipes.
+                  </p>
                 </div>
               )}
             </div>
@@ -1112,7 +863,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
               <>Welcome back, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 👋</>
             )}
           </h2>
-          <p className="text-gray-600 mb-4 text-sm">
+          <p className="text-gray-600 mb-4">
             {isCreatorMode ? (
               'Manage your recipes, track performance, and grow your audience.'
             ) : (
@@ -1126,75 +877,74 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
           )}
         </div>
 
-        {/* Full-Width Search Bar */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border">
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center font-sans">
-            <Search className="w-5 h-5 mr-2 text-primary-600" />
-            {isCreatorMode ? 'Search Your Recipes' : 'Find New Recipes'}
-          </h3>
-          
-          <div className="relative flex items-center bg-gray-50 rounded-xl overflow-hidden transition-all duration-300 ease-in-out hover:bg-gray-100 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-opacity-20 border border-gray-200 focus-within:border-primary-300">
-            {/* Voice/Mic Icon */}
-            <div className="flex items-center pl-4 pr-3">
-              <button
-                onClick={handleVoiceSearch}
-                className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
-                  isListening 
-                    ? 'bg-red-50 text-red-500 animate-pulse shadow-md' 
-                    : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'
-                }`}
-                aria-label="Voice search"
-              >
-                <Mic className="w-5 h-5" />
-              </button>
-            </div>
+        {/* Full-Width Search Bar - Only show in consumer mode */}
+        {!isCreatorMode && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Search className="w-5 h-5 mr-2 text-primary-600" />
+              Find New Recipes
+            </h3>
             
-            {/* Search Input */}
-            <div className="flex-1 font-sans">
-              <Input
-                type="text"
-                placeholder={isCreatorMode ? "Search your published recipes..." : "Search for recipes by ingredients, cuisine, or dietary needs..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-12 text-base bg-transparent px-0 text-sm"
-              />
+            <div className="relative flex items-center bg-gray-50 rounded-xl overflow-hidden transition-all duration-300 ease-in-out hover:bg-gray-100 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-opacity-20 border border-gray-200 focus-within:border-primary-300">
+              {/* Voice/Mic Icon */}
+              <div className="flex items-center pl-4 pr-3">
+                <button
+                  onClick={handleVoiceSearch}
+                  className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
+                    isListening 
+                      ? 'bg-red-50 text-red-500 animate-pulse shadow-md' 
+                      : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'
+                  }`}
+                  aria-label="Voice search"
+                >
+                  <Mic className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Search Input */}
+              <div className="flex-1">
+                <Input
+                  type="text"
+                  placeholder="Search for recipes by ingredients, cuisine, or dietary needs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-12 text-base bg-transparent px-0"
+                />
+              </div>
+              
+              {/* Search Icon/Button */}
+              <div className="flex items-center pr-4 pl-3">
+                <button
+                  onClick={handleSearch}
+                  disabled={searchLoading}
+                  className="p-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-110 shadow-md hover:shadow-lg group disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Search recipes"
+                >
+                  {searchLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Search className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                  )}
+                </button>
+              </div>
             </div>
-            
-            {/* Search Icon/Button */}
-            <div className="flex items-center pr-4 pl-3">
-              <button
-                onClick={handleSearch}
-                disabled={searchLoading}
-                className="p-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-110 shadow-md hover:shadow-lg group disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Search recipes"
-              >
-                {searchLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Search className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                )}
-              </button>
-            </div>
-          </div>
 
-          {/* Quick Search Tags */}
-          <div className="mt-4 flex flex-wrap gap-2 font-sans text-xs">
-            {(isCreatorMode 
-              ? ['My Popular', 'Recent', 'Drafts', 'High Rated'] 
-              : ['Healthy', 'Quick & Easy', 'Vegetarian', 'Low Carb', 'High Protein']
-            ).map((tag, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickSearch(tag.toLowerCase())}
-                disabled={searchLoading}
-                className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-              >
-                {tag}
-              </button>
-            ))}
+            {/* Quick Search Tags */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {['Healthy', 'Quick & Easy', 'Vegetarian', 'Low Carb', 'High Protein'].map((tag, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleQuickSearch(tag.toLowerCase())}
+                  disabled={searchLoading}
+                  className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Search Results Section - Only show when there's a search query */}
         {showSearchResults && (
@@ -1387,7 +1137,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
         <div className="bg-white rounded-2xl shadow-sm border">
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-medium text-gray-900 font-sans">
+              <h3 className="text-xl font-semibold text-gray-900">
                 {isCreatorMode ? 'Your Published Recipes' : 'Recipe Feed'}
               </h3>
               <div className="flex items-center space-x-2">
@@ -1704,7 +1454,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
           </h4>
           <div className="grid grid-cols-2 gap-3">
             {currentStats.map((stat, index) => (
-              <div key={index} className="bg-white rounded-xl p-3 text-center font-sans">
+              <div key={index} className="bg-white rounded-xl p-3 text-center">
                 <stat.icon className={`w-5 h-5 ${stat.color} mx-auto mb-1`} />
                 <p className="text-lg font-bold text-gray-900">{stat.value}</p>
                 <p className="text-xs text-gray-600">{stat.label}</p>
@@ -1716,7 +1466,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
         {/* Creator Insights or Trending Topics */}
         {isCreatorMode ? (
           <div className="bg-gray-50 rounded-2xl p-4">
-            <h4 className="font-semibold font-sans text-gray-900 mb-4 flex items-center">
+            <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
               Performance Insights
             </h4>
@@ -1873,7 +1623,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
                   }`}
                 >
                   <item.icon className={`w-5 h-5 ${item.active ? 'text-primary-600' : 'text-gray-500'}`} />
-                  <span className="text-sm font-sans">{item.name}</span>
+                  <span className="text-sm font-medium">{item.name}</span>
                 </button>
               ))}
             </nav>
