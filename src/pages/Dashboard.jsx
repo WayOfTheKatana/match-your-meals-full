@@ -1130,7 +1130,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border">
           <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center font-sans">
             <Search className="w-5 h-5 mr-2 text-primary-600" />
-            {isCreatorMode ? 'Search Your Recipes' : 'Find New Recipes'}
+            {isCreatorMode ? NULL : 'Find New Recipes'}
           </h3>
           
           <div className="relative flex items-center bg-gray-50 rounded-xl overflow-hidden transition-all duration-300 ease-in-out hover:bg-gray-100 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-opacity-20 border border-gray-200 focus-within:border-primary-300">
