@@ -229,7 +229,67 @@ const Dashboard = () => {
   //   }
   // };
 
-  async function fetchRecipesByCategory(categoryName, categoryType) {
+//   async function fetchRecipesByCategory(categoryName, categoryType) {
+//   try {
+//     console.log(`🔍 Fetching recipes by ${categoryType}:`, categoryName);
+    
+//     let query = supabase
+//       .from('recipes')
+//       .select(`
+//         id,
+//         title,
+//         description,
+//         prep_time,
+//         cook_time,
+//         servings,
+//         image_path,
+//         ingredients,
+//         instructions,
+//         health_tags,
+//         dietary_tags,
+//         health_benefits,
+//         nutritional_info,
+//         creator_id,
+//         created_at
+//       `);
+
+//     // Apply the correct filter based on column type
+//     if (categoryType === 'health_tags') {
+//       // For JSONB array - use contains with JSON string
+//       query = query.contains('health_tags', JSON.stringify([categoryName]));
+//     } else if (categoryType === 'dietary_tags') {
+//       // For text array - use overlaps
+//       query = query.overlaps('dietary_tags', [categoryName]);
+//     } else if (categoryType === 'health_benefits') {
+//       // For text array - use overlaps
+//       query = query.overlaps('health_benefits', [categoryName]);
+//     } else {
+//       throw new Error(`Unsupported category type: ${categoryType}`);
+//     }
+
+//     const { data, error } = await query.limit(20);
+
+//     if (error) {
+//       console.error('❌ Database query error:', error);
+//       throw error;
+//     }
+
+//     console.log(`✅ Found ${data?.length || 0} recipes for ${categoryType}: ${categoryName}`);
+//     return data || [];
+
+//   } catch (error) {
+//     console.error('❌ Error in fetchRecipesByCategory:', error);
+//     throw error;
+//   }
+// }
+
+  // Replace your current fetchRecipesByCategory function with this complete version:
+
+const fetchRecipesByCategory = async (categoryName, categoryType) => {
+  setCategoryRecipesLoading(true);
+  setCategoryRecipesError('');
+  setSelectedCategory({ name: categoryName, type: categoryType });
+
   try {
     console.log(`🔍 Fetching recipes by ${categoryType}:`, categoryName);
     
@@ -267,7 +327,9 @@ const Dashboard = () => {
       throw new Error(`Unsupported category type: ${categoryType}`);
     }
 
-    const { data, error } = await query.limit(20);
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(20);
 
     if (error) {
       console.error('❌ Database query error:', error);
@@ -275,13 +337,29 @@ const Dashboard = () => {
     }
 
     console.log(`✅ Found ${data?.length || 0} recipes for ${categoryType}: ${categoryName}`);
+    
+    // Set the recipes to state
+    setCategoryRecipes(data || []);
+    
     return data || [];
 
   } catch (error) {
     console.error('❌ Error in fetchRecipesByCategory:', error);
+    setCategoryRecipesError(error.message || 'Failed to load recipes for this category');
+    setCategoryRecipes([]);
     throw error;
+  } finally {
+    setCategoryRecipesLoading(false);
   }
-}
+};
+
+// And update your category button onClick handlers to this simple version:
+
+// For health_tags buttons:
+onClick={() => fetchRecipesByCategory(tag, 'health_tags')}
+
+// For dietary_tags buttons:
+onClick={() => fetchRecipesByCategory(tag, 'dietary_tags')}
 
   // Fetch recent recipes from database
   const fetchRecentRecipes = async () => {
