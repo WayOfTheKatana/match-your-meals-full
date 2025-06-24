@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Loader2, AlertCircle, ChefHat, Clock, Users, Heart, BookOpen, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 
@@ -138,11 +139,14 @@ const DashboardSearchResults = ({
                           )}
                         </Button>
                         <Button
+                          asChild
                           size="sm"
                           className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
                         >
-                          <BookOpen className="w-4 h-4" />
-                          <span>View Recipe</span>
+                          <Link to={`/recipes/${recipe.slug}`}>
+                            <BookOpen className="w-4 h-4" />
+                            <span>View Recipe</span>
+                          </Link>
                         </Button>
                       </div>
                     </div>

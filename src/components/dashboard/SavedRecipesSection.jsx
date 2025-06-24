@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Bookmark, 
   Filter, 
@@ -117,11 +118,14 @@ const SavedRecipesSection = ({
                               <span>Remove</span>
                             </Button>
                             <Button
+                              asChild
                               size="sm"
                               className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
                             >
-                              <BookOpen className="w-4 h-4" />
-                              <span>View Recipe</span>
+                              <Link to={`/recipes/${recipe.slug}`}>
+                                <BookOpen className="w-4 h-4" />
+                                <span>View Recipe</span>
+                              </Link>
                             </Button>
                           </div>
                         </div>

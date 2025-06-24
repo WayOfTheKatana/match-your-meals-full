@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Filter, 
   Loader2, 
@@ -132,10 +133,17 @@ const RecipeFeedSection = ({
                                 </>
                               )}
                             </Button>
-                            <button className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                              <BookOpen className="w-4 h-4" />
-                              <span>View Recipe</span>
-                            </button>
+                            <Button
+                              asChild
+                              variant="ghost"
+                              size="sm"
+                              className="flex items-center space-x-1 hover:text-blue-500 transition-colors"
+                            >
+                              <Link to={`/recipes/${recipe.slug}`}>
+                                <BookOpen className="w-4 h-4" />
+                                <span>View Recipe</span>
+                              </Link>
+                            </Button>
                           </>
                         )}
                       </div>

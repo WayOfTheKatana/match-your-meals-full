@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Grid3X3, 
   Heart, 
@@ -129,7 +130,8 @@ const RecipeCategoriesBrowser = ({
           health_benefits,
           nutritional_info,
           creator_id,
-          created_at
+          created_at,
+          slug
         `);
 
       // Apply the correct filter based on column type
@@ -381,11 +383,14 @@ const RecipeCategoriesBrowser = ({
                                   )}
                                 </Button>
                                 <Button
+                                  asChild
                                   size="sm"
                                   className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
                                 >
-                                  <BookOpen className="w-4 h-4" />
-                                  <span>View Recipe</span>
+                                  <Link to={`/recipes/${recipe.slug}`}>
+                                    <BookOpen className="w-4 h-4" />
+                                    <span>View Recipe</span>
+                                  </Link>
                                 </Button>
                               </div>
                             </div>

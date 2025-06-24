@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Clock, Users, Heart, BookOpen, ChefHat, Loader2, Search, X, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { supabase } from '../lib/supabase';
@@ -194,11 +195,14 @@ const RecipeSearchResults = ({ searchQuery, onClose }) => {
                         <span>Save</span>
                       </Button>
                       <Button
+                        asChild
                         size="sm"
                         className="flex-1 flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-700"
                       >
-                        <BookOpen className="w-4 h-4" />
-                        <span>View Recipe</span>
+                        <Link to={`/recipes/${recipe.slug}`}>
+                          <BookOpen className="w-4 h-4" />
+                          <span>View Recipe</span>
+                        </Link>
                       </Button>
                     </div>
                   </div>

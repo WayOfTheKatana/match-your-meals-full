@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
   Star, 
@@ -66,7 +67,9 @@ const SavedRecipesSidebarWidgets = ({
                         <Heart className="w-3 h-3 mr-1" />
                         Save
                       </Button>
-                      <ArrowRight className="w-3 h-3 text-gray-400" />
+                      <Link to={`/recipes/${recipe.slug}`} className="text-gray-400 hover:text-primary-600 transition-colors">
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
                     </div>
                   </div>
                 </div>
