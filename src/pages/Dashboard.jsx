@@ -1873,7 +1873,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
                   }`}
                 >
                   <item.icon className={`w-5 h-5 ${item.active ? 'text-primary-600' : 'text-gray-500'}`} />
-                  <span className="text-sm font-medium font-sans">{item.name}</span>
+                  <span className="text-sm font-sans">{item.name}</span>
                 </button>
               ))}
             </nav>
