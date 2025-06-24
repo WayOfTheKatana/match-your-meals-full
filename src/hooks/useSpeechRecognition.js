@@ -109,12 +109,6 @@ export const useSpeechRecognition = () => {
         }
       };
 
-      // Handle no speech detected
-      recognition.onnomatch = () => {
-        console.log('🎤 No speech match found');
-        setError('No speech recognized. Please try speaking more clearly.');
-      };
-
     } else {
       setIsSupported(false);
       setError('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
