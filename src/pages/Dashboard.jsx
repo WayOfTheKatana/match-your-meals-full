@@ -1716,7 +1716,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
         {/* Creator Insights or Trending Topics */}
         {isCreatorMode ? (
           <div className="bg-gray-50 rounded-2xl p-4">
-            <h4 className="font-semibold font-sans text-gray-900 mb-4 flex items-center">
+            <h4 className="font-semibold font-serif text-gray-900 mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
               Performance Insights
             </h4>
