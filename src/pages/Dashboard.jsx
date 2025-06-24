@@ -1704,7 +1704,7 @@ const fetchRecipesByCategory = async (categoryName, categoryType) => {
           </h4>
           <div className="grid grid-cols-2 gap-3">
             {currentStats.map((stat, index) => (
-              <div key={index} className="bg-white rounded-xl p-3 text-center">
+              <div key={index} className="bg-white rounded-xl p-3 text-center font-sans">
                 <stat.icon className={`w-5 h-5 ${stat.color} mx-auto mb-1`} />
                 <p className="text-lg font-bold text-gray-900">{stat.value}</p>
                 <p className="text-xs text-gray-600">{stat.label}</p>
