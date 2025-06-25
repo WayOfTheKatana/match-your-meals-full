@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
-  ArrowLeft, 
   Clock, 
   Users, 
   ChefHat, 
   Heart, 
   Share2, 
-  Bookmark, 
   Star,
   Loader2,
   AlertCircle,
@@ -191,7 +189,6 @@ const RecipeDetail = () => {
                 Browse Recipes
               </Button>
               <Button onClick={() => navigate(-1)} variant="outline" className="w-full">
-                <ArrowLeft className="w-4 h-4 mr-2" />
                 Go Back
               </Button>
             </div>
@@ -209,60 +206,6 @@ const RecipeDetail = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Common Header */}
       <CommonHeader />
-
-      {/* Recipe Actions Bar - Transparent, not sticky, strategic positioning */}
-      <div className="relative">
-        <div className="absolute top-6 left-0 right-0 z-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
-              {/* Back Button - Left side */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(-1)}
-                className="flex items-center space-x-2 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg border border-white/20 text-gray-700 hover:text-gray-900"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back</span>
-              </Button>
-              
-              {/* Action Buttons - Right side */}
-              <div className="flex items-center space-x-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleShare}
-                  className="flex items-center space-x-2 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg border border-white/20"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Share</span>
-                </Button>
-                
-                {user && (
-                  <Button
-                    variant={isRecipeSaved(recipe.id) ? "default" : "outline"}
-                    size="sm"
-                    onClick={handleSaveRecipe}
-                    disabled={saving}
-                    className={`flex items-center space-x-2 shadow-lg ${
-                      isRecipeSaved(recipe.id) 
-                        ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' 
-                        : 'bg-white/90 backdrop-blur-sm hover:bg-white border border-white/20 hover:border-red-200 hover:text-red-600'
-                    }`}
-                  >
-                    {saving ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Heart className={`w-4 h-4 ${isRecipeSaved(recipe.id) ? 'fill-current' : ''}`} />
-                    )}
-                    <span className="hidden sm:inline">{isRecipeSaved(recipe.id) ? 'Saved' : 'Save'}</span>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content - Two Column Layout */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -287,6 +230,40 @@ const RecipeDetail = () => {
                   <p className="text-white/90 text-lg">{recipe.description}</p>
                 </div>
               </div>
+            </div>
+
+            {/* Action Buttons - Positioned under the featured image */}
+            <div className="flex items-center justify-center space-x-4">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleShare}
+                className="flex items-center space-x-2 px-6 py-3 border-gray-300 hover:border-primary-300 hover:text-primary-600"
+              >
+                <Share2 className="w-5 h-5" />
+                <span>Share Recipe</span>
+              </Button>
+              
+              {user && (
+                <Button
+                  variant={isRecipeSaved(recipe.id) ? "default" : "outline"}
+                  size="lg"
+                  onClick={handleSaveRecipe}
+                  disabled={saving}
+                  className={`flex items-center space-x-2 px-6 py-3 ${
+                    isRecipeSaved(recipe.id) 
+                      ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' 
+                      : 'border-gray-300 hover:border-red-300 hover:text-red-600'
+                  }`}
+                >
+                  {saving ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Heart className={`w-5 h-5 ${isRecipeSaved(recipe.id) ? 'fill-current' : ''}`} />
+                  )}
+                  <span>{isRecipeSaved(recipe.id) ? 'Recipe Saved' : 'Save Recipe'}</span>
+                </Button>
+              )}
             </div>
 
             {/* Ingredients - Clean Design */}
