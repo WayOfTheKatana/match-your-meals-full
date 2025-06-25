@@ -186,14 +186,50 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       setLoading(true);
+      setError(null);
+
+      // Always clear local state first
+      const clearLocalState = () => {
+        setUser(null);
+        setUserProfile(null);
+        setError(null);
+      };
+
+      // Attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
       
-      setUser(null);
-      setUserProfile(null);
+      // Handle session-related errors gracefully
+      if (error) {
+        const isSessionError = 
+          error.message?.includes('Auth session missing') ||
+          error.message?.includes('Session from session_id claim in JWT does not exist') ||
+          error.message?.includes('session_not_found') ||
+          error.status === 403;
+
+        if (isSessionError) {
+          // Session is already invalid, treat as successful logout
+          console.log('Session already invalid, clearing local state');
+          clearLocalState();
+          return { error: null };
+        } else {
+          // Other errors should be thrown
+          throw error;
+        }
+      }
+
+      // Successful logout
+      clearLocalState();
+      return { error: null };
     } catch (error) {
       console.error('Error signing out:', error);
+      
+      // For any unexpected errors, still clear local state
+      // This ensures the user can always "sign out" from the UI perspective
+      setUser(null);
+      setUserProfile(null);
+      
       setError(error.message);
+      return { error: error.message };
     } finally {
       setLoading(false);
     }
