@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSavedRecipes } from '../hooks/useSavedRecipes';
 import { supabase } from '../lib/supabase';
 import { formatTime, getTotalTime } from '../lib/utils';
+import CommonHeader from '../components/CommonHeader';
 
 const RecipeDetail = () => {
   const { slug } = useParams();
@@ -131,11 +132,14 @@ const RecipeDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Recipe</h2>
-          <p className="text-gray-600">Please wait while we fetch the recipe details...</p>
+      <div className="min-h-screen bg-gray-50">
+        <CommonHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Recipe</h2>
+            <p className="text-gray-600">Please wait while we fetch the recipe details...</p>
+          </div>
         </div>
       </div>
     );
@@ -143,20 +147,23 @@ const RecipeDetail = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Recipe Not Found</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <div className="space-y-3">
-            <Button onClick={() => navigate('/dashboard')} className="w-full">
-              <ChefHat className="w-4 h-4 mr-2" />
-              Browse Recipes
-            </Button>
-            <Button onClick={() => navigate(-1)} variant="outline" className="w-full">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Back
-            </Button>
+      <div className="min-h-screen bg-gray-50">
+        <CommonHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <div className="text-center max-w-md mx-auto p-6">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Recipe Not Found</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="space-y-3">
+              <Button onClick={() => navigate('/dashboard')} className="w-full">
+                <ChefHat className="w-4 h-4 mr-2" />
+                Browse Recipes
+              </Button>
+              <Button onClick={() => navigate(-1)} variant="outline" className="w-full">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Go Back
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -169,8 +176,11 @@ const RecipeDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+      {/* Common Header */}
+      <CommonHeader />
+
+      {/* Recipe Actions Bar */}
+      <div className="bg-white border-b border-gray-200 sticky top-[80px] z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -183,11 +193,6 @@ const RecipeDetail = () => {
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back</span>
               </Button>
-              <div className="h-6 w-px bg-gray-300" />
-              <Link to="/dashboard" className="flex items-center space-x-2 text-primary-600 hover:text-primary-700">
-                <ChefHat className="w-5 h-5" />
-                <span className="font-serif text-lg">MatchMyMeals</span>
-              </Link>
             </div>
             
             <div className="flex items-center space-x-3">
@@ -224,7 +229,7 @@ const RecipeDetail = () => {
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

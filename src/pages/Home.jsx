@@ -1,5 +1,5 @@
 import React from 'react';
-import Header from '../components/Header';
+import CommonHeader from '../components/CommonHeader';
 import SearchSection from '../components/SearchSection';
 
 const Home = () => {
@@ -18,9 +18,14 @@ const Home = () => {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        <Header />
+        {/* Use CommonHeader instead of Header */}
+        <div className="absolute top-0 left-0 right-0 z-20">
+          <div className="bg-primary-600/90 backdrop-blur-sm">
+            <CommonHeader />
+          </div>
+        </div>
         
-        <main className="flex-1 flex items-center justify-center py-12" style={{ background: 'linear-gradient(to bottom, #D35400 60%, #ECF0F1 100%)' }}>
+        <main className="flex-1 flex items-center justify-center py-12 pt-24" style={{ background: 'linear-gradient(to bottom, #D35400 60%, #ECF0F1 100%)' }}>
           <SearchSection />
         </main>
       </div>
