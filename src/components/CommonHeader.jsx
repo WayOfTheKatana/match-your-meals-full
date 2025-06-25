@@ -234,3 +234,5 @@ export const CommonHeader = ({ variant = 'default' }) => {
     </>
   );
 };
+
+export default CommonHeader
