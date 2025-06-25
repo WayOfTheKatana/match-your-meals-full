@@ -266,9 +266,9 @@ const RecipeDetail = () => {
 
       {/* Main Content - Two Column Layout */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left Column - Main Content (2/3 width) */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-12">
             {/* Featured Image */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="relative h-96 overflow-hidden">
@@ -289,17 +289,17 @@ const RecipeDetail = () => {
               </div>
             </div>
 
-            {/* Ingredients */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+            {/* Ingredients - Clean Design */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-semibold text-gray-900 flex items-center">
                 <Utensils className="w-6 h-6 mr-3 text-primary-600" />
                 Ingredients
               </h3>
               <div className="space-y-4">
                 {recipe.ingredients?.map((ingredient, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="w-3 h-3 bg-primary-600 rounded-full flex-shrink-0" />
-                    <span className="text-gray-900 text-lg">
+                  <div key={index} className="flex items-center space-x-4 py-3 border-b border-gray-100 last:border-b-0">
+                    <div className="w-2 h-2 bg-primary-600 rounded-full flex-shrink-0" />
+                    <span className="text-gray-900 text-lg leading-relaxed">
                       <span className="font-semibold text-primary-600">{ingredient.amount} {ingredient.unit}</span>
                       {' '}
                       <span>{ingredient.name}</span>
@@ -311,15 +311,15 @@ const RecipeDetail = () => {
               </div>
             </div>
 
-            {/* Instructions */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+            {/* Instructions - Clean Design */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-semibold text-gray-900 flex items-center">
                 <ChefHat className="w-6 h-6 mr-3 text-primary-600" />
                 Instructions
               </h3>
               <div className="space-y-6">
                 {recipe.instructions?.map((instruction, index) => (
-                  <div key={index} className="flex space-x-6">
+                  <div key={index} className="flex space-x-6 pb-6 border-b border-gray-100 last:border-b-0">
                     <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0">
                       {index + 1}
                     </div>
