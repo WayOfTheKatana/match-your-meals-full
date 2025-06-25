@@ -10,11 +10,14 @@ import {
   BookOpen, 
   Star,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  UserPlus,
+  UserCheck
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedRecipes } from '../hooks/useSavedRecipes';
+import { useFollowing } from '../hooks/useFollowing';
 import { supabase } from '../lib/supabase';
 import { formatTime, getTotalTime } from '../lib/utils';
 import CommonHeader from '../components/CommonHeader';
@@ -24,6 +27,13 @@ const CreatorProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { saveRecipe, removeSavedRecipe, isRecipeSaved } = useSavedRecipes();
+  const { 
+    isFollowing, 
+    followerCount, 
+    loading: followLoading, 
+    toggleFollow, 
+    canFollow 
+  } = useFollowing(creatorId);
 
   const [creatorData, setCreatorData] = useState(null);
   const [recipes, setRecipes] = useState([]);
@@ -133,6 +143,20 @@ const CreatorProfile = () => {
     }
   };
 
+  const handleFollowToggle = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await toggleFollow();
+    } catch (error) {
+      console.error('Error toggling follow status:', error);
+      alert(error.message || 'Failed to update follow status. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -185,45 +209,81 @@ const CreatorProfile = () => {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Creator Header Section - Flat */}
         <div className="border-b border-gray-200 pb-8 mb-12">
-          <div className="flex items-center space-x-6">
-            <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center">
-              {creatorData.avatar_url ? (
-                <img
-                  src={creatorData.avatar_url}
-                  alt={creatorData.name}
-                  className="w-20 h-20 rounded-full object-cover"
-                />
-              ) : (
-                <User className="w-10 h-10 text-white" />
-              )}
-            </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-serif text-gray-900 mb-1">{creatorData.name}</h1>
-              <p className="text-gray-600 mb-3">Recipe Creator</p>
-              <div className="flex items-center space-x-6 text-sm text-gray-500">
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>Joined {new Date(creatorData.joined_date).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <ChefHat className="w-4 h-4" />
-                  <span>{recipes.length} Recipe{recipes.length === 1 ? '' : 's'}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Heart className="w-4 h-4" />
-                  <span>{totalSaves} Total Saves</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center">
+                {creatorData.avatar_url ? (
+                  <img
+                    src={creatorData.avatar_url}
+                    alt={creatorData.name}
+                    className="w-20 h-20 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="w-10 h-10 text-white" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h1 className="text-3xl font-serif text-gray-900 mb-1">{creatorData.name}</h1>
+                <p className="text-gray-600 mb-3">Recipe Creator</p>
+                <div className="flex items-center space-x-6 text-sm text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>Joined {new Date(creatorData.joined_date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <ChefHat className="w-4 h-4" />
+                    <span>{recipes.length} Recipe{recipes.length === 1 ? '' : 's'}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Users className="w-4 h-4" />
+                    <span>{followerCount} Follower{followerCount === 1 ? '' : 's'}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Heart className="w-4 h-4" />
+                    <span>{totalSaves} Total Saves</span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Follow Button */}
+            {canFollow && (
+              <Button
+                onClick={handleFollowToggle}
+                disabled={followLoading}
+                variant={isFollowing ? "outline" : "default"}
+                className={`flex items-center space-x-2 px-6 py-3 ${
+                  isFollowing 
+                    ? 'border-primary-300 text-primary-600 hover:bg-primary-50' 
+                    : 'bg-primary-600 hover:bg-primary-700 text-white'
+                }`}
+              >
+                {followLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isFollowing ? (
+                  <UserCheck className="w-5 h-5" />
+                ) : (
+                  <UserPlus className="w-5 h-5" />
+                )}
+                <span>
+                  {followLoading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
+                </span>
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Creator Stats - Flat */}
-        <div className="grid grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-4 gap-8 mb-12">
           <div className="text-center">
             <ChefHat className="w-8 h-8 text-primary-600 mx-auto mb-2" />
             <p className="text-3xl font-bold text-gray-900">{recipes.length}</p>
             <p className="text-sm text-gray-600">Published Recipes</p>
+          </div>
+          <div className="text-center">
+            <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+            <p className="text-3xl font-bold text-gray-900">{followerCount}</p>
+            <p className="text-sm text-gray-600">Followers</p>
           </div>
           <div className="text-center">
             <Heart className="w-8 h-8 text-red-500 mx-auto mb-2" />
