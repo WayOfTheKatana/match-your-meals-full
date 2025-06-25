@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedRecipes } from '../hooks/useSavedRecipes';
+import { useSearchHistory } from '../hooks/useSearchHistory';
 import { AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import RecipeCreationModal from '../components/RecipeCreationModal';
@@ -13,6 +14,7 @@ import DashboardSearchResults from '../components/dashboard/DashboardSearchResul
 import CreatorQuickActions from '../components/dashboard/CreatorQuickActions';
 import RecipeFeedSection from '../components/dashboard/RecipeFeedSection';
 import SavedRecipesSection from '../components/dashboard/SavedRecipesSection';
+import SearchHistorySection from '../components/dashboard/SearchHistorySection';
 import RecipeCategoriesBrowser from '../components/dashboard/RecipeCategoriesBrowser';
 import DashboardRightSidebar from '../components/dashboard/DashboardRightSidebar';
 
@@ -39,6 +41,7 @@ import {
 const Dashboard = () => {
   const { user, userProfile, signOut, isConnected } = useAuth();
   const { savedRecipes, saveRecipe, removeSavedRecipe, isRecipeSaved, loading: savedRecipesLoading } = useSavedRecipes();
+  const { searchHistory, addSearchHistory, deleteSearchHistory, clearAllSearchHistory, loading: searchHistoryLoading, error: searchHistoryError } = useSearchHistory();
   
   // State variables
   const [isCreatorMode, setIsCreatorMode] = useState(false);
@@ -274,6 +277,38 @@ const Dashboard = () => {
     performSearch(query);
   };
 
+  // Handle search from history
+  const handleSearchFromHistory = (query) => {
+    setSearchQuery(query);
+    performSearch(query);
+    // Switch to home view to show search results
+    setCurrentView('home');
+  };
+
+  // Handle delete search history
+  const handleDeleteSearchHistory = async (historyId) => {
+    try {
+      await deleteSearchHistory(historyId);
+      console.log('Search history item deleted:', historyId);
+    } catch (error) {
+      console.error('Error deleting search history:', error);
+      alert(error.message || 'Failed to delete search history. Please try again.');
+    }
+  };
+
+  // Handle clear all search history
+  const handleClearAllHistory = async () => {
+    if (window.confirm('Are you sure you want to clear all search history? This action cannot be undone.')) {
+      try {
+        await clearAllSearchHistory();
+        console.log('All search history cleared');
+      } catch (error) {
+        console.error('Error clearing search history:', error);
+        alert(error.message || 'Failed to clear search history. Please try again.');
+      }
+    }
+  };
+
   const formatTime = (minutes) => {
     if (!minutes) return 'N/A';
     if (minutes < 60) return `${minutes}m`;
@@ -427,6 +462,20 @@ const Dashboard = () => {
       );
     }
 
+    if (currentView === 'history') {
+      return (
+        <SearchHistorySection
+          searchHistory={searchHistory}
+          loading={searchHistoryLoading}
+          error={searchHistoryError}
+          handleDeleteSearchHistory={handleDeleteSearchHistory}
+          handleClearAllHistory={handleClearAllHistory}
+          handleSearchFromHistory={handleSearchFromHistory}
+          handleNavigationClick={handleNavigationClick}
+        />
+      );
+    }
+
     // Default home view content
     return (
       <div className="space-y-6">
@@ -462,6 +511,7 @@ const Dashboard = () => {
           handleQuickSearch={handleQuickSearch}
           searchLoading={searchLoading}
           isCreatorMode={isCreatorMode}
+          addSearchHistory={addSearchHistory}
         />
 
         {/* Search Results */}

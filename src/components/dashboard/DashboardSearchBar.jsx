@@ -14,7 +14,8 @@ const DashboardSearchBar = ({
   handleSearch, 
   handleQuickSearch, 
   searchLoading, 
-  isCreatorMode 
+  isCreatorMode,
+  addSearchHistory // New prop for saving search history
 }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { user } = useAuth();
@@ -66,6 +67,49 @@ const DashboardSearchBar = ({
   const handleLoginSuccess = () => {
     console.log('Search after login:', searchQuery);
     navigate('/dashboard');
+  };
+
+  // Enhanced handleSearch to save search history
+  const handleSearchWithHistory = async () => {
+    // Perform the search
+    handleSearch();
+    
+    // Save to search history if user is authenticated and query is not empty
+    if (user && searchQuery.trim() && addSearchHistory) {
+      try {
+        await addSearchHistory(searchQuery.trim());
+        console.log('Search query saved to history:', searchQuery.trim());
+      } catch (error) {
+        console.error('Failed to save search to history:', error);
+        // Don't show error to user as this is not critical functionality
+      }
+    }
+  };
+
+  // Enhanced handleQuickSearch to save search history
+  const handleQuickSearchWithHistory = async (query) => {
+    // Perform the quick search
+    handleQuickSearch(query);
+    
+    // Save to search history if user is authenticated
+    if (user && query.trim() && addSearchHistory) {
+      try {
+        await addSearchHistory(query.trim());
+        console.log('Quick search query saved to history:', query.trim());
+      } catch (error) {
+        console.error('Failed to save quick search to history:', error);
+        // Don't show error to user as this is not critical functionality
+      }
+    }
+  };
+
+  // Enhanced handleKeyPress to save search history
+  const handleKeyPressWithHistory = (e) => {
+    if (e.key === 'Enter') {
+      handleSearchWithHistory();
+    } else {
+      handleKeyPress(e);
+    }
   };
 
   const getPlaceholderText = () => {
@@ -167,7 +211,7 @@ const DashboardSearchBar = ({
               placeholder={getPlaceholderText()}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyPress={handleKeyPressWithHistory}
               className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-12 text-base bg-transparent px-0 text-sm"
             />
             
@@ -186,7 +230,7 @@ const DashboardSearchBar = ({
           {/* Search Icon/Button */}
           <div className="flex items-center pr-4 pl-3">
             <button
-              onClick={handleSearch}
+              onClick={handleSearchWithHistory}
               disabled={searchLoading}
               className="p-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-110 shadow-md hover:shadow-lg group disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Search recipes"
@@ -208,7 +252,7 @@ const DashboardSearchBar = ({
           ).map((tag, index) => (
             <button
               key={index}
-              onClick={() => handleQuickSearch(tag.toLowerCase())}
+              onClick={() => handleQuickSearchWithHistory(tag.toLowerCase())}
               disabled={searchLoading}
               className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200 hover:border-primary-300 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
             >
