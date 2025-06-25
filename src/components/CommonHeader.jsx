@@ -41,13 +41,21 @@ export const CommonHeader = ({ variant = 'default' }) => {
   // Navigation items based on auth status
   const navigationItems = user ? [
     { label: 'Dashboard', href: '/dashboard', icon: BookOpen },
-    { label: 'Saved Recipes', href: '/saved-recipes', icon: Heart },
-    { label: 'Search', href: '/search', icon: Search },
+    { label: 'Saved Recipes', href: '/dashboard', icon: Heart, onClick: () => navigate('/dashboard') },
+    { label: 'Search', href: '/dashboard', icon: Search, onClick: () => navigate('/dashboard') },
   ] : [
     { label: 'Features', href: '#features' },
     { label: 'How it Works', href: '#how-it-works' },
     { label: 'About', href: '#about' },
   ];
+
+  const handleNavClick = (item) => {
+    if (item.onClick) {
+      item.onClick();
+    } else if (item.href.startsWith('/')) {
+      navigate(item.href);
+    }
+  };
 
   return (
     <>
@@ -67,13 +75,13 @@ export const CommonHeader = ({ variant = 'default' }) => {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
               {navigationItems.map((item) => (
-                <Link
+                <button
                   key={item.label}
-                  to={item.href}
-                  className="text-sm font-medium text-gray-700 hover:text-[#D35400] transition-colors duration-200"
+                  onClick={() => handleNavClick(item)}
+                  className="text-sm font-medium text-gray-700 hover:text-[#D35400] transition-colors duration-200 cursor-pointer"
                 >
                   {item.label}
-                </Link>
+                </button>
               ))}
             </nav>
 
@@ -105,23 +113,27 @@ export const CommonHeader = ({ variant = 'default' }) => {
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
                       
-                      <Link
-                        to="/dashboard"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowUserMenu(false)}
+                      <button
+                        onClick={() => {
+                          navigate('/dashboard');
+                          setShowUserMenu(false);
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <BookOpen className="h-4 w-4 mr-2" />
                         Dashboard
-                      </Link>
+                      </button>
                       
-                      <Link
-                        to="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowUserMenu(false)}
+                      <button
+                        onClick={() => {
+                          navigate('/profile');
+                          setShowUserMenu(false);
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <Settings className="h-4 w-4 mr-2" />
                         Settings
-                      </Link>
+                      </button>
                       
                       <button
                         onClick={handleSignOut}
@@ -174,14 +186,16 @@ export const CommonHeader = ({ variant = 'default' }) => {
             <div className="md:hidden border-t border-gray-200 py-4">
               <nav className="flex flex-col space-y-2">
                 {navigationItems.map((item) => (
-                  <Link
+                  <button
                     key={item.label}
-                    to={item.href}
-                    className="px-2 py-2 text-sm font-medium text-gray-700 hover:text-[#D35400] hover:bg-gray-50 rounded-md transition-colors duration-200"
-                    onClick={() => setShowMobileMenu(false)}
+                    onClick={() => {
+                      handleNavClick(item);
+                      setShowMobileMenu(false);
+                    }}
+                    className="px-2 py-2 text-sm font-medium text-gray-700 hover:text-[#D35400] hover:bg-gray-50 rounded-md transition-colors duration-200 text-left"
                   >
                     {item.label}
-                  </Link>
+                  </button>
                 ))}
                 
                 {!user && (
