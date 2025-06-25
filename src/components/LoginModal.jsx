@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Eye, EyeOff, Mail, Lock, User, ChefHat, AlertCircle, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -78,7 +79,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
         if (data?.user) {
           setSuccess('Login successful! Redirecting...');
           setTimeout(() => {
-            onSuccess();
+            onSuccess && onSuccess();
             onClose();
           }, 1000);
         }
@@ -98,7 +99,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
           if (data.user.email_confirmed_at) {
             setSuccess('Account created successfully! Redirecting...');
             setTimeout(() => {
-              onSuccess();
+              onSuccess && onSuccess();
               onClose();
             }, 1500);
           } else {
@@ -150,9 +151,10 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative z-[101]">
+  // Render modal using portal to ensure it's at the root level
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center space-x-3">
@@ -418,7 +420,8 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
