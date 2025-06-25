@@ -333,7 +333,12 @@ const RecipeDetail = () => {
                     )}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{creatorProfile.full_name}</p>
+                    <Link 
+                      to={`/creators/${creatorProfile.id}`}
+                      className="font-semibold text-gray-900 hover:text-primary-600 transition-colors"
+                    >
+                      {creatorProfile.full_name}
+                    </Link>
                     <p className="text-sm text-gray-600">Recipe Creator</p>
                     <div className="flex items-center text-xs text-gray-500 mt-1">
                       <Calendar className="w-3 h-3 mr-1" />

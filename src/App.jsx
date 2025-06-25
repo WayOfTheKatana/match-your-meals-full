@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import RecipeDetail from './pages/RecipeDetail';
+import CreatorProfile from './pages/CreatorProfile';
 import BoltBadge from './components/BoltBadge';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
               } 
             />
             <Route path="/recipes/:slug" element={<RecipeDetail />} />
+            <Route path="/creators/:creatorId" element={<CreatorProfile />} />
           </Routes>
           
           {/* Built on Bolt Badge */}
