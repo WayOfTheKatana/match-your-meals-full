@@ -10,10 +10,7 @@ import {
   BookOpen, 
   Star,
   Loader2,
-  AlertCircle,
-  Tag,
-  Award,
-  BarChart3
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
@@ -184,25 +181,25 @@ const CreatorProfile = () => {
       {/* Common Header */}
       <CommonHeader />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Creator Header Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
+      {/* Main Content - Flat Design */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Creator Header Section - Flat */}
+        <div className="border-b border-gray-200 pb-8 mb-12">
           <div className="flex items-center space-x-6">
-            <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center">
+            <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center">
               {creatorData.avatar_url ? (
                 <img
                   src={creatorData.avatar_url}
                   alt={creatorData.name}
-                  className="w-24 h-24 rounded-full object-cover"
+                  className="w-20 h-20 rounded-full object-cover"
                 />
               ) : (
-                <User className="w-12 h-12 text-white" />
+                <User className="w-10 h-10 text-white" />
               )}
             </div>
             <div className="flex-1">
-              <h1 className="text-3xl font-serif text-gray-900 mb-2">{creatorData.name}</h1>
-              <p className="text-gray-600 mb-4">Recipe Creator</p>
+              <h1 className="text-3xl font-serif text-gray-900 mb-1">{creatorData.name}</h1>
+              <p className="text-gray-600 mb-3">Recipe Creator</p>
               <div className="flex items-center space-x-6 text-sm text-gray-500">
                 <div className="flex items-center space-x-1">
                   <Calendar className="w-4 h-4" />
@@ -221,119 +218,121 @@ const CreatorProfile = () => {
           </div>
         </div>
 
-        {/* Creator Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 text-center shadow-sm">
+        {/* Creator Stats - Flat */}
+        <div className="grid grid-cols-3 gap-8 mb-12">
+          <div className="text-center">
             <ChefHat className="w-8 h-8 text-primary-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">{recipes.length}</p>
+            <p className="text-3xl font-bold text-gray-900">{recipes.length}</p>
             <p className="text-sm text-gray-600">Published Recipes</p>
           </div>
-          <div className="bg-white rounded-xl p-6 text-center shadow-sm">
+          <div className="text-center">
             <Heart className="w-8 h-8 text-red-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">{totalSaves}</p>
+            <p className="text-3xl font-bold text-gray-900">{totalSaves}</p>
             <p className="text-sm text-gray-600">Total Recipe Saves</p>
           </div>
-          <div className="bg-white rounded-xl p-6 text-center shadow-sm">
+          <div className="text-center">
             <Star className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">4.8</p>
+            <p className="text-3xl font-bold text-gray-900">4.8</p>
             <p className="text-sm text-gray-600">Average Rating</p>
           </div>
         </div>
 
-        {/* Published Recipes Section */}
-        <div className="space-y-6">
+        {/* Published Recipes Section - Flat */}
+        <div className="space-y-8">
           <h2 className="text-2xl font-serif text-gray-900">Published Recipes</h2>
           
           {recipes.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
+            <div className="text-center py-16">
               <ChefHat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No Recipes Yet</h3>
               <p className="text-gray-600">This creator hasn't published any recipes yet.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-8">
               {recipes.map((recipe) => (
-                <div key={recipe.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                  {/* Recipe Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400'}
-                      alt={recipe.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1">
-                      <Heart className="w-3 h-3 text-red-500" />
-                      <span className="text-xs font-medium">{recipe.save_count || 0}</span>
-                    </div>
-                  </div>
-
-                  {/* Recipe Content */}
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {recipe.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {recipe.description}
-                    </p>
-
-                    {/* Recipe Meta */}
-                    <div className="flex items-center justify-between text-gray-700 mb-4">
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4 text-primary-600" />
-                        <span className="text-sm font-medium">{formatTime(getTotalTime(recipe))}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Users className="w-4 h-4 text-primary-600" />
-                        <span className="text-sm font-medium">{recipe.servings} servings</span>
+                <div key={recipe.id} className="border-b border-gray-200 pb-8 last:border-b-0">
+                  <div className="flex space-x-6">
+                    {/* Recipe Image */}
+                    <div className="relative w-48 h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                      <img
+                        src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400'}
+                        alt={recipe.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center space-x-1">
+                        <Heart className="w-3 h-3 text-red-500" />
+                        <span className="text-xs font-medium">{recipe.save_count || 0}</span>
                       </div>
                     </div>
 
-                    {/* Tags */}
-                    {recipe.dietary_tags?.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {recipe.dietary_tags.slice(0, 2).map((tag, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"
-                          >
-                            {tag.replace(/-/g, ' ')}
-                          </span>
-                        ))}
-                        {recipe.dietary_tags.length > 2 && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-                            +{recipe.dietary_tags.length - 2} more
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    {/* Recipe Content */}
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        {recipe.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                        {recipe.description}
+                      </p>
 
-                    {/* Actions */}
-                    <div className="flex items-center space-x-3">
-                      {user && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={`flex-1 flex items-center justify-center space-x-2 transition-colors ${
-                            isRecipeSaved(recipe.id)
-                              ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
-                              : 'hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-                          }`}
-                          onClick={() => handleSaveRecipe(recipe.id)}
-                        >
-                          <Heart className={`w-4 h-4 ${isRecipeSaved(recipe.id) ? 'fill-current' : ''}`} />
-                          <span>{isRecipeSaved(recipe.id) ? 'Saved' : 'Save'}</span>
-                        </Button>
+                      {/* Recipe Meta */}
+                      <div className="flex items-center space-x-6 text-gray-700 mb-4">
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-4 h-4 text-primary-600" />
+                          <span className="text-sm font-medium">{formatTime(getTotalTime(recipe))}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Users className="w-4 h-4 text-primary-600" />
+                          <span className="text-sm font-medium">{recipe.servings} servings</span>
+                        </div>
+                      </div>
+
+                      {/* Tags */}
+                      {recipe.dietary_tags?.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {recipe.dietary_tags.slice(0, 3).map((tag, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"
+                            >
+                              {tag.replace(/-/g, ' ')}
+                            </span>
+                          ))}
+                          {recipe.dietary_tags.length > 3 && (
+                            <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                              +{recipe.dietary_tags.length - 3} more
+                            </span>
+                          )}
+                        </div>
                       )}
-                      <Button
-                        asChild
-                        size="sm"
-                        className="flex-1 flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-700"
-                      >
-                        <Link to={`/recipes/${recipe.slug}`}>
-                          <BookOpen className="w-4 h-4" />
-                          <span>View Recipe</span>
-                        </Link>
-                      </Button>
+
+                      {/* Actions */}
+                      <div className="flex items-center space-x-3">
+                        {user && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`flex items-center space-x-2 transition-colors ${
+                              isRecipeSaved(recipe.id)
+                                ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+                                : 'hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                            }`}
+                            onClick={() => handleSaveRecipe(recipe.id)}
+                          >
+                            <Heart className={`w-4 h-4 ${isRecipeSaved(recipe.id) ? 'fill-current' : ''}`} />
+                            <span>{isRecipeSaved(recipe.id) ? 'Saved' : 'Save'}</span>
+                          </Button>
+                        )}
+                        <Button
+                          asChild
+                          size="sm"
+                          className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
+                        >
+                          <Link to={`/recipes/${recipe.slug}`}>
+                            <BookOpen className="w-4 h-4" />
+                            <span>View Recipe</span>
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
