@@ -5,12 +5,10 @@ import { Button } from './ui/button';
 import LoginModal from './LoginModal';
 import { 
   ChefHat, 
-  Search, 
   User, 
   LogOut, 
   Settings, 
   BookOpen,
-  Heart,
   Menu,
   X
 } from 'lucide-react';
@@ -35,93 +33,12 @@ export const CommonHeader = ({ variant = 'default' }) => {
     }
   };
 
-  const isHomePage = location.pathname === '/';
-  const isDashboard = location.pathname === '/dashboard';
-
-  // Navigation items based on auth status and current page
-  const navigationItems = user ? (
-    isHomePage ? [
-      // Keep original homepage navigation for authenticated users on homepage
-      { label: 'Features', href: '#features' },
-      { label: 'How it Works', href: '#how-it-works' },
-      { label: 'About', href: '#about' },
-    ] : [
-      // Functional navigation for other pages
-      { label: 'Dashboard', href: '/dashboard', icon: BookOpen },
-      { label: 'Saved Recipes', href: '/dashboard', icon: Heart, onClick: () => navigate('/dashboard') },
-      { label: 'Search', href: '/dashboard', icon: Search, onClick: () => navigate('/dashboard') },
-    ]
-  ) : [
-    // Non-authenticated users always see homepage navigation
+  // Always use homepage-style navigation for cleaner UX
+  const navigationItems = [
     { label: 'Features', href: '#features' },
     { label: 'How it Works', href: '#how-it-works' },
     { label: 'About', href: '#about' },
   ];
-
-  const handleNavClick = (item) => {
-    if (item.onClick) {
-      item.onClick();
-    } else if (item.href.startsWith('/')) {
-      navigate(item.href);
-    }
-    // For anchor links (#features, etc.), let the default behavior handle it
-  };
-
-  const renderNavigationItem = (item) => {
-    // For homepage or anchor links, use Link component
-    if (isHomePage || item.href.startsWith('#')) {
-      return (
-        <Link
-          key={item.label}
-          to={item.href}
-          className="text-sm font-medium text-gray-700 hover:text-[#D35400] transition-colors duration-200"
-        >
-          {item.label}
-        </Link>
-      );
-    }
-    
-    // For other pages with functional navigation, use button
-    return (
-      <button
-        key={item.label}
-        onClick={() => handleNavClick(item)}
-        className="text-sm font-medium text-gray-700 hover:text-[#D35400] transition-colors duration-200 cursor-pointer"
-      >
-        {item.label}
-      </button>
-    );
-  };
-
-  const renderMobileNavigationItem = (item) => {
-    // For homepage or anchor links, use Link component
-    if (isHomePage || item.href.startsWith('#')) {
-      return (
-        <Link
-          key={item.label}
-          to={item.href}
-          className="px-2 py-2 text-sm font-medium text-gray-700 hover:text-[#D35400] hover:bg-gray-50 rounded-md transition-colors duration-200"
-          onClick={() => setShowMobileMenu(false)}
-        >
-          {item.label}
-        </Link>
-      );
-    }
-    
-    // For other pages with functional navigation, use button
-    return (
-      <button
-        key={item.label}
-        onClick={() => {
-          handleNavClick(item);
-          setShowMobileMenu(false);
-        }}
-        className="px-2 py-2 text-sm font-medium text-gray-700 hover:text-[#D35400] hover:bg-gray-50 rounded-md transition-colors duration-200 text-left"
-      >
-        {item.label}
-      </button>
-    );
-  };
 
   return (
     <>
@@ -138,9 +55,17 @@ export const CommonHeader = ({ variant = 'default' }) => {
               <span className="text-xl font-bold text-gray-900">HealthyEats</span>
             </Link>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - Always homepage style */}
             <nav className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item) => renderNavigationItem(item))}
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  className="text-sm font-medium text-gray-700 hover:text-[#D35400] transition-colors duration-200"
+                >
+                  {item.label}
+                </Link>
+              ))}
             </nav>
 
             {/* Right side actions */}
@@ -243,7 +168,16 @@ export const CommonHeader = ({ variant = 'default' }) => {
           {showMobileMenu && (
             <div className="md:hidden border-t border-gray-200 py-4">
               <nav className="flex flex-col space-y-2">
-                {navigationItems.map((item) => renderMobileNavigationItem(item))}
+                {navigationItems.map((item) => (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    className="px-2 py-2 text-sm font-medium text-gray-700 hover:text-[#D35400] hover:bg-gray-50 rounded-md transition-colors duration-200"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
                 
                 {!user && (
                   <div className="pt-2 border-t border-gray-200 mt-2">
