@@ -17,6 +17,7 @@ import SavedRecipesSection from '../components/dashboard/SavedRecipesSection';
 import SearchHistorySection from '../components/dashboard/SearchHistorySection';
 import RecipeCategoriesBrowser from '../components/dashboard/RecipeCategoriesBrowser';
 import DashboardRightSidebar from '../components/dashboard/DashboardRightSidebar';
+import FollowingsSection from '../components/dashboard/FollowingsSection';
 
 // Navigation items
 import { 
@@ -474,6 +475,10 @@ const Dashboard = () => {
           handleNavigationClick={handleNavigationClick}
         />
       );
+    }
+
+    if (currentView === 'followings') {
+      return <FollowingsSection />;
     }
 
     // Default home view content
