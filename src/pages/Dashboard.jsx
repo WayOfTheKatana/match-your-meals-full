@@ -5,6 +5,7 @@ import { useSearchHistory } from '../hooks/useSearchHistory';
 import { AlertCircle, Info } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import RecipeCreationModal from '../components/RecipeCreationModal';
+import { useQuery } from '@tanstack/react-query';
 
 // Dashboard Components
 import DashboardHeader from '../components/dashboard/DashboardHeader';
@@ -42,6 +43,33 @@ import {
   Eye
 } from 'lucide-react';
 
+const fetchRecentRecipes = async () => {
+  const { data, error } = await supabase
+    .from('recipes')
+    .select(`
+      id,
+      slug,
+      title,
+      description,
+      prep_time,
+      cook_time,
+      servings,
+      image_path,
+      ingredients,
+      instructions,
+      health_tags,
+      dietary_tags,
+      health_benefits,
+      nutritional_info,
+      creator_id,
+      created_at
+    `)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  if (error) throw new Error(error.message);
+  return data || [];
+};
+
 const Dashboard = () => {
   const { user, userProfile, signOut, isConnected } = useAuth();
   const { savedRecipes, saveRecipe, removeSavedRecipe, isRecipeSaved, loading: savedRecipesLoading } = useSavedRecipes();
@@ -54,12 +82,20 @@ const Dashboard = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
-  const [recentRecipes, setRecentRecipes] = useState([]);
-  const [recipesLoading, setRecipesLoading] = useState(false);
-  const [recipesError, setRecipesError] = useState('');
   const [currentView, setCurrentView] = useState('home');
   const [relatedRecipes, setRelatedRecipes] = useState([]);
   const [relatedRecipesLoading, setRelatedRecipesLoading] = useState(false);
+
+  const {
+    data: recentRecipes = [],
+    isLoading: recipesLoading,
+    error: recipesError,
+    refetch: refetchRecentRecipes,
+  } = useQuery({
+    queryKey: ['recentRecipes'],
+    queryFn: fetchRecentRecipes,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
@@ -67,7 +103,7 @@ const Dashboard = () => {
     console.log('Connected to Supabase:', isConnected);
     
     if (isConnected) {
-      fetchRecentRecipes();
+      fetchRelatedRecipes();
     }
   }, [user, userProfile, isConnected]);
 
@@ -85,52 +121,6 @@ const Dashboard = () => {
       fetchRelatedRecipes();
     }
   }, [currentView, savedRecipes]);
-
-  // Fetch recent recipes from database
-  const fetchRecentRecipes = async () => {
-    setRecipesLoading(true);
-    setRecipesError('');
-
-    try {
-      console.log('🔄 Fetching recent recipes from database...');
-      
-      const { data, error } = await supabase
-        .from('recipes')
-        .select(`
-          id,
-          slug,
-          title,
-          description,
-          prep_time,
-          cook_time,
-          servings,
-          image_path,
-          ingredients,
-          instructions,
-          health_tags,
-          dietary_tags,
-          health_benefits,
-          nutritional_info,
-          creator_id,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error('❌ Error fetching recipes:', error);
-        throw error;
-      }
-
-      console.log('✅ Fetched recipes successfully:', data?.length || 0);
-      setRecentRecipes(data || []);
-    } catch (err) {
-      console.error('❌ Error in fetchRecentRecipes:', err);
-      setRecipesError(err.message || 'Failed to load recipes');
-    } finally {
-      setRecipesLoading(false);
-    }
-  };
 
   // Fetch related recipes based on saved recipes' tags and ingredients
   const fetchRelatedRecipes = async () => {
@@ -342,12 +332,12 @@ const Dashboard = () => {
 
   const handleRecipeSave = async (recipeData) => {
     console.log('Recipe saved as draft:', recipeData);
-    await fetchRecentRecipes();
+    await refetchRecentRecipes();
   };
 
   const handlePublishRecipe = async (recipeData) => {
     console.log('Recipe published:', recipeData);
-    await fetchRecentRecipes();
+    await refetchRecentRecipes();
   };
 
   const handleRemoveSavedRecipe = async (recipeId) => {
@@ -572,7 +562,7 @@ const Dashboard = () => {
           recipesLoading={recipesLoading}
           recipesError={recipesError}
           recentRecipes={recentRecipes}
-          fetchRecentRecipes={fetchRecentRecipes}
+          fetchRecentRecipes={refetchRecentRecipes}
           publishedRecipes={publishedRecipes}
           formatTime={formatTime}
           getTotalTime={getTotalTime}
