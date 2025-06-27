@@ -19,6 +19,7 @@ import RecipeCategoriesBrowser from '../components/dashboard/RecipeCategoriesBro
 import DashboardRightSidebar from '../components/dashboard/DashboardRightSidebar';
 import FollowingsSection from '../components/dashboard/FollowingsSection';
 import PublishedRecipesSection from '../components/dashboard/PublishedRecipesSection';
+import FollowersSection from '../components/dashboard/FollowersSection';
 
 // Navigation items
 import { 
@@ -484,6 +485,10 @@ const Dashboard = () => {
 
     if (currentView === 'published') {
       return <PublishedRecipesSection />;
+    }
+
+    if (currentView === 'followers') {
+      return <FollowersSection />;
     }
 
     // Default home view content
