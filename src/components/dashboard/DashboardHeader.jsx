@@ -14,8 +14,8 @@ const DashboardHeader = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            <ChefHat className="w-8 h-8 text-primary-600" />
-            <h1 className="text-2xl font-serif text-white">MatchMyMeals</h1>
+            {/* <ChefHat className="w-8 h-8 text-primary-600" /> */}
+            <h1 className="text-2xl font-dm-serif text-white">MatchMyMeals</h1>
           </div>
           
           <div className="flex items-center space-x-12">
@@ -24,7 +24,7 @@ const DashboardHeader = ({
               variant="ghost"
               size="sm"
               onClick={toggleMode}
-              className="text-white hover:bg-white/10 hover:text-white border border-white/20 hover:border-white/30 transition-all duration-200"
+              className="text-white hover:bg-white/10 hover:text-white border border-white/20 hover:border-white/30 transition-all duration-200 font-inter"
             >
               {isCreatorMode ? (
                 <>
@@ -44,7 +44,7 @@ const DashboardHeader = ({
                 <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
-                <div className="hidden md:block">
+                <div className="hidden md:block font-inter">
                   <p className="text-sm font-medium text-white">
                     {userProfile?.full_name || user?.email || 'User'}
                   </p>
@@ -58,7 +58,7 @@ const DashboardHeader = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="text-gray-400 hover:text-white hover:bg-white/10"
+                className="text-gray-400 hover:text-white hover:bg-white/10 font-inter"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out

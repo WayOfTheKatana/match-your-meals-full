@@ -506,14 +506,14 @@ const Dashboard = () => {
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border">
-          <h2 className="text-2xl font-serif text-gray-900 mb-2">
+          <h2 className="text-2xl font-dm-serif text-gray-900 mb-2">
             {isCreatorMode ? (
               <>Welcome to Creator Dashboard, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 🎨</>
             ) : (
               <>Welcome back, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 👋</>
             )}
           </h2>
-          <p className="text-gray-600 mb-4 text-sm">
+          <p className="text-gray-600 mb-4 text-md font-urbanist tracking-wide">
             {isCreatorMode ? (
               'Manage your recipes, track performance, and grow your audience.'
             ) : (
@@ -521,7 +521,7 @@ const Dashboard = () => {
             )}
           </p>
           {user && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 font-urbanist">
               Logged in as: {user.email} • {isCreatorMode ? 'Creator Mode' : 'Consumer Mode'}
             </p>
           )}
