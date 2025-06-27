@@ -1,52 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { User, Loader2, AlertCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
+const fetchFollowings = async (userId) => {
+  // Get all followed user IDs for the current user
+  const { data: follows, error: followsError } = await supabase
+    .from('followers')
+    .select('followed_id')
+    .eq('follower_id', userId);
+  if (followsError) throw new Error(followsError.message);
+  if (!follows || follows.length === 0) return [];
+
+  // Fetch user profiles for all followed IDs
+  const followedIds = follows.map(f => f.followed_id);
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('id, full_name, avatar_url, created_at')
+    .in('id', followedIds);
+  if (usersError) throw new Error(usersError.message);
+  return users || [];
+};
 
 const FollowingsSection = () => {
   const { user } = useAuth();
-  const [followings, setFollowings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchFollowings = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        // Get all followed user IDs for the current user
-        const { data: follows, error: followsError } = await supabase
-          .from('followers')
-          .select('followed_id')
-          .eq('follower_id', user.id);
+  const {
+    data: followings = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['followings', user?.id],
+    queryFn: () => fetchFollowings(user.id),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-        if (followsError) throw followsError;
-        if (!follows || follows.length === 0) {
-          setFollowings([]);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch user profiles for all followed IDs
-        const followedIds = follows.map(f => f.followed_id);
-        const { data: users, error: usersError } = await supabase
-          .from('users')
-          .select('id, full_name, avatar_url, created_at')
-          .in('id', followedIds);
-
-        if (usersError) throw usersError;
-        setFollowings(users || []);
-      } catch (err) {
-        setError(err.message || 'Failed to load followings');
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (user) fetchFollowings();
-  }, [user]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-40">
         <Loader2 className="w-6 h-6 animate-spin text-primary-600 mr-2" />
@@ -59,7 +51,7 @@ const FollowingsSection = () => {
     return (
       <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg">
         <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-        <span className="text-red-700">{error}</span>
+        <span className="text-red-700">{error.message}</span>
       </div>
     );
   }
