@@ -23,6 +23,7 @@ import { useSavedRecipes } from '../hooks/useSavedRecipes';
 import { supabase } from '../lib/supabase';
 import { formatTime, getTotalTime } from '../lib/utils';
 import CommonHeader from '../components/CommonHeader';
+import { getOrCreateSessionId } from '../lib/session';
 
 const RecipeDetail = () => {
   const { slug } = useParams();
@@ -41,6 +42,22 @@ const RecipeDetail = () => {
       fetchRecipe();
     }
   }, [slug]);
+
+  useEffect(() => {
+    if (!recipe) return;
+
+    const recordView = async () => {
+      const sessionId = getOrCreateSessionId();
+      await supabase.from('recipe_views').insert({
+        recipe_id: recipe.id,
+        user_id: user ? user.id : null,
+        session_id: sessionId,
+        // viewed_at will default to now
+      });
+    };
+
+    recordView();
+  }, [recipe, user]);
 
   const fetchRecipe = async () => {
     setLoading(true);

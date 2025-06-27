@@ -20,6 +20,7 @@ import DashboardRightSidebar from '../components/dashboard/DashboardRightSidebar
 import FollowingsSection from '../components/dashboard/FollowingsSection';
 import PublishedRecipesSection from '../components/dashboard/PublishedRecipesSection';
 import FollowersSection from '../components/dashboard/FollowersSection';
+import RecipeAnalyticsSection from '../components/dashboard/RecipeAnalyticsSection';
 
 // Navigation items
 import { 
@@ -499,6 +500,10 @@ const Dashboard = () => {
           <p className="text-gray-600">Recipe vetting is not in work right now.<br/>We will implement this feature soon.</p>
         </div>
       );
+    }
+
+    if (currentView === 'analytics') {
+      return <RecipeAnalyticsSection />;
     }
 
     // Default home view content
