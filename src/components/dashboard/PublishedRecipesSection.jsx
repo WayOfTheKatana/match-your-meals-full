@@ -1,38 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { ChefHat, Loader2, AlertCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
+const fetchPublishedRecipes = async (userId) => {
+  const { data, error } = await supabase
+    .from('recipes')
+    .select('id, slug, title, description, image_path, created_at')
+    .eq('creator_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data || [];
+};
 
 const PublishedRecipesSection = () => {
   const { user } = useAuth();
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchPublishedRecipes = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const { data, error: fetchError } = await supabase
-          .from('recipes')
-          .select('id, slug, title, description, image_path, created_at')
-          .eq('creator_id', user.id)
-          .order('created_at', { ascending: false });
+  const {
+    data: recipes = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['publishedRecipes', user?.id],
+    queryFn: () => fetchPublishedRecipes(user.id),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-        if (fetchError) throw fetchError;
-        setRecipes(data || []);
-      } catch (err) {
-        setError(err.message || 'Failed to load published recipes');
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (user) fetchPublishedRecipes();
-  }, [user]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-40">
         <Loader2 className="w-6 h-6 animate-spin text-primary-600 mr-2" />
@@ -45,7 +42,7 @@ const PublishedRecipesSection = () => {
     return (
       <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg">
         <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-        <span className="text-red-700">{error}</span>
+        <span className="text-red-700">{error.message}</span>
       </div>
     );
   }
