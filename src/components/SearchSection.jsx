@@ -140,18 +140,18 @@ const SearchSection = () => {
       <div className="flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto w-full">
         {/* Badge */}
         <div className="mb-8 animate-fade-in">
-          <span className="inline-flex items-center px-4 py-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white text-sm font-medium">
+          <span className="inline-flex items-center px-4 py-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white text-sm font-medium font-urbanist">
             AI Powered Recipe Search
           </span>
         </div>
 
         {/* Main Heading */}
         <div className="mb-12 animate-slide-up">
-          <h1 className="text-5xl md:text-7xl font-serif text-white mb-4 leading-tight">
+          <h1 className="text-3xl md:text-6xl font-urbanist text-white mb-1.5 leading-tight font-medium tracking-normal">
             Find Your Perfect
           </h1>
-          <h1 className="text-5xl md:text-7xl font-serif text-white mb-4 leading-tight">
-            Recipe in <span className="italic font-light">Seconds</span>
+          <h1 className="text-3xl md:text-6xl font-urbanist text-white mb-4 leading-tight font-medium">
+            Recipe in <span className="italic font-light font-dm-serif md:text-[4rem]">Seconds</span>
           </h1>
         </div>
 

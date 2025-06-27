@@ -39,6 +39,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
     { label: 'How it Works', href: '#how-it-works' },
     { label: 'Creator Share', href: '#about' },
     { label: 'Explore Recipes', href: '#about' },
+    { label: 'Explore Recipes', href: '#about' },
   ];
 
   return (
@@ -51,7 +52,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
               {/* <div className="flex items-center justify-center w-8 h-8 bg-[#D35400] rounded-lg">
                 <ChefHat className="h-6 w-6 text-white" />
               </div> */}
-              <span className="text-2xl text-white font-serif tracking-wide">MatchMyMeals</span>
+              <span className="text-xl text-white font-dm-serif tracking-normal">MatchMyMeals</span>
             </Link>
 
             {/* Desktop Navigation - Always homepage style */}
@@ -60,7 +61,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
                 <Link
                   key={item.label}
                   to={item.href}
-                  className="text-sm font-medium text-white hover:text-[#e7ccba] transition-colors duration-200 font-inter"
+                  className="text-medium font-medium text-white hover:text-[#e7ccba] transition-colors duration-200 font-urbanist"
                 >
                   {item.label}
                 </Link>
