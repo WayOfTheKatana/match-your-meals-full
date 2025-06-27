@@ -1,65 +1,48 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { User, Loader2, AlertCircle, Users } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
+const fetchFollowers = async (userId) => {
+  // Get all follower user IDs for the current user
+  const { data: follows, error: followsError } = await supabase
+    .from('followers')
+    .select('follower_id')
+    .eq('followed_id', userId);
+  if (followsError) throw new Error(followsError.message);
+  if (!follows || follows.length === 0) return [];
+
+  // Fetch user profiles for all follower IDs
+  const followerIds = follows.map(f => f.follower_id);
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('id, full_name, avatar_url, created_at')
+    .in('id', followerIds);
+  if (usersError) throw new Error(usersError.message);
+  return users || [];
+};
 
 const FollowersSection = () => {
   const { user } = useAuth();
-  const [followers, setFollowers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchFollowers = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        // Get all follower user IDs for the current user
-        const { data: follows, error: followsError } = await supabase
-          .from('followers')
-          .select('follower_id')
-          .eq('followed_id', user.id);
+  const {
+    data: followers = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['followers', user?.id],
+    queryFn: () => fetchFollowers(user.id),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-        if (followsError) throw followsError;
-        if (!follows || follows.length === 0) {
-          setFollowers([]);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch user profiles for all follower IDs
-        const followerIds = follows.map(f => f.follower_id);
-        const { data: users, error: usersError } = await supabase
-          .from('users')
-          .select('id, full_name, avatar_url, created_at')
-          .in('id', followerIds);
-
-        if (usersError) throw usersError;
-        setFollowers(users || []);
-      } catch (err) {
-        setError(err.message || 'Failed to load followers');
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (user) fetchFollowers();
-  }, [user]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-40">
         <Loader2 className="w-6 h-6 animate-spin text-primary-600 mr-2" />
         <span className="text-gray-700">Loading followers...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg">
-        <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-        <span className="text-red-700">{error}</span>
       </div>
     );
   }
@@ -71,7 +54,12 @@ const FollowersSection = () => {
         <h2 className="text-2xl font-bold">Followers</h2>
         <span className="ml-2 text-base text-gray-500">({followers.length})</span>
       </div>
-      {followers.length === 0 ? (
+      {error ? (
+        <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+          <span className="text-red-700">{error.message}</span>
+        </div>
+      ) : followers.length === 0 ? (
         <div className="p-6 text-center text-gray-500">
           <User className="w-10 h-10 mx-auto mb-2 text-gray-300" />
           <p className="text-lg font-semibold">You don't have any followers yet.</p>
