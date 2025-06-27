@@ -72,7 +72,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
               {user ? (
                 <div className="relative">
                   <Button
-                    variant="ghost"
+                    variant="default"
                     size="sm"
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center space-x-2"
