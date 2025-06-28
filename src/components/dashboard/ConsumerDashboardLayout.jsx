@@ -75,6 +75,57 @@ const ConsumerDashboardLayout = (props) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // Query stats directly from database
+  const { data: followingsData } = useQuery({
+    queryKey: ['followings-count', user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('followers')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', user?.id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data: searchesData } = useQuery({
+    queryKey: ['searches-count', user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('search_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data: savedRecipesData } = useQuery({
+    queryKey: ['saved-recipes-count', user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('saved_recipes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Calculate stats for consumer widget
+  const followingsCount = followingsData || 0;
+  const searchesCount = searchesData || 0;
+  const savedRecipesCount = savedRecipesData || 0;
+
   useEffect(() => {
     if (isConnected) {
       fetchRelatedRecipes();
@@ -223,6 +274,10 @@ const ConsumerDashboardLayout = (props) => {
           currentStats={currentStats}
           trendingTopics={trendingTopics}
           upcomingEvents={upcomingEvents}
+          mode="consumer"
+          followingsCount={followingsCount}
+          searchesCount={searchesCount}
+          savedRecipesCount={savedRecipesCount}
         />
       </main>
       <RecipeCreationModal isOpen={showRecipeModal} onClose={() => setShowRecipeModal(false)} />
