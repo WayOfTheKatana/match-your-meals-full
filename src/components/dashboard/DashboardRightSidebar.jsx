@@ -2,6 +2,7 @@ import React from 'react';
 import ConsumerStatsWidget from './ConsumerStatsWidget';
 import CreatorStatsWidget from './CreatorStatsWidget';
 import SavedRecipesSidebarWidgets from './SavedRecipesSidebarWidgets';
+import RegisteredUsersWidget from './RegisteredUsersWidget';
 
 const DashboardRightSidebar = ({ 
   currentView,
@@ -51,6 +52,9 @@ const DashboardRightSidebar = ({
                 savedRecipesCount={savedRecipesCount}
               />
             )}
+
+            {/* Registered Users Widget - Always show */}
+            <RegisteredUsersWidget />
           </>
         )}
       </div>
