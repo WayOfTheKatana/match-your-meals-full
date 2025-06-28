@@ -1,10 +1,31 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRecipeBoards } from '../../hooks/useRecipeBoards';
-import { Layers, Plus, BookOpen, Loader2, AlertCircle, Star, ExternalLink } from 'lucide-react';
+import { 
+  Layers, 
+  Plus, 
+  BookOpen, 
+  Loader2, 
+  AlertCircle, 
+  Star, 
+  ExternalLink,
+  MoreVertical,
+  Trash2,
+  Globe,
+  Lock,
+  Eye
+} from 'lucide-react';
 import { Button } from '../ui/button';
 import { Link } from 'react-router-dom';
 import CreateBoardModal from './CreateBoardModal';
+import ConfirmationModal from '../ConfirmationModal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 // Skeleton Loading Component
 const BoardSkeleton = () => (
@@ -42,8 +63,10 @@ const BoardSkeleton = () => (
 
 const DashboardBoards = () => {
   const { user } = useAuth();
-  const { boards, loading, error, refetch } = useRecipeBoards();
+  const { boards, loading, error, refetch, deleteBoard, updateBoard } = useRecipeBoards();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
+  const [boardToDeleteId, setBoardToDeleteId] = useState(null);
 
   const generateBoardUrl = (boardSlug) => {
     return `/creators/board/${boardSlug}`;
@@ -53,6 +76,47 @@ const DashboardBoards = () => {
     console.log('✅ Board created:', newBoard);
     // The useRecipeBoards hook will automatically refetch the data
     // due to the query invalidation in the mutation
+  };
+
+  const handleDeleteBoardClick = (boardId, event) => {
+    // Prevent navigation when clicking delete
+    event.preventDefault();
+    event.stopPropagation();
+    
+    setBoardToDeleteId(boardId);
+    setShowConfirmDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!boardToDeleteId) return;
+
+    try {
+      await deleteBoard(boardToDeleteId);
+      console.log('✅ Board deleted successfully');
+    } catch (error) {
+      console.error('❌ Error deleting board:', error);
+      alert('Failed to delete board. Please try again.');
+    } finally {
+      setShowConfirmDeleteModal(false);
+      setBoardToDeleteId(null);
+    }
+  };
+
+  const handleTogglePrivacy = async (boardId, currentIsPrivate, event) => {
+    // Prevent navigation when clicking privacy toggle
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      await updateBoard({
+        boardId,
+        updates: { is_private: !currentIsPrivate }
+      });
+      console.log('✅ Board privacy updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating board privacy:', error);
+      alert('Failed to update board privacy. Please try again.');
+    }
   };
 
   const renderRecipeImagesGrid = (images, recipeCount) => {
@@ -165,6 +229,10 @@ const DashboardBoards = () => {
     }
   };
 
+  const getBoardToDelete = () => {
+    return boards.find(board => board.id === boardToDeleteId);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -213,46 +281,121 @@ const DashboardBoards = () => {
       {!loading && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {boards.map((board) => (
-            <Link
+            <div
               key={board.id}
-              to={generateBoardUrl(board.slug)}
-              className="bg-white rounded-2xl shadow-sm border overflow-hidden hover:shadow-md transition-all duration-200 group"
+              className="bg-white rounded-2xl shadow-sm border overflow-hidden hover:shadow-md transition-all duration-200 group relative"
             >
-              {/* Board Cover with Recipe Images */}
-              <div className="relative h-48 overflow-hidden bg-gray-100">
-                <div className="absolute inset-0 p-4">
-                  {renderRecipeImagesGrid(board.recipe_images, board.recipe_count)}
-                </div>
-                
-                {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                
-                {/* Recipe Count */}
-                <div className="absolute bottom-3 left-3 text-white">
-                  <div className="flex items-center space-x-1 bg-black/50 rounded-full px-2 py-1">
-                    <BookOpen className="w-4 h-4" />
-                    <span className="text-sm font-medium">{board.recipe_count} recipes</span>
-                  </div>
+              {/* Context Menu - Positioned in top-right corner */}
+              <div className="absolute top-3 right-3 z-10">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={(e) => handleDeleteBoardClick(board.id, e)}
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Board
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={(e) => handleTogglePrivacy(board.id, board.is_private, e)}
+                    >
+                      {board.is_private ? (
+                        <>
+                          <Globe className="w-4 h-4 mr-2" />
+                          Make Public
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 mr-2" />
+                          Make Private
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Privacy Badge - Positioned in top-left corner */}
+              <div className="absolute top-3 left-3 z-10">
+                <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  board.is_private 
+                    ? 'bg-gray-100/90 text-gray-600' 
+                    : 'bg-green-100/90 text-green-600'
+                } backdrop-blur-sm`}>
+                  {board.is_private ? (
+                    <>
+                      <Lock className="w-3 h-3" />
+                      <span>Private</span>
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="w-3 h-3" />
+                      <span>Public</span>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Board Content - Fixed Heights for Perfect Alignment */}
-              <div className="p-4 flex flex-col">
-                {/* Fixed Height Title Container */}
-                <div className="h-14 flex items-start mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors leading-tight line-clamp-2">
-                    {board.title}
-                  </h3>
+              {/* Clickable Link Area */}
+              <Link to={generateBoardUrl(board.slug)} className="block">
+                {/* Board Cover with Recipe Images */}
+                <div className="relative h-48 overflow-hidden bg-gray-100">
+                  <div className="absolute inset-0 p-4">
+                    {renderRecipeImagesGrid(board.recipe_images, board.recipe_count)}
+                  </div>
+                  
+                  {/* Overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  
+                  {/* Recipe Count */}
+                  <div className="absolute bottom-3 left-3 text-white">
+                    <div className="flex items-center space-x-1 bg-black/50 rounded-full px-2 py-1">
+                      <BookOpen className="w-4 h-4" />
+                      <span className="text-sm font-medium">{board.recipe_count} recipes</span>
+                    </div>
+                  </div>
                 </div>
-                
-                {/* Fixed Height Action Container */}
-                <div className="h-6 flex items-center justify-end">
-                  <span className="text-sm text-primary-600 font-medium group-hover:text-primary-700 transition-colors">
-                    View Board →
-                  </span>
+
+                {/* Board Content - Fixed Heights for Perfect Alignment */}
+                <div className="p-4 flex flex-col">
+                  {/* Fixed Height Title Container */}
+                  <div className="h-14 flex items-start mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors leading-tight line-clamp-2">
+                      {board.title}
+                    </h3>
+                  </div>
+                  
+                  {/* Fixed Height Action Container */}
+                  <div className="h-6 flex items-center justify-between">
+                    <Link 
+                      to="/explore-recipes"
+                      className="text-sm text-gray-500 hover:text-primary-600 transition-colors flex items-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Explore recipes
+                    </Link>
+                    <span className="text-sm text-primary-600 font-medium group-hover:text-primary-700 transition-colors">
+                      View Board →
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           ))}
 
           {/* Create New Board Card */}
@@ -321,9 +464,7 @@ const DashboardBoards = () => {
               <p className="text-sm text-gray-600">Total Recipes</p>
             </div>
             <div className="text-center">
-              <div className="w-6 h-6 bg-green-500 rounded-full mx-auto mb-2 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">2</span>
-              </div>
+              <Globe className="w-6 h-6 text-green-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-gray-900">
                 {boards.filter(board => !board.is_private).length}
               </p>
@@ -343,6 +484,18 @@ const DashboardBoards = () => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onBoardCreated={handleBoardCreated}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmDeleteModal}
+        onClose={() => setShowConfirmDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Recipe Board"
+        message={`Are you sure you want to delete "${getBoardToDelete()?.title}"? This action cannot be undone and will remove all recipes from this board.`}
+        confirmText="Delete Board"
+        cancelText="Cancel"
+        isDestructive={true}
       />
     </div>
   );
