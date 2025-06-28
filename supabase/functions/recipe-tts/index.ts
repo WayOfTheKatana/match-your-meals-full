@@ -22,11 +22,10 @@ async function testElevenLabsConnection(): Promise<boolean> {
       return false
     }
     
-    const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+    const response = await fetch('https://api.elevenlabs.io/v2/voices', {
       method: 'GET',
       headers: {
-        'xi-api-key': ELEVENLABS_API_KEY,
-        'Content-Type': 'application/json',
+        'xi-api-key': ELEVENLABS_API_KEY
       },
     })
 
