@@ -7,38 +7,32 @@ const ConsumerStatsWidget = ({ followingsCount = 0, searchesCount = 0, savedReci
       <Activity className="w-5 h-5 mr-2 text-primary-600" />
       Your Stats
     </h3>
-    <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-4">
       {/* Followings Stat */}
-      <div className="bg-gray-50 rounded-xl p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors">
-        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-          <Users className="w-5 h-5 text-blue-600" />
+      <div className="bg-gray-50 rounded-xl p-4 text-center hover:bg-gray-100 transition-colors">
+        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+          <Users className="w-4 h-4 text-blue-600" />
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">Followings</p>
-          <p className="text-2xl font-bold text-gray-900">{followingsCount}</p>
-        </div>
+        <p className="text-lg font-bold text-gray-900">{followingsCount}</p>
+        <p className="text-xs font-medium text-gray-600">Followings</p>
       </div>
 
       {/* Total Searches Stat */}
-      <div className="bg-gray-50 rounded-xl p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors">
-        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-          <Search className="w-5 h-5 text-green-600" />
+      <div className="bg-gray-50 rounded-xl p-4 text-center hover:bg-gray-100 transition-colors">
+        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+          <Search className="w-4 h-4 text-green-600" />
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">Total Searches</p>
-          <p className="text-2xl font-bold text-gray-900">{searchesCount}</p>
-        </div>
+        <p className="text-lg font-bold text-gray-900">{searchesCount}</p>
+        <p className="text-xs font-medium text-gray-600">Total Searches</p>
       </div>
 
-      {/* Saved Recipes Stat */}
-      <div className="bg-gray-50 rounded-xl p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors">
-        <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+      {/* Saved Recipes Stat - Spans 2 columns for emphasis */}
+      <div className="col-span-2 bg-gradient-to-r from-primary-50 to-orange-50 rounded-xl p-4 text-center hover:from-primary-100 hover:to-orange-100 transition-colors border border-primary-100">
+        <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-3">
           <Bookmark className="w-5 h-5 text-primary-600" />
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">Saved Recipes</p>
-          <p className="text-2xl font-bold text-gray-900">{savedRecipesCount}</p>
-        </div>
+        <p className="text-2xl font-bold text-primary-700">{savedRecipesCount}</p>
+        <p className="text-sm font-medium text-primary-600">Saved Recipes</p>
       </div>
     </div>
   </div>
