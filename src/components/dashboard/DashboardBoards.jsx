@@ -334,14 +334,14 @@ const DashboardBoards = () => {
                       View Board →
                     </span>
                     
-                    {/* Context Menu - Positioned where Explore Recipes was */}
+                    {/* Context Menu - Always Visible */}
                     <div className="flex items-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0 hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-6 w-6 p-0 hover:bg-gray-100 text-gray-400 hover:text-gray-600"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
