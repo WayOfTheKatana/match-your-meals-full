@@ -18,27 +18,23 @@ const fetchFollowings = async (userId) => {
   const followedIds = follows.map(f => f.followed_id);
   const { data: users, error: usersError } = await supabase
     .from('users')
-    .select('id, full_name, avatar_url, created_at')
+    .select('id, full_name, avatar_url, email')
     .in('id', followedIds);
   if (usersError) throw new Error(usersError.message);
   return users || [];
 };
 
-// Skeleton Loading Component
+// Skeleton Loading Component - Minimal Design
 const FollowingsSkeleton = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
     {[...Array(6)].map((_, index) => (
-      <div key={index} className="bg-white rounded-xl shadow p-5 flex items-center space-x-4 border border-gray-100 animate-pulse">
+      <div key={index} className="bg-white rounded-lg p-4 flex items-center space-x-3 border border-gray-100 animate-pulse">
         {/* Avatar Skeleton */}
-        <div className="w-14 h-14 bg-gray-200 rounded-full flex-shrink-0"></div>
+        <div className="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0"></div>
         
-        {/* Content Skeleton */}
+        {/* Name Skeleton */}
         <div className="flex-1 min-w-0">
-          {/* Name Skeleton */}
-          <div className="h-5 bg-gray-200 rounded w-24 mb-2"></div>
-          
-          {/* Join Date Skeleton */}
-          <div className="h-3 bg-gray-200 rounded w-20"></div>
+          <div className="h-4 bg-gray-200 rounded w-20"></div>
         </div>
       </div>
     ))}
@@ -66,6 +62,14 @@ const FollowingsSection = () => {
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  const getDisplayName = (creator) => {
+    if (creator.full_name && creator.full_name.trim()) {
+      return creator.full_name;
+    }
+    // Fallback to email username if no full name
+    return creator.email ? creator.email.split('@')[0] : 'Creator';
+  };
 
   return (
     <div className="space-y-6">
@@ -96,27 +100,35 @@ const FollowingsSection = () => {
         </div>
       )}
 
-      {/* Loaded Content */}
+      {/* Loaded Content - Minimal Design */}
       {!isLoading && !error && followings.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {followings.map(creator => (
-            <div key={creator.id} className="bg-white rounded-xl shadow p-5 flex items-center space-x-4 border border-gray-100">
-              <div className="w-14 h-14 bg-primary-100 rounded-full flex items-center justify-center overflow-hidden">
+            <Link
+              key={creator.id}
+              to={`/creators/${creator.id}`}
+              className="bg-white rounded-lg p-4 flex items-center space-x-3 border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all duration-200 group"
+            >
+              {/* Avatar */}
+              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
                 {creator.avatar_url ? (
-                  <img src={creator.avatar_url} alt={creator.full_name} className="w-14 h-14 object-cover rounded-full" />
+                  <img 
+                    src={creator.avatar_url} 
+                    alt={getDisplayName(creator)} 
+                    className="w-12 h-12 object-cover rounded-full" 
+                  />
                 ) : (
-                  <User className="w-7 h-7 text-primary-600" />
+                  <User className="w-6 h-6 text-primary-600" />
                 )}
               </div>
-              <div>
-                <Link to={`/creators/${creator.id}`} className="text-lg font-semibold text-gray-900 hover:text-primary-600">
-                  {creator.full_name}
-                </Link>
-                <div className="text-xs text-gray-500 mt-1">
-                  Joined {new Date(creator.created_at).toLocaleDateString()}
-                </div>
+              
+              {/* Name Only */}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 truncate group-hover:text-primary-600 transition-colors">
+                  {getDisplayName(creator)}
+                </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
