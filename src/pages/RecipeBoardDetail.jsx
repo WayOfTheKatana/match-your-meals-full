@@ -17,16 +17,20 @@ import {
   User,
   Lock,
   Globe,
-  Check
+  Check,
+  X,
+  Save
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedRecipes } from '../hooks/useSavedRecipes';
 import { useRecipeBoards } from '../hooks/useRecipeBoards';
 import { supabase } from '../lib/supabase';
 import { formatTime, getTotalTime } from '../lib/utils';
 import CommonHeader from '../components/CommonHeader';
-import { useQuery } from '@tanstack/react-query';
+import ConfirmationModal from '../components/ConfirmationModal';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AddToBoardModal from '../components/AddToBoardModal';
 
 const fetchBoardDetails = async (boardSlug) => {
@@ -126,10 +130,6 @@ const BoardHeaderSkeleton = () => (
             <div className="w-4 h-4 bg-gray-200 rounded"></div>
             <div className="h-4 bg-gray-200 rounded w-20"></div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-16"></div>
-          </div>
         </div>
       </div>
       <div className="flex items-center space-x-3">
@@ -173,9 +173,22 @@ const RecipeBoardDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { saveRecipe, removeSavedRecipe, isRecipeSaved } = useSavedRecipes();
-  const { deleteBoard } = useRecipeBoards();
-  const [selectedRecipeForBoard, setSelectedRecipeForBoard] = useState(null);
+  const { updateBoard, deleteBoard } = useRecipeBoards();
+  const queryClient = useQueryClient();
+  
+  // State for edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedIsPrivate, setEditedIsPrivate] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // State for delete confirmation
+  const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Other state
+  const [selectedRecipeForBoard, setSelectedRecipeForBoard] = useState(null);
 
   const {
     data: boardData,
@@ -192,12 +205,85 @@ const RecipeBoardDetail = () => {
   const isOwner = user && boardData && user.id === boardData.user_id;
   const canView = boardData && (!boardData.is_private || isOwner);
 
+  // Initialize edit form when boardData changes
+  useEffect(() => {
+    if (boardData && !isEditing) {
+      setEditedTitle(boardData.title || '');
+      setEditedDescription(boardData.description || '');
+      setEditedIsPrivate(boardData.is_private || false);
+    }
+  }, [boardData, isEditing]);
+
   const getDisplayName = (creator) => {
     if (!creator) return 'Unknown Creator';
     if (creator.full_name && creator.full_name.trim()) {
       return creator.full_name;
     }
     return creator.email ? creator.email.split('@')[0] : 'Creator';
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    // Reset to original values
+    setEditedTitle(boardData.title || '');
+    setEditedDescription(boardData.description || '');
+    setEditedIsPrivate(boardData.is_private || false);
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!boardData || !isOwner) return;
+    
+    // Validate title
+    if (!editedTitle.trim()) {
+      alert('Board title is required');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updates = {
+        title: editedTitle.trim(),
+        description: editedDescription.trim() || null,
+        is_private: editedIsPrivate
+      };
+
+      await updateBoard({ boardId: boardData.id, updates });
+      
+      // Invalidate and refetch the board details
+      queryClient.invalidateQueries(['boardDetails', boardSlug]);
+      
+      setIsEditing(false);
+      console.log('✅ Board updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating board:', error);
+      alert(error.message || 'Failed to update board. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setShowConfirmDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!boardData || !isOwner) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteBoard(boardData.id);
+      navigate('/dashboard/consumer/boards');
+    } catch (error) {
+      console.error('❌ Error deleting board:', error);
+      alert('Failed to delete board. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowConfirmDeleteModal(false);
+    }
   };
 
   const handleSaveRecipe = async (recipeId) => {
@@ -240,27 +326,6 @@ const RecipeBoardDetail = () => {
     } else {
       navigator.clipboard.writeText(window.location.href);
       alert('Board link copied to clipboard!');
-    }
-  };
-
-  const handleDeleteBoard = async () => {
-    if (!isOwner) return;
-    
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${boardData.title}"? This action cannot be undone.`
-    );
-    
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-    try {
-      await deleteBoard(boardData.id);
-      navigate('/dashboard/consumer/boards');
-    } catch (error) {
-      console.error('Error deleting board:', error);
-      alert('Failed to delete board. Please try again.');
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -334,14 +399,27 @@ const RecipeBoardDetail = () => {
             <div className="flex-1">
               <div className="flex items-center mb-4">
                 <Layers className="w-8 h-8 text-primary-600 mr-3" />
-                <h1 className="text-3xl font-serif text-gray-900">{boardData.title}</h1>
-                {boardData.is_private && (
+                
+                {/* Editable Title */}
+                {isEditing ? (
+                  <Input
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    className="text-3xl font-serif text-gray-900 border-2 border-primary-300 focus:border-primary-500 h-12 px-3"
+                    placeholder="Board title"
+                    maxLength={100}
+                  />
+                ) : (
+                  <h1 className="text-3xl font-serif text-gray-900">{boardData.title}</h1>
+                )}
+                
+                {/* Privacy Badge */}
+                {(isEditing ? editedIsPrivate : boardData.is_private) ? (
                   <div className="ml-3 flex items-center space-x-1 bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                     <Lock className="w-3 h-3" />
                     <span className="text-xs font-medium">Private</span>
                   </div>
-                )}
-                {!boardData.is_private && (
+                ) : (
                   <div className="ml-3 flex items-center space-x-1 bg-green-100 text-green-600 px-2 py-1 rounded-full">
                     <Globe className="w-3 h-3" />
                     <span className="text-xs font-medium">Public</span>
@@ -349,12 +427,44 @@ const RecipeBoardDetail = () => {
                 )}
               </div>
               
-              {boardData.description && (
-                <p className="text-gray-600 mb-4 text-lg leading-relaxed">
-                  {boardData.description}
-                </p>
+              {/* Editable Description */}
+              {isEditing ? (
+                <div className="mb-4">
+                  <textarea
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-primary-300 focus:border-primary-500 rounded-lg resize-none"
+                    placeholder="Board description (optional)"
+                    rows={3}
+                    maxLength={500}
+                  />
+                </div>
+              ) : (
+                boardData.description && (
+                  <p className="text-gray-600 mb-4 text-lg leading-relaxed">
+                    {boardData.description}
+                  </p>
+                )
+              )}
+
+              {/* Privacy Toggle in Edit Mode */}
+              {isEditing && (
+                <div className="mb-4">
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={editedIsPrivate}
+                      onChange={(e) => setEditedIsPrivate(e.target.checked)}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Make this board private (only you can see it)
+                    </span>
+                  </label>
+                </div>
               )}
               
+              {/* Board Stats - Moved here and simplified */}
               <div className="flex items-center space-x-6 text-gray-700">
                 {/* Creator Info */}
                 <div className="flex items-center space-x-2">
@@ -381,54 +491,72 @@ const RecipeBoardDetail = () => {
                     {boardData.recipe_count} recipe{boardData.recipe_count === 1 ? '' : 's'}
                   </span>
                 </div>
-                
-                {/* Created Date */}
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4 text-primary-600" />
-                  <span className="text-sm font-medium">
-                    Created {new Date(boardData.created_at).toLocaleDateString()}
-                  </span>
-                </div>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-                className="flex items-center space-x-2"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Share</span>
-              </Button>
-              
-              {isOwner && (
+              {isEditing ? (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center space-x-2 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600"
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="flex items-center space-x-2"
                   >
-                    <Edit3 className="w-4 h-4" />
-                    <span>Edit</span>
+                    <X className="w-4 h-4" />
+                    <span>Cancel</span>
                   </Button>
-                  
+                  <Button
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    disabled={isSaving || !editedTitle.trim()}
+                    className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    <span>{isSaving ? 'Saving...' : 'Save'}</span>
+                  </Button>
+                </>
+              ) : (
+                <>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleDeleteBoard}
-                    disabled={isDeleting}
-                    className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                    onClick={handleShare}
+                    className="flex items-center space-x-2"
                   >
-                    {isDeleting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                    <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                    <Share2 className="w-4 h-4" />
+                    <span>Share</span>
                   </Button>
+                  
+                  {isOwner && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEditClick}
+                        className="flex items-center space-x-2 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        <span>Edit</span>
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDeleteClick}
+                        className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Delete</span>
+                      </Button>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -578,44 +706,20 @@ const RecipeBoardDetail = () => {
             )}
           </div>
         )}
-
-        {/* Board Stats */}
-        {boardData.recipes.length > 0 && (
-          <div className="mt-8 bg-white rounded-2xl p-6 shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Board Statistics</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <BookOpen className="w-6 h-6 text-primary-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900">{boardData.recipe_count}</p>
-                <p className="text-sm text-gray-600">Total Recipes</p>
-              </div>
-              <div className="text-center">
-                <Clock className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900">
-                  {Math.round(
-                    boardData.recipes.reduce((sum, br) => sum + getTotalTime(br.recipes), 0) / boardData.recipes.length
-                  ) || 0}m
-                </p>
-                <p className="text-sm text-gray-600">Avg Cook Time</p>
-              </div>
-              <div className="text-center">
-                <Users className="w-6 h-6 text-green-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900">
-                  {Math.round(
-                    boardData.recipes.reduce((sum, br) => sum + (br.recipes.servings || 0), 0) / boardData.recipes.length
-                  ) || 0}
-                </p>
-                <p className="text-sm text-gray-600">Avg Servings</p>
-              </div>
-              <div className="text-center">
-                <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900">4.8</p>
-                <p className="text-sm text-gray-600">Avg Rating</p>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmDeleteModal}
+        onClose={() => setShowConfirmDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Recipe Board"
+        message={`Are you sure you want to delete "${boardData?.title}"? This action cannot be undone and will remove all recipes from this board.`}
+        confirmText="Delete Board"
+        cancelText="Cancel"
+        isDestructive={true}
+        loading={isDeleting}
+      />
 
       {/* Add to Board Modal */}
       <AddToBoardModal
