@@ -277,6 +277,9 @@ const RecipeBoardDetail = () => {
     try {
       await deleteBoard(boardData.id);
       
+      // Cancel any pending queries for this board to prevent unnecessary network requests
+      queryClient.cancelQueries(['boardDetails', boardSlug]);
+      
       // Remove the board data from React Query cache to prevent refetch attempts
       queryClient.removeQueries(['boardDetails', boardSlug]);
       
