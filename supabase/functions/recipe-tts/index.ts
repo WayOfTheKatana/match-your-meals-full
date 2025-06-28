@@ -115,8 +115,29 @@ Deno.serve(async (req: Request) => {
       throw new Error('Only POST method is allowed')
     }
 
-    // Parse request body
-    const payload: RequestPayload = await req.json()
+    // Parse request body with robust error handling
+    let payload: RequestPayload
+    
+    try {
+      // First, read the request body as text
+      const bodyText = await req.text()
+      console.log('📋 Raw request body length:', bodyText.length)
+      
+      // Check if body is empty
+      if (!bodyText || bodyText.trim().length === 0) {
+        throw new Error('Request body is empty')
+      }
+      
+      // Log first 200 characters of body for debugging (without sensitive data)
+      console.log('📋 Request body preview:', bodyText.substring(0, 200))
+      
+      // Parse the JSON
+      payload = JSON.parse(bodyText)
+      
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError)
+      throw new Error(`Invalid JSON in request body: ${parseError.message}`)
+    }
     
     if (!payload.text || payload.text.trim().length === 0) {
       throw new Error('Text is required for speech generation')
