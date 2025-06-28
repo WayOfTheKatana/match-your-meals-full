@@ -8,7 +8,7 @@ import { generateSlug } from '../../lib/utils';
 
 const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
   const { user } = useAuth();
-  const { createBoard } = useRecipeBoards();
+  const { createBoard, isCreating } = useRecipeBoards();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -61,8 +61,8 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
       
       console.log('🔄 Creating board with title:', title);
 
-      // Use the React Query mutation instead of direct Supabase call
-      const newBoard = await createBoard.mutateAsync({
+      // Use the createBoard function directly (it's already the mutateAsync function)
+      const newBoard = await createBoard({
         title: title,
         description: description || null,
         isPrivate: formData.isPrivate
@@ -100,7 +100,7 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
   };
 
   const handleClose = () => {
-    if (createBoard.isPending) return; // Prevent closing while loading
+    if (isCreating) return; // Prevent closing while loading
     
     setFormData({
       title: '',
@@ -121,7 +121,7 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
 
   if (!isOpen) return null;
 
-  const isLoading = createBoard.isPending;
+  const isLoading = isCreating;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
