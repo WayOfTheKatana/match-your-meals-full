@@ -3,17 +3,17 @@ import { X, Layers, Loader2, AlertCircle, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { useRecipeBoards } from '../../hooks/useRecipeBoards';
 import { generateSlug } from '../../lib/utils';
 
 const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
   const { user } = useAuth();
+  const { createBoard } = useRecipeBoards();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     isPrivate: false
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -52,7 +52,6 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
       return;
     }
 
-    setLoading(true);
     setError('');
     setSuccess('');
 
@@ -60,58 +59,20 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
       const title = formData.title.trim();
       const description = formData.description.trim();
       
-      // Generate a unique slug
-      const baseSlug = generateSlug(title);
-      let finalSlug = baseSlug;
-      let counter = 0;
+      console.log('🔄 Creating board with title:', title);
 
-      // Check if slug already exists and make it unique
-      while (true) {
-        const { data: existingBoard, error: checkError } = await supabase
-          .from('recipe_boards')
-          .select('id')
-          .eq('slug', finalSlug)
-          .single();
-
-        if (checkError && checkError.code === 'PGRST116') {
-          // No existing board with this slug, we can use it
-          break;
-        } else if (checkError) {
-          throw checkError;
-        } else {
-          // Slug exists, try with counter
-          counter++;
-          finalSlug = `${baseSlug}-${counter}`;
-        }
-      }
-
-      console.log('🔄 Creating board with slug:', finalSlug);
-
-      // Create the board
-      const { data: newBoard, error: createError } = await supabase
-        .from('recipe_boards')
-        .insert([
-          {
-            user_id: user.id,
-            title: title,
-            slug: finalSlug,
-            description: description || null,
-            is_private: formData.isPrivate
-          }
-        ])
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('❌ Error creating board:', createError);
-        throw createError;
-      }
+      // Use the React Query mutation instead of direct Supabase call
+      const newBoard = await createBoard.mutateAsync({
+        title: title,
+        description: description || null,
+        isPrivate: formData.isPrivate
+      });
 
       console.log('✅ Board created successfully:', newBoard);
 
       setSuccess('Board created successfully!');
       
-      // Call the callback to refresh the boards list
+      // Call the callback to refresh the boards list (if needed for additional UI updates)
       if (onBoardCreated) {
         onBoardCreated(newBoard);
       }
@@ -135,13 +96,11 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
       }
       
       setError(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleClose = () => {
-    if (loading) return; // Prevent closing while loading
+    if (createBoard.isPending) return; // Prevent closing while loading
     
     setFormData({
       title: '',
@@ -162,6 +121,8 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
 
   if (!isOpen) return null;
 
+  const isLoading = createBoard.isPending;
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -178,7 +139,7 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
           </div>
           <button
             onClick={handleClose}
-            disabled={loading}
+            disabled={isLoading}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
           >
             <X className="w-5 h-5 text-gray-500" />
@@ -218,7 +179,7 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
                 onKeyPress={handleKeyPress}
                 placeholder="e.g., Healthy Breakfast Ideas"
                 className="h-12 bg-white border-gray-200 focus:border-primary-500 focus:ring-primary-500 rounded-lg"
-                disabled={loading}
+                disabled={isLoading}
                 maxLength={100}
                 required
               />
@@ -239,7 +200,7 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
                 placeholder="Describe what this board is about..."
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-                disabled={loading}
+                disabled={isLoading}
                 maxLength={500}
               />
               <p className="text-xs text-gray-500">
@@ -255,7 +216,7 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
                 checked={formData.isPrivate}
                 onChange={(e) => handleInputChange('isPrivate', e.target.checked)}
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                disabled={loading}
+                disabled={isLoading}
               />
               <label htmlFor="isPrivate" className="text-sm text-gray-700">
                 Make this board private (only you can see it)
@@ -268,17 +229,17 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                disabled={loading}
+                disabled={isLoading}
                 className="px-4 py-2"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={loading || !formData.title.trim()}
+                disabled={isLoading || !formData.title.trim()}
                 className="px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? (
+                {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Creating...</span>
