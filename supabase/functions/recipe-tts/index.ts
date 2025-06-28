@@ -114,12 +114,31 @@ Deno.serve(async (req: Request) => {
       throw new Error('Only POST method is allowed')
     }
 
+    // Check if request has a body
+    const contentLength = req.headers.get('content-length')
+    if (!contentLength || parseInt(contentLength) === 0) {
+      console.error('❌ Request has no body or empty body')
+      throw new Error('Request body is empty')
+    }
+
+    // Log request headers for debugging
+    console.log('📋 Request headers:')
+    for (const [key, value] of req.headers.entries()) {
+      // Don't log authorization headers
+      if (!key.toLowerCase().includes('auth') && !key.toLowerCase().includes('key')) {
+        console.log(`${key}: ${value}`)
+      }
+    }
+
     // Parse request body with robust error handling
     let payload: RequestPayload
     
     try {
+      // Clone the request to avoid consuming the body
+      const clonedReq = req.clone()
+      
       // First, read the request body as text
-      const bodyText = await req.text()
+      const bodyText = await clonedReq.text()
       console.log('📋 Raw request body length:', bodyText.length)
       
       // Check if body is empty
@@ -127,19 +146,28 @@ Deno.serve(async (req: Request) => {
         throw new Error('Request body is empty')
       }
       
-      // Log first 200 characters of body for debugging (without sensitive data)
-      console.log('📋 Request body preview:', bodyText.substring(0, 200))
+      // Log first 100 characters of body for debugging (without sensitive data)
+      console.log('📋 Request body preview:', bodyText.substring(0, 100).replace(/"/g, "'"))
       
       // Parse the JSON
-      payload = JSON.parse(bodyText)
+      try {
+        payload = JSON.parse(bodyText)
+      } catch (jsonError) {
+        console.error('❌ JSON parse error:', jsonError)
+        throw new Error(`Invalid JSON format: ${jsonError.message}`)
+      }
       
     } catch (parseError) {
       console.error('❌ Failed to parse request body:', parseError)
       throw new Error(`Invalid JSON in request body: ${parseError.message}`)
     }
     
-    if (!payload.text || payload.text.trim().length === 0) {
-      throw new Error('Text is required for speech generation')
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('Invalid request payload: must be a JSON object')
+    }
+    
+    if (!payload.text || typeof payload.text !== 'string' || payload.text.trim().length === 0) {
+      throw new Error('Text is required for speech generation and must be a non-empty string')
     }
 
     console.log('📋 TTS request received:', {
