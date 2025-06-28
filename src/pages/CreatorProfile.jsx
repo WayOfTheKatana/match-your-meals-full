@@ -315,7 +315,7 @@ const CreatorProfile = () => {
                     {/* Recipe Image */}
                     <div className="relative w-48 h-32 flex-shrink-0 overflow-hidden rounded-lg">
                       <img
-                        src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400'}
+                        src={recipe.image_path || 'https://images.pexels.com/photos/262959/pexels-photo-262959.jpeg?auto=compress&cs=tinysrgb&w=400'}
                         alt={recipe.title}
                         className="w-full h-full object-cover"
                       />

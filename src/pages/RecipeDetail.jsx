@@ -240,7 +240,7 @@ const RecipeDetail = () => {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="relative h-96 overflow-hidden">
                 <img
-                  src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                  src={recipe.image_path || 'https://images.pexels.com/photos/262959/pexels-photo-262959.jpeg?auto=compress&cs=tinysrgb&w=800'}
                   alt={recipe.title}
                   className="w-full h-full object-cover"
                 />

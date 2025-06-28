@@ -69,7 +69,7 @@ const SavedRecipesSection = ({
                     {/* Recipe Image */}
                     <div className="relative overflow-hidden rounded-xl w-32 h-32 flex-shrink-0">
                       <img
-                        src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                        src={recipe.image_path || 'https://images.pexels.com/photos/262959/pexels-photo-262959.jpeg?auto=compress&cs=tinysrgb&w=300'}
                         alt={recipe.title}
                         className="w-full h-full object-cover"
                       />
