@@ -107,9 +107,9 @@ const CreatorDashboardLayout = (props) => {
       
       const recipeIds = recipes.map(r => r.id);
       
-      // Get total views (all-time)
+      // Get total views (all-time, no date filter)
       const { count: totalViews, error: totalError } = await supabase
-        .from('recipe_analytics')
+        .from('recipe_views')
         .select('*', { count: 'exact', head: true })
         .in('recipe_id', recipeIds);
       
@@ -118,21 +118,21 @@ const CreatorDashboardLayout = (props) => {
       // Get unique users (today)
       const today = new Date().toISOString().split('T')[0];
       const { count: uniqueUsers, error: uniqueError } = await supabase
-        .from('recipe_analytics')
+        .from('recipe_views')
         .select('user_id', { count: 'exact', head: true })
         .in('recipe_id', recipeIds)
-        .gte('created_at', `${today}T00:00:00`)
-        .lt('created_at', `${today}T23:59:59`);
+        .gte('viewed_at', `${today}T00:00:00`)
+        .lt('viewed_at', `${today}T23:59:59`);
       
       if (uniqueError) throw uniqueError;
       
       // Get session views (today)
       const { count: sessionViews, error: sessionError } = await supabase
-        .from('recipe_analytics')
+        .from('recipe_views')
         .select('*', { count: 'exact', head: true })
         .in('recipe_id', recipeIds)
-        .gte('created_at', `${today}T00:00:00`)
-        .lt('created_at', `${today}T23:59:59`);
+        .gte('viewed_at', `${today}T00:00:00`)
+        .lt('viewed_at', `${today}T23:59:59`);
       
       if (sessionError) throw sessionError;
       

@@ -8,15 +8,15 @@ const CreatorStatsWidget = ({ publishedCount = 0, followersCount = 0, analyticsS
     <div className="grid grid-cols-1 gap-3">
       <div className="flex items-center justify-between">
         <span className="text-gray-600">Published Recipes</span>
-        <span className="font-bold text-primary-700">{publishedCount}</span>
+        <span className="font-bold text-primary-700 text-right">{publishedCount}</span>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-gray-600">Followers</span>
-        <span className="font-bold text-primary-700">{followersCount}</span>
+        <span className="font-bold text-primary-700 text-right">{followersCount}</span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-gray-600">Analytics</span>
-        <span className="font-bold text-primary-700">{analyticsSummary?.views || 0} views</span>
+        <span className="text-gray-600">Total Views</span>
+        <span className="font-semibold text-orange-600 text-right">{analyticsSummary?.totalViews || 0} views</span>
       </div>
     </div>
   </div>
