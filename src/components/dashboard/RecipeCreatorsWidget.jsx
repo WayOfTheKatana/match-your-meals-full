@@ -5,26 +5,43 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 
 const fetchRecentCreators = async () => {
-  // Get users who have published at least one recipe, with their recipe count
-  const { data, error } = await supabase
+  // First, get recipe counts per creator
+  const { data: recipeCounts, error: recipeError } = await supabase
+    .from('recipes')
+    .select('creator_id')
+    .not('creator_id', 'is', null);
+  
+  if (recipeError) throw new Error(recipeError.message);
+  
+  // Count recipes per creator
+  const creatorRecipeCounts = {};
+  recipeCounts.forEach(recipe => {
+    if (recipe.creator_id) {
+      creatorRecipeCounts[recipe.creator_id] = (creatorRecipeCounts[recipe.creator_id] || 0) + 1;
+    }
+  });
+  
+  // Get creators who have published at least one recipe
+  const creatorIds = Object.keys(creatorRecipeCounts);
+  
+  if (creatorIds.length === 0) {
+    return [];
+  }
+  
+  // Get user details for creators
+  const { data: creators, error: usersError } = await supabase
     .from('users')
-    .select(`
-      id, 
-      full_name, 
-      avatar_url, 
-      created_at, 
-      email,
-      recipes!inner(id)
-    `)
+    .select('id, full_name, avatar_url, created_at, email')
+    .in('id', creatorIds)
     .order('created_at', { ascending: false })
     .limit(5);
   
-  if (error) throw new Error(error.message);
+  if (usersError) throw new Error(usersError.message);
   
-  // Transform data to include recipe count
-  const creatorsWithRecipeCount = (data || []).map(user => ({
+  // Combine user data with recipe counts
+  const creatorsWithRecipeCount = (creators || []).map(user => ({
     ...user,
-    recipe_count: user.recipes?.length || 0
+    recipe_count: creatorRecipeCounts[user.id] || 0
   }));
   
   return creatorsWithRecipeCount;
