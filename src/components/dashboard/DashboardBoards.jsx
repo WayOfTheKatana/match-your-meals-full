@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
-import { Layers, Plus, BookOpen, Heart, Clock, Users, Star, Loader2, AlertCircle, Lock, Globe } from 'lucide-react';
+import { Layers, Plus, BookOpen, Loader2, AlertCircle, Star } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Link } from 'react-router-dom';
 
@@ -92,11 +92,6 @@ const BoardSkeleton = () => (
         </div>
       </div>
       
-      {/* Privacy Badge Skeleton */}
-      <div className="absolute top-3 right-3">
-        <div className="w-16 h-6 bg-gray-300 rounded-full"></div>
-      </div>
-      
       {/* Recipe Count Skeleton */}
       <div className="absolute bottom-3 left-3">
         <div className="w-20 h-5 bg-gray-300 rounded"></div>
@@ -108,12 +103,8 @@ const BoardSkeleton = () => (
       <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
       
       {/* Board Actions Skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="h-4 bg-gray-200 rounded w-24"></div>
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gray-200 rounded"></div>
-          <div className="w-20 h-8 bg-gray-200 rounded"></div>
-        </div>
+      <div className="flex items-center justify-end">
+        <div className="w-20 h-8 bg-gray-200 rounded"></div>
       </div>
     </div>
   </div>
@@ -292,27 +283,6 @@ const DashboardBoards = () => {
                 {/* Overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                 
-                {/* Privacy Badge */}
-                <div className="absolute top-3 right-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${
-                    board.is_private 
-                      ? 'bg-gray-900/70 text-white' 
-                      : 'bg-green-500/70 text-white'
-                  }`}>
-                    {board.is_private ? (
-                      <>
-                        <Lock className="w-3 h-3" />
-                        <span>Private</span>
-                      </>
-                    ) : (
-                      <>
-                        <Globe className="w-3 h-3" />
-                        <span>Public</span>
-                      </>
-                    )}
-                  </span>
-                </div>
-                
                 {/* Recipe Count */}
                 <div className="absolute bottom-3 left-3 text-white">
                   <div className="flex items-center space-x-1 bg-black/50 rounded-full px-2 py-1">
@@ -328,26 +298,11 @@ const DashboardBoards = () => {
                   {board.name}
                 </h3>
                 
-                {/* Board Actions */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">
-                    Created {new Date(board.created_at).toLocaleDateString()}
+                {/* Board Actions - Simplified */}
+                <div className="flex items-center justify-end">
+                  <span className="text-sm text-primary-600 font-medium group-hover:text-primary-700">
+                    View Board →
                   </span>
-                  <div className="flex items-center space-x-2">
-                    <button 
-                      className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Handle favorite toggle
-                      }}
-                    >
-                      <Heart className="w-4 h-4" />
-                    </button>
-                    <span className="text-sm text-primary-600 font-medium group-hover:text-primary-700">
-                      View Board →
-                    </span>
-                  </div>
                 </div>
               </div>
             </Link>
@@ -407,7 +362,9 @@ const DashboardBoards = () => {
               <p className="text-sm text-gray-600">Total Recipes</p>
             </div>
             <div className="text-center">
-              <Globe className="w-6 h-6 text-green-500 mx-auto mb-2" />
+              <div className="w-6 h-6 bg-green-500 rounded-full mx-auto mb-2 flex items-center justify-center">
+                <span className="text-white text-xs font-bold">2</span>
+              </div>
               <p className="text-2xl font-bold text-gray-900">
                 {userBoards.filter(board => !board.is_private).length}
               </p>
