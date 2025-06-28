@@ -8,7 +8,8 @@ const fetchUserBoards = async (userId) => {
   
   console.log('🔍 Fetching boards for user:', userId);
   
-  const { data, error } = await supabase
+  // Get boards with actual recipe counts and images
+  const { data: boards, error: boardsError } = await supabase
     .from('recipe_boards')
     .select(`
       id,
@@ -22,26 +23,118 @@ const fetchUserBoards = async (userId) => {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   
-  if (error) {
-    console.error('❌ Error fetching boards:', error);
-    throw new Error(error.message);
+  if (boardsError) {
+    console.error('❌ Error fetching boards:', boardsError);
+    throw new Error(boardsError.message);
   }
   
-  console.log('✅ Fetched boards:', data?.length || 0);
+  if (!boards || boards.length === 0) {
+    return [];
+  }
   
-  // For now, add mock recipe data since we don't have the board_recipes relationship set up yet
-  const boardsWithMockData = (data || []).map((board, index) => ({
-    ...board,
-    recipe_count: Math.floor(Math.random() * 20) + 1, // Random count between 1-20
-    recipe_images: [
-      'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200',
-      'https://images.pexels.com/photos/566566/pexels-photo-566566.jpeg?auto=compress&cs=tinysrgb&w=200',
-      'https://images.pexels.com/photos/775032/pexels-photo-775032.jpeg?auto=compress&cs=tinysrgb&w=200',
-      'https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=200'
-    ].slice(0, Math.floor(Math.random() * 4) + 1) // Random 1-4 images
-  }));
+  // Get recipe counts and images for each board
+  const boardsWithData = await Promise.all(
+    boards.map(async (board) => {
+      // Get recipe count for this board
+      const { count: recipeCount, error: countError } = await supabase
+        .from('board_recipes')
+        .select('*', { count: 'exact', head: true })
+        .eq('board_id', board.id);
+      
+      if (countError) {
+        console.error('❌ Error fetching recipe count for board:', board.id, countError);
+      }
+      
+      // Get recipe images for this board (up to 4 for display)
+      const { data: recipeImages, error: imagesError } = await supabase
+        .from('board_recipes')
+        .select(`
+          recipes (
+            image_path
+          )
+        `)
+        .eq('board_id', board.id)
+        .limit(4);
+      
+      if (imagesError) {
+        console.error('❌ Error fetching recipe images for board:', board.id, imagesError);
+      }
+      
+      // Extract image URLs
+      const imageUrls = recipeImages
+        ?.map(item => item.recipes?.image_path)
+        .filter(Boolean) || [];
+      
+      return {
+        ...board,
+        recipe_count: recipeCount || 0,
+        recipe_images: imageUrls
+      };
+    })
+  );
   
-  return boardsWithMockData;
+  console.log('✅ Fetched boards with data:', boardsWithData.length);
+  return boardsWithData;
+};
+
+const addRecipeToBoard = async (boardId, recipeId, userId) => {
+  if (!userId) throw new Error('User must be logged in to add recipes to boards');
+  
+  // Verify the board belongs to the user
+  const { data: board, error: boardError } = await supabase
+    .from('recipe_boards')
+    .select('id')
+    .eq('id', boardId)
+    .eq('user_id', userId)
+    .single();
+  
+  if (boardError || !board) {
+    throw new Error('Board not found or access denied');
+  }
+  
+  // Add recipe to board (will handle duplicates with UNIQUE constraint)
+  const { data, error } = await supabase
+    .from('board_recipes')
+    .insert([{
+      board_id: boardId,
+      recipe_id: recipeId
+    }])
+    .select()
+    .single();
+  
+  if (error) {
+    if (error.code === '23505') { // Unique constraint violation
+      throw new Error('Recipe is already in this board');
+    }
+    throw error;
+  }
+  
+  return data;
+};
+
+const removeRecipeFromBoard = async (boardId, recipeId, userId) => {
+  if (!userId) throw new Error('User must be logged in to remove recipes from boards');
+  
+  // Verify the board belongs to the user
+  const { data: board, error: boardError } = await supabase
+    .from('recipe_boards')
+    .select('id')
+    .eq('id', boardId)
+    .eq('user_id', userId)
+    .single();
+  
+  if (boardError || !board) {
+    throw new Error('Board not found or access denied');
+  }
+  
+  const { error } = await supabase
+    .from('board_recipes')
+    .delete()
+    .eq('board_id', boardId)
+    .eq('recipe_id', recipeId);
+  
+  if (error) throw error;
+  return { boardId, recipeId };
 };
 
 export const useRecipeBoards = () => {
@@ -126,6 +219,26 @@ export const useRecipeBoards = () => {
     },
   });
 
+  // Add recipe to board
+  const addRecipeToBoardMutation = useMutation({
+    mutationFn: async ({ boardId, recipeId }) => {
+      return addRecipeToBoard(boardId, recipeId, user?.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userBoards', user?.id]);
+    },
+  });
+
+  // Remove recipe from board
+  const removeRecipeFromBoardMutation = useMutation({
+    mutationFn: async ({ boardId, recipeId }) => {
+      return removeRecipeFromBoard(boardId, recipeId, user?.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userBoards', user?.id]);
+    },
+  });
+
   return {
     boards,
     loading,
@@ -134,8 +247,12 @@ export const useRecipeBoards = () => {
     createBoard: createBoardMutation.mutateAsync,
     updateBoard: updateBoardMutation.mutateAsync,
     deleteBoard: deleteBoardMutation.mutateAsync,
+    addRecipeToBoard: addRecipeToBoardMutation.mutateAsync,
+    removeRecipeFromBoard: removeRecipeFromBoardMutation.mutateAsync,
     isCreating: createBoardMutation.isPending,
     isUpdating: updateBoardMutation.isPending,
     isDeleting: deleteBoardMutation.isPending,
+    isAddingRecipe: addRecipeToBoardMutation.isPending,
+    isRemovingRecipe: removeRecipeFromBoardMutation.isPending,
   };
 };

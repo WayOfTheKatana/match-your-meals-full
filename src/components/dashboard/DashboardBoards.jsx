@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRecipeBoards } from '../../hooks/useRecipeBoards';
-import { Layers, Plus, BookOpen, Loader2, AlertCircle, Star } from 'lucide-react';
+import { Layers, Plus, BookOpen, Loader2, AlertCircle, Star, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Link } from 'react-router-dom';
 import CreateBoardModal from './CreateBoardModal';
@@ -56,6 +56,24 @@ const DashboardBoards = () => {
   };
 
   const renderRecipeImagesGrid = (images, recipeCount) => {
+    // If no recipes, show empty state
+    if (recipeCount === 0) {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+          <div className="text-center">
+            <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">No recipes yet</p>
+            <Link 
+              to="/explore-recipes"
+              className="text-xs text-primary-600 hover:text-primary-700 font-medium mt-1 inline-flex items-center"
+            >
+              Explore recipes <ExternalLink className="w-3 h-3 ml-1" />
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
     // Ensure we have at least some placeholder images
     const placeholderImages = [
       'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200',
@@ -263,13 +281,25 @@ const DashboardBoards = () => {
           <p className="text-gray-600 mb-6">
             Create your first board to start organizing your favorite recipes
           </p>
-          <Button 
-            className="bg-primary-600 hover:bg-primary-700"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Your First Board
-          </Button>
+          <div className="space-y-3">
+            <Button 
+              className="bg-primary-600 hover:bg-primary-700"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Your First Board
+            </Button>
+            <p className="text-sm text-gray-500">
+              or{' '}
+              <Link 
+                to="/explore-recipes" 
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                explore recipes
+              </Link>
+              {' '}to find ones to save
+            </p>
+          </div>
         </div>
       )}
 

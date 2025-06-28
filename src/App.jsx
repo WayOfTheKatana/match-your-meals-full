@@ -8,6 +8,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import RecipeDetail from './pages/RecipeDetail';
 import CreatorProfile from './pages/CreatorProfile';
+import ExploreRecipes from './pages/ExploreRecipes';
 import BoltBadge from './components/BoltBadge';
 import DashboardHome from './components/dashboard/DashboardHome';
 import DashboardAnalytics from './components/dashboard/DashboardAnalytics';
@@ -33,6 +34,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/explore-recipes" element={<ExploreRecipes />} />
             {/* Redirect /dashboard to /dashboard/consumer */}
             <Route path="/dashboard" element={<Navigate to="/dashboard/consumer" replace />} />
             {/* Consumer Dashboard */}
