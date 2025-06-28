@@ -4,6 +4,7 @@ import { X, Eye, EyeOff, Mail, Lock, User, ChefHat, AlertCircle, Check } from 'l
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const LoginModal = ({ isOpen, onClose, onSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,6 +20,8 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
+
+  const navigate = useNavigate();
 
   const { signIn, signUp, isConnected } = useAuth();
 
@@ -79,6 +82,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
         if (data?.user) {
           setSuccess('Login successful! Redirecting...');
           setTimeout(() => {
+            navigate('/dashboard');
             onSuccess && onSuccess();
             onClose();
           }, 1000);
@@ -99,6 +103,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
           if (data.user.email_confirmed_at) {
             setSuccess('Account created successfully! Redirecting...');
             setTimeout(() => {
+              navigate('/dashboard');
               onSuccess && onSuccess();
               onClose();
             }, 1500);

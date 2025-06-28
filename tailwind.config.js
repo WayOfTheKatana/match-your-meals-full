@@ -23,6 +23,8 @@ export default {
       fontFamily: {
         'serif': ['Instrument Serif', 'serif'],
         'sans': ['Inter', 'sans-serif'],
+        'dm-serif': ['DM Serif Text', 'serif'],
+        'urbanist': ['Urbanist', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

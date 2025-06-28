@@ -1,18 +1,19 @@
 import React from 'react';
-import DashboardStatsWidget from './DashboardStatsWidget';
-import DashboardTrendingWidget from './DashboardTrendingWidget';
-import DashboardUpcomingEventsWidget from './DashboardUpcomingEventsWidget';
-import DashboardAchievementWidget from './DashboardAchievementWidget';
+import ConsumerStatsWidget from './ConsumerStatsWidget';
+import CreatorStatsWidget from './CreatorStatsWidget';
 import SavedRecipesSidebarWidgets from './SavedRecipesSidebarWidgets';
 
 const DashboardRightSidebar = ({ 
   currentView,
-  isCreatorMode,
-  currentStats,
-  trendingTopics,
-  creatorInsights,
-  upcomingEvents,
-  handleQuickSearch,
+  mode = 'consumer',
+  // Consumer stats
+  followingsCount = 0,
+  searchesCount = 0,
+  savedRecipesCount = 0,
+  // Creator stats
+  publishedCount = 0,
+  followersCount = 0,
+  analyticsSummary = {},
   // Saved recipes specific props
   savedRecipes,
   relatedRecipes,
@@ -36,27 +37,20 @@ const DashboardRightSidebar = ({
           />
         ) : (
           <>
-            {/* Default sidebar widgets */}
-            <DashboardStatsWidget 
-              isCreatorMode={isCreatorMode}
-              currentStats={currentStats}
-            />
-            
-            <DashboardTrendingWidget
-              isCreatorMode={isCreatorMode}
-              trendingTopics={trendingTopics}
-              creatorInsights={creatorInsights}
-              handleQuickSearch={handleQuickSearch}
-            />
-            
-            <DashboardUpcomingEventsWidget
-              isCreatorMode={isCreatorMode}
-              upcomingEvents={upcomingEvents}
-            />
-            
-            <DashboardAchievementWidget
-              isCreatorMode={isCreatorMode}
-            />
+            {/* Show only the appropriate stats widget */}
+            {mode === 'creator' ? (
+              <CreatorStatsWidget
+                publishedCount={publishedCount}
+                followersCount={followersCount}
+                analyticsSummary={analyticsSummary}
+              />
+            ) : (
+              <ConsumerStatsWidget
+                followingsCount={followingsCount}
+                searchesCount={searchesCount}
+                savedRecipesCount={savedRecipesCount}
+              />
+            )}
           </>
         )}
       </div>

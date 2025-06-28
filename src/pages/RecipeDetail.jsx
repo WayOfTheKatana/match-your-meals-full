@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   Clock, 
@@ -23,24 +23,48 @@ import { useSavedRecipes } from '../hooks/useSavedRecipes';
 import { supabase } from '../lib/supabase';
 import { formatTime, getTotalTime } from '../lib/utils';
 import CommonHeader from '../components/CommonHeader';
+import { getOrCreateSessionId } from '../lib/session';
+import { useQueryClient } from '@tanstack/react-query';
 
 const RecipeDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { saveRecipe, removeSavedRecipe, isRecipeSaved } = useSavedRecipes();
+  const queryClient = useQueryClient();
 
   const [recipe, setRecipe] = useState(null);
   const [creatorProfile, setCreatorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const hasRecordedView = useRef(false);
 
   useEffect(() => {
     if (slug) {
       fetchRecipe();
     }
   }, [slug]);
+
+  useEffect(() => {
+    if (!recipe || hasRecordedView.current) return;
+
+    const recordView = async () => {
+      const sessionId = getOrCreateSessionId();
+      await supabase.from('recipe_views').insert({
+        recipe_id: recipe.id,
+        user_id: user ? user.id : null,
+        session_id: sessionId,
+        // viewed_at will default to now
+      });
+      hasRecordedView.current = true;
+      // Invalidate analytics query for today
+      const today = new Date().toISOString().slice(0, 10);
+      queryClient.invalidateQueries(['recipeAnalyticsForDate', user?.id, today]);
+    };
+
+    recordView();
+  }, [recipe, user]);
 
   const fetchRecipe = async () => {
     setLoading(true);

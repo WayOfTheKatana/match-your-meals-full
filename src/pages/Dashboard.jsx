@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedRecipes } from '../hooks/useSavedRecipes';
 import { useSearchHistory } from '../hooks/useSearchHistory';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import RecipeCreationModal from '../components/RecipeCreationModal';
+import { useQuery } from '@tanstack/react-query';
+import { Outlet, useLocation } from 'react-router-dom';
 
 // Dashboard Components
 import DashboardHeader from '../components/dashboard/DashboardHeader';
@@ -17,6 +19,10 @@ import SavedRecipesSection from '../components/dashboard/SavedRecipesSection';
 import SearchHistorySection from '../components/dashboard/SearchHistorySection';
 import RecipeCategoriesBrowser from '../components/dashboard/RecipeCategoriesBrowser';
 import DashboardRightSidebar from '../components/dashboard/DashboardRightSidebar';
+import FollowingsSection from '../components/dashboard/FollowingsSection';
+import PublishedRecipesSection from '../components/dashboard/PublishedRecipesSection';
+import FollowersSection from '../components/dashboard/FollowersSection';
+import RecipeAnalyticsSection from '../components/dashboard/RecipeAnalyticsSection';
 
 // Navigation items
 import { 
@@ -38,7 +44,34 @@ import {
   Eye
 } from 'lucide-react';
 
-const Dashboard = () => {
+const fetchRecentRecipes = async () => {
+  const { data, error } = await supabase
+    .from('recipes')
+    .select(`
+      id,
+      slug,
+      title,
+      description,
+      prep_time,
+      cook_time,
+      servings,
+      image_path,
+      ingredients,
+      instructions,
+      health_tags,
+      dietary_tags,
+      health_benefits,
+      nutritional_info,
+      creator_id,
+      created_at
+    `)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  if (error) throw new Error(error.message);
+  return data || [];
+};
+
+const Dashboard = ({ section }) => {
   const { user, userProfile, signOut, isConnected } = useAuth();
   const { savedRecipes, saveRecipe, removeSavedRecipe, isRecipeSaved, loading: savedRecipesLoading } = useSavedRecipes();
   const { searchHistory, addSearchHistory, deleteSearchHistory, clearAllSearchHistory, loading: searchHistoryLoading, error: searchHistoryError } = useSearchHistory();
@@ -50,12 +83,19 @@ const Dashboard = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
-  const [recentRecipes, setRecentRecipes] = useState([]);
-  const [recipesLoading, setRecipesLoading] = useState(false);
-  const [recipesError, setRecipesError] = useState('');
-  const [currentView, setCurrentView] = useState('home');
   const [relatedRecipes, setRelatedRecipes] = useState([]);
   const [relatedRecipesLoading, setRelatedRecipesLoading] = useState(false);
+
+  const {
+    data: recentRecipes = [],
+    isLoading: recipesLoading,
+    error: recipesError,
+    refetch: refetchRecentRecipes,
+  } = useQuery({
+    queryKey: ['recentRecipes'],
+    queryFn: fetchRecentRecipes,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   useEffect(() => {
     console.log('Dashboard loaded - User:', user?.email);
@@ -63,7 +103,7 @@ const Dashboard = () => {
     console.log('Connected to Supabase:', isConnected);
     
     if (isConnected) {
-      fetchRecentRecipes();
+      fetchRelatedRecipes();
     }
   }, [user, userProfile, isConnected]);
 
@@ -77,56 +117,10 @@ const Dashboard = () => {
 
   // Fetch related recipes when saved recipes change and we're on saved view
   useEffect(() => {
-    if (currentView === 'saved' && savedRecipes.length > 0) {
+    if (section === 'saved' && savedRecipes.length > 0) {
       fetchRelatedRecipes();
     }
-  }, [currentView, savedRecipes]);
-
-  // Fetch recent recipes from database
-  const fetchRecentRecipes = async () => {
-    setRecipesLoading(true);
-    setRecipesError('');
-
-    try {
-      console.log('🔄 Fetching recent recipes from database...');
-      
-      const { data, error } = await supabase
-        .from('recipes')
-        .select(`
-          id,
-          slug,
-          title,
-          description,
-          prep_time,
-          cook_time,
-          servings,
-          image_path,
-          ingredients,
-          instructions,
-          health_tags,
-          dietary_tags,
-          health_benefits,
-          nutritional_info,
-          creator_id,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error('❌ Error fetching recipes:', error);
-        throw error;
-      }
-
-      console.log('✅ Fetched recipes successfully:', data?.length || 0);
-      setRecentRecipes(data || []);
-    } catch (err) {
-      console.error('❌ Error in fetchRecentRecipes:', err);
-      setRecipesError(err.message || 'Failed to load recipes');
-    } finally {
-      setRecipesLoading(false);
-    }
-  };
+  }, [section, savedRecipes]);
 
   // Fetch related recipes based on saved recipes' tags and ingredients
   const fetchRelatedRecipes = async () => {
@@ -281,8 +275,6 @@ const Dashboard = () => {
   const handleSearchFromHistory = (query) => {
     setSearchQuery(query);
     performSearch(query);
-    // Switch to home view to show search results
-    setCurrentView('home');
   };
 
   // Handle delete search history
@@ -338,12 +330,12 @@ const Dashboard = () => {
 
   const handleRecipeSave = async (recipeData) => {
     console.log('Recipe saved as draft:', recipeData);
-    await fetchRecentRecipes();
+    await refetchRecentRecipes();
   };
 
   const handlePublishRecipe = async (recipeData) => {
     console.log('Recipe published:', recipeData);
-    await fetchRecentRecipes();
+    await refetchRecentRecipes();
   };
 
   const handleRemoveSavedRecipe = async (recipeId) => {
@@ -381,22 +373,22 @@ const Dashboard = () => {
   ];
 
   const consumerNavigationItems = [
-    { name: 'Home / Feed', icon: Home, active: currentView === 'home', view: 'home' },
-    { name: 'Saved Recipes', icon: Bookmark, active: currentView === 'saved', view: 'saved' },
-    { name: 'By Categories', icon: Grid3X3, active: currentView === 'categories', view: 'categories' },
-    { name: 'Recipe Search History', icon: History, active: currentView === 'history', view: 'history' },
-    { name: 'Followings', icon: Users, active: currentView === 'followings', view: 'followings' },
-    { name: 'Help & Support', icon: HelpCircle, active: currentView === 'help', view: 'help' }
+    { name: 'Home / Feed', icon: Home, active: section === 'home', view: 'home' },
+    { name: 'Saved Recipes', icon: Bookmark, active: section === 'saved', view: 'saved' },
+    { name: 'By Categories', icon: Grid3X3, active: section === 'categories', view: 'categories' },
+    { name: 'Recipe Search History', icon: History, active: section === 'history', view: 'history' },
+    { name: 'Followings', icon: Users, active: section === 'followings', view: 'followings' },
+    { name: 'Help & Support', icon: HelpCircle, active: section === 'help', view: 'help' }
   ];
 
   const creatorNavigationItems = [
-    { name: 'Dashboard Overview', icon: Home, active: currentView === 'home', view: 'home' },
-    { name: 'Published Recipes', icon: FileText, active: currentView === 'published', view: 'published' },
-    { name: 'Followers', icon: UserCheck, active: currentView === 'followers', view: 'followers' },
-    { name: 'Recipe Vetting', icon: CheckCircle, active: currentView === 'vetting', view: 'vetting' },
-    { name: 'Analytics', icon: BarChart3, active: currentView === 'analytics', view: 'analytics' },
-    { name: 'Revenue', icon: DollarSign, active: currentView === 'revenue', view: 'revenue' },
-    { name: 'Help & Support', icon: HelpCircle, active: currentView === 'help', view: 'help' }
+    { name: 'Dashboard Overview', icon: Home, active: section === 'home', view: 'home' },
+    { name: 'Published Recipes', icon: FileText, active: section === 'published', view: 'published' },
+    { name: 'Followers', icon: UserCheck, active: section === 'followers', view: 'followers' },
+    { name: 'Recipe Vetting', icon: CheckCircle, active: section === 'vetting', view: 'vetting' },
+    { name: 'Analytics', icon: BarChart3, active: section === 'analytics', view: 'analytics' },
+    { name: 'Revenue', icon: DollarSign, active: section === 'revenue', view: 'revenue' },
+    { name: 'Help & Support', icon: HelpCircle, active: section === 'help', view: 'help' }
   ];
 
   const trendingTopics = [
@@ -428,130 +420,130 @@ const Dashboard = () => {
 
   // Handle navigation click
   const handleNavigationClick = (view) => {
-    setCurrentView(view);
     setSearchQuery('');
     setSearchResults([]);
     setSearchError('');
   };
 
-  // Render main content based on current view
-  const renderMainContent = () => {
-    if (currentView === 'categories') {
-      return (
-        <RecipeCategoriesBrowser
-          isConnected={isConnected}
-          formatTime={formatTime}
-          getTotalTime={getTotalTime}
-          isRecipeSaved={isRecipeSaved}
-          handleSaveSearchedRecipe={handleSaveSearchedRecipe}
-          handleNavigationClick={handleNavigationClick}
-        />
-      );
+  // Helper to render section for backward compatibility
+  const renderSection = (sectionName) => {
+    switch (sectionName) {
+      case 'categories':
+        return (
+          <RecipeCategoriesBrowser
+            isConnected={isConnected}
+            formatTime={formatTime}
+            getTotalTime={getTotalTime}
+            isRecipeSaved={isRecipeSaved}
+            handleSaveSearchedRecipe={handleSaveSearchedRecipe}
+            handleNavigationClick={() => {}}
+          />
+        );
+      case 'saved':
+        return (
+          <SavedRecipesSection
+            savedRecipes={savedRecipes}
+            savedRecipesLoading={savedRecipesLoading}
+            handleRemoveSavedRecipe={handleRemoveSavedRecipe}
+            formatTime={formatTime}
+            getTotalTime={getTotalTime}
+            handleNavigationClick={() => {}}
+          />
+        );
+      case 'history':
+        return (
+          <SearchHistorySection
+            searchHistory={searchHistory}
+            loading={searchHistoryLoading}
+            error={searchHistoryError}
+            handleDeleteSearchHistory={handleDeleteSearchHistory}
+            handleClearAllHistory={handleClearAllHistory}
+            handleSearchFromHistory={handleSearchFromHistory}
+            handleNavigationClick={() => {}}
+          />
+        );
+      case 'followings':
+        return <FollowingsSection />;
+      case 'published':
+        return <PublishedRecipesSection />;
+      case 'followers':
+        return <FollowersSection />;
+      case 'analytics':
+        return <RecipeAnalyticsSection />;
+      default:
+        // Home/Feed
+        return (
+          <div className="space-y-6">
+            {/* Welcome Section */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border">
+              <h2 className="text-2xl font-dm-serif text-gray-900 mb-2">
+                {isCreatorMode ? (
+                  <>Welcome to Creator Dashboard, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 🎨</>
+                ) : (
+                  <>Welcome back, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 👋</>
+                )}
+              </h2>
+              <p className="text-gray-600 mb-4 text-md font-urbanist tracking-wide">
+                {isCreatorMode ? (
+                  'Manage your recipes, track performance, and grow your audience.'
+                ) : (
+                  'Ready to discover some amazing recipes today?'
+                )}
+              </p>
+              {user && (
+                <p className="text-sm text-gray-500 font-urbanist">
+                  Logged in as: {user.email} • {isCreatorMode ? 'Creator Mode' : 'Consumer Mode'}
+                </p>
+              )}
+            </div>
+            {/* Search Bar */}
+            <DashboardSearchBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              handleKeyPress={handleKeyPress}
+              handleSearch={handleSearch}
+              handleQuickSearch={handleQuickSearch}
+              searchLoading={searchLoading}
+              isCreatorMode={isCreatorMode}
+              addSearchHistory={addSearchHistory}
+            />
+            {/* Search Results */}
+            <DashboardSearchResults
+              showSearchResults={showSearchResults}
+              searchLoading={searchLoading}
+              searchError={searchError}
+              searchResults={searchResults}
+              searchQuery={searchQuery}
+              hasSearchQuery={hasSearchQuery}
+              performSearch={performSearch}
+              formatTime={formatTime}
+              getTotalTime={getTotalTime}
+              isRecipeSaved={isRecipeSaved}
+              handleSaveSearchedRecipe={handleSaveSearchedRecipe}
+              handleQuickSearch={handleQuickSearch}
+            />
+            {/* Creator Quick Actions */}
+            <CreatorQuickActions
+              isCreatorMode={isCreatorMode}
+              handleCreateRecipe={handleCreateRecipe}
+            />
+            {/* Recipe Feed */}
+            <RecipeFeedSection
+              isCreatorMode={isCreatorMode}
+              recipesLoading={recipesLoading}
+              recipesError={recipesError}
+              recentRecipes={recentRecipes}
+              fetchRecentRecipes={refetchRecentRecipes}
+              publishedRecipes={publishedRecipes}
+              formatTime={formatTime}
+              getTotalTime={getTotalTime}
+              isRecipeSaved={isRecipeSaved}
+              handleSaveSearchedRecipe={handleSaveSearchedRecipe}
+              handleQuickSearch={handleQuickSearch}
+            />
+          </div>
+        );
     }
-
-    if (currentView === 'saved') {
-      return (
-        <SavedRecipesSection
-          savedRecipes={savedRecipes}
-          savedRecipesLoading={savedRecipesLoading}
-          handleRemoveSavedRecipe={handleRemoveSavedRecipe}
-          formatTime={formatTime}
-          getTotalTime={getTotalTime}
-          handleNavigationClick={handleNavigationClick}
-        />
-      );
-    }
-
-    if (currentView === 'history') {
-      return (
-        <SearchHistorySection
-          searchHistory={searchHistory}
-          loading={searchHistoryLoading}
-          error={searchHistoryError}
-          handleDeleteSearchHistory={handleDeleteSearchHistory}
-          handleClearAllHistory={handleClearAllHistory}
-          handleSearchFromHistory={handleSearchFromHistory}
-          handleNavigationClick={handleNavigationClick}
-        />
-      );
-    }
-
-    // Default home view content
-    return (
-      <div className="space-y-6">
-        {/* Welcome Section */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border">
-          <h2 className="text-2xl font-serif text-gray-900 mb-2">
-            {isCreatorMode ? (
-              <>Welcome to Creator Dashboard, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 🎨</>
-            ) : (
-              <>Welcome back, {userProfile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Chef'}! 👋</>
-            )}
-          </h2>
-          <p className="text-gray-600 mb-4 text-sm">
-            {isCreatorMode ? (
-              'Manage your recipes, track performance, and grow your audience.'
-            ) : (
-              'Ready to discover some amazing recipes today?'
-            )}
-          </p>
-          {user && (
-            <p className="text-sm text-gray-500">
-              Logged in as: {user.email} • {isCreatorMode ? 'Creator Mode' : 'Consumer Mode'}
-            </p>
-          )}
-        </div>
-
-        {/* Search Bar */}
-        <DashboardSearchBar
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          handleKeyPress={handleKeyPress}
-          handleSearch={handleSearch}
-          handleQuickSearch={handleQuickSearch}
-          searchLoading={searchLoading}
-          isCreatorMode={isCreatorMode}
-          addSearchHistory={addSearchHistory}
-        />
-
-        {/* Search Results */}
-        <DashboardSearchResults
-          showSearchResults={showSearchResults}
-          searchLoading={searchLoading}
-          searchError={searchError}
-          searchResults={searchResults}
-          searchQuery={searchQuery}
-          hasSearchQuery={hasSearchQuery}
-          performSearch={performSearch}
-          formatTime={formatTime}
-          getTotalTime={getTotalTime}
-          isRecipeSaved={isRecipeSaved}
-          handleSaveSearchedRecipe={handleSaveSearchedRecipe}
-          handleQuickSearch={handleQuickSearch}
-        />
-
-        {/* Creator Quick Actions */}
-        <CreatorQuickActions
-          isCreatorMode={isCreatorMode}
-          handleCreateRecipe={handleCreateRecipe}
-        />
-
-        {/* Recipe Feed */}
-        <RecipeFeedSection
-          isCreatorMode={isCreatorMode}
-          recipesLoading={recipesLoading}
-          recipesError={recipesError}
-          recentRecipes={recentRecipes}
-          fetchRecentRecipes={fetchRecentRecipes}
-          publishedRecipes={publishedRecipes}
-          formatTime={formatTime}
-          getTotalTime={getTotalTime}
-          isRecipeSaved={isRecipeSaved}
-          handleSaveSearchedRecipe={handleSaveSearchedRecipe}
-          handleQuickSearch={handleQuickSearch}
-        />
-      </div>
-    );
   };
 
   return (
@@ -564,15 +556,12 @@ const Dashboard = () => {
         toggleMode={toggleMode}
         handleSignOut={handleSignOut}
       />
-
       {/* Main Content */}
       <main className="flex max-w-7xl mx-auto">
         {/* Left Sidebar - Navigation */}
         <DashboardSidebarNav
           currentNavigation={currentNavigation}
-          handleNavigationClick={handleNavigationClick}
         />
-
         {/* Center Content - Scrollable Feed */}
         <div className="flex-1 max-w-2xl">
           <div className="p-6 space-y-6">
@@ -586,15 +575,49 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
-
-            {/* Render main content based on current view */}
-            {renderMainContent()}
+            {/* Render section content via Outlet and pass context */}
+            <Outlet context={{
+              isCreatorMode,
+              user,
+              userProfile,
+              searchQuery,
+              setSearchQuery,
+              handleKeyPress,
+              handleSearch,
+              handleQuickSearch,
+              searchLoading,
+              addSearchHistory,
+              showSearchResults,
+              searchError,
+              searchResults,
+              hasSearchQuery,
+              performSearch,
+              formatTime,
+              getTotalTime,
+              isRecipeSaved,
+              handleSaveSearchedRecipe,
+              recentRecipes,
+              recipesLoading,
+              recipesError,
+              refetchRecentRecipes,
+              publishedRecipes,
+              handleCreateRecipe,
+              savedRecipes,
+              savedRecipesLoading,
+              handleRemoveSavedRecipe,
+              handleNavigationClick,
+              searchHistory,
+              loading: searchHistoryLoading,
+              error: searchHistoryError,
+              handleDeleteSearchHistory,
+              handleClearAllHistory,
+              handleSearchFromHistory
+            }} />
           </div>
         </div>
-
         {/* Right Sidebar - Widgets */}
         <DashboardRightSidebar
-          currentView={currentView}
+          currentView={section || 'home'}
           isCreatorMode={isCreatorMode}
           currentStats={currentStats}
           trendingTopics={trendingTopics}
@@ -609,7 +632,6 @@ const Dashboard = () => {
           handleSaveSearchedRecipe={handleSaveSearchedRecipe}
         />
       </main>
-
       {/* Recipe Creation Modal */}
       <RecipeCreationModal
         isOpen={showRecipeModal}
