@@ -1,15 +1,16 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-const DashboardSidebarNav = ({ currentNavigation }) => {
+const DashboardSidebarNav = ({ currentNavigation, mode = 'consumer' }) => {
   const location = useLocation();
+  const basePath = mode === 'creator' ? '/dashboard/creator' : '/dashboard/consumer';
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-0">
       <div className="p-4">
         <nav className="space-y-2">
           {currentNavigation.map((item, index) => {
             // Build the dashboard URL for each section
-            const to = item.view === 'home' ? '/dashboard' : `/dashboard/${item.view}`;
+            const to = item.view === 'home' ? basePath : `${basePath}/${item.view}`;
             return (
               <Link
                 key={index}
