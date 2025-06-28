@@ -47,6 +47,29 @@ const fetchRecentCreators = async () => {
   return creatorsWithRecipeCount;
 };
 
+// Skeleton Loading Component
+const CreatorSkeleton = () => (
+  <div className="flex items-center space-x-3 p-2 rounded-lg animate-pulse">
+    {/* Avatar Skeleton */}
+    <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0"></div>
+    
+    {/* Content Skeleton */}
+    <div className="flex-1 min-w-0">
+      {/* Name Skeleton */}
+      <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+      
+      {/* Join Date Skeleton */}
+      <div className="h-3 bg-gray-200 rounded w-20 mb-1"></div>
+      
+      {/* Recipe Count Skeleton */}
+      <div className="h-3 bg-gray-200 rounded w-16"></div>
+    </div>
+    
+    {/* Badge Skeleton */}
+    <div className="h-6 w-10 bg-gray-200 rounded-full"></div>
+  </div>
+);
+
 const RecipeCreatorsWidget = () => {
   const {
     data: recentCreators = [],
@@ -92,13 +115,16 @@ const RecipeCreatorsWidget = () => {
         New Recipe Creators
       </h3>
       
+      {/* Skeleton Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-primary-600 mr-2" />
-          <span className="text-sm text-gray-600">Loading creators...</span>
+        <div className="space-y-3">
+          {[...Array(3)].map((_, index) => (
+            <CreatorSkeleton key={index} />
+          ))}
         </div>
       )}
 
+      {/* Error State */}
       {error && (
         <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
           <AlertCircle className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
@@ -106,6 +132,7 @@ const RecipeCreatorsWidget = () => {
         </div>
       )}
 
+      {/* Empty State */}
       {!isLoading && !error && recentCreators.length === 0 && (
         <div className="text-center py-4">
           <ChefHat className="w-8 h-8 text-gray-300 mx-auto mb-2" />
@@ -114,6 +141,7 @@ const RecipeCreatorsWidget = () => {
         </div>
       )}
 
+      {/* Loaded Content */}
       {!isLoading && !error && recentCreators.length > 0 && (
         <div className="space-y-3">
           {recentCreators.map((creator) => (
