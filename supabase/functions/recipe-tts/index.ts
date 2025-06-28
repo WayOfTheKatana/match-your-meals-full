@@ -70,8 +70,23 @@ async function generateSpeech(text: string, voiceId: string, modelId: string): P
     })
 
     if (!response.ok) {
-      const errorData = await response.text()
-      throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`)
+      let errorMessage = `ElevenLabs API error: ${response.status} ${response.statusText}`
+      
+      try {
+        // Safely extract error body with proper error handling
+        const errorBody = await response.text()
+        
+        // Ensure errorBody is a valid string and truncate if too long
+        if (errorBody && typeof errorBody === 'string' && errorBody.trim().length > 0) {
+          const truncatedError = errorBody.length > 500 ? errorBody.substring(0, 500) + '...' : errorBody
+          errorMessage += ` - ${truncatedError}`
+        }
+      } catch (parseError) {
+        console.error('❌ Failed to parse error response from ElevenLabs:', parseError)
+        // Don't include the unparseable error body in the message
+      }
+      
+      throw new Error(errorMessage)
     }
 
     const audioBuffer = await response.arrayBuffer()
@@ -164,10 +179,13 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error('❌ Error in recipe-tts function:', error)
 
+    // Ensure error message is always a valid string
+    const errorMessage = error && typeof error.message === 'string' ? error.message : 'Unknown error occurred'
+
     const errorResponse = {
       success: false,
       error: 'Text-to-speech generation failed',
-      message: error.message,
+      message: errorMessage,
       timestamp: new Date().toISOString()
     }
 
