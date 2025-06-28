@@ -8,7 +8,6 @@ import {
   Loader2, 
   AlertCircle, 
   Star, 
-  ExternalLink,
   MoreVertical,
   Trash2,
   Globe,
@@ -127,12 +126,6 @@ const DashboardBoards = () => {
           <div className="text-center">
             <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No recipes yet</p>
-            <Link 
-              to="/explore-recipes"
-              className="text-xs text-primary-600 hover:text-primary-700 font-medium mt-1 inline-flex items-center"
-            >
-              Explore recipes <ExternalLink className="w-3 h-3 ml-1" />
-            </Link>
           </div>
         </div>
       );
@@ -285,50 +278,6 @@ const DashboardBoards = () => {
               key={board.id}
               className="bg-white rounded-2xl shadow-sm border overflow-hidden hover:shadow-md transition-all duration-200 group relative"
             >
-              {/* Context Menu - Positioned in top-right corner */}
-              <div className="absolute top-3 right-3 z-10">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onClick={(e) => handleDeleteBoardClick(board.id, e)}
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Board
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={(e) => handleTogglePrivacy(board.id, board.is_private, e)}
-                    >
-                      {board.is_private ? (
-                        <>
-                          <Globe className="w-4 h-4 mr-2" />
-                          Make Public
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          Make Private
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
               {/* Privacy Badge - Positioned in top-left corner */}
               <div className="absolute top-3 left-3 z-10">
                 <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
@@ -381,17 +330,53 @@ const DashboardBoards = () => {
                   
                   {/* Fixed Height Action Container */}
                   <div className="h-6 flex items-center justify-between">
-                    <Link 
-                      to="/explore-recipes"
-                      className="text-sm text-gray-500 hover:text-primary-600 transition-colors flex items-center"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Explore recipes
-                    </Link>
                     <span className="text-sm text-primary-600 font-medium group-hover:text-primary-700 transition-colors">
                       View Board →
                     </span>
+                    
+                    {/* Context Menu - Positioned where Explore Recipes was */}
+                    <div className="flex items-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={(e) => handleDeleteBoardClick(board.id, e)}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Board
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={(e) => handleTogglePrivacy(board.id, board.is_private, e)}
+                          >
+                            {board.is_private ? (
+                              <>
+                                <Globe className="w-4 h-4 mr-2" />
+                                Make Public
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-4 h-4 mr-2" />
+                                Make Private
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </div>
               </Link>
