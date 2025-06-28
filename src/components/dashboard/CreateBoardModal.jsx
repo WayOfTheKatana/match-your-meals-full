@@ -58,12 +58,14 @@ const CreateBoardModal = ({ isOpen, onClose, onBoardCreated }) => {
     try {
       const title = formData.title.trim();
       const description = formData.description.trim();
+      const slug = generateSlug(title);
       
-      console.log('🔄 Creating board with title:', title);
+      console.log('🔄 Creating board with title:', title, 'and slug:', slug);
 
       // Use the createBoard function directly (it's already the mutateAsync function)
       const newBoard = await createBoard({
         title: title,
+        slug: slug,
         description: description || null,
         isPrivate: formData.isPrivate
       });
