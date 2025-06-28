@@ -1,80 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { useQuery } from '@tanstack/react-query';
+import { useRecipeBoards } from '../../hooks/useRecipeBoards';
 import { Layers, Plus, BookOpen, Loader2, AlertCircle, Star } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Link } from 'react-router-dom';
-
-// Fetch user's recipe boards
-const fetchUserBoards = async (userId) => {
-  if (!userId) return [];
-  
-  // For now, we'll use mock data since we haven't created the boards table yet
-  // In a real implementation, this would fetch from a 'recipe_boards' table
-  const mockBoards = [
-    {
-      id: 1,
-      name: 'Healthy Breakfast Ideas',
-      slug: 'healthy-breakfast-ideas',
-      recipe_count: 12,
-      is_private: false,
-      created_at: '2024-01-15',
-      user_id: userId,
-      recipe_images: [
-        'https://images.pexels.com/photos/566566/pexels-photo-566566.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/775032/pexels-photo-775032.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=200'
-      ]
-    },
-    {
-      id: 2,
-      name: 'Quick Dinner Solutions',
-      slug: 'quick-dinner-solutions',
-      recipe_count: 8,
-      is_private: true,
-      created_at: '2024-01-10',
-      user_id: userId,
-      recipe_images: [
-        'https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/566566/pexels-photo-566566.jpeg?auto=compress&cs=tinysrgb&w=200'
-      ]
-    },
-    {
-      id: 3,
-      name: 'Holiday Favorites',
-      slug: 'holiday-favorites',
-      recipe_count: 15,
-      is_private: false,
-      created_at: '2024-01-05',
-      user_id: userId,
-      recipe_images: [
-        'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/566566/pexels-photo-566566.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/775032/pexels-photo-775032.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200'
-      ]
-    },
-    {
-      id: 4,
-      name: 'Vegan Delights',
-      slug: 'vegan-delights',
-      recipe_count: 6,
-      is_private: true,
-      created_at: '2024-01-01',
-      user_id: userId,
-      recipe_images: [
-        'https://images.pexels.com/photos/775032/pexels-photo-775032.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/566566/pexels-photo-566566.jpeg?auto=compress&cs=tinysrgb&w=200'
-      ]
-    }
-  ];
-  
-  return mockBoards;
-};
+import CreateBoardModal from './CreateBoardModal';
 
 // Skeleton Loading Component
 const BoardSkeleton = () => (
@@ -112,21 +42,17 @@ const BoardSkeleton = () => (
 
 const DashboardBoards = () => {
   const { user } = useAuth();
+  const { boards, loading, error, refetch } = useRecipeBoards();
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  const {
-    data: userBoards = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['userBoards', user?.id],
-    queryFn: () => fetchUserBoards(user?.id),
-    enabled: !!user,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
 
   const generateBoardUrl = (boardSlug) => {
     return `/creators/board/${boardSlug}`;
+  };
+
+  const handleBoardCreated = (newBoard) => {
+    console.log('✅ Board created:', newBoard);
+    // The useRecipeBoards hook will automatically refetch the data
+    // due to the query invalidation in the mutation
   };
 
   const renderRecipeImagesGrid = (images, recipeCount) => {
@@ -246,7 +172,7 @@ const DashboardBoards = () => {
       </div>
 
       {/* Loading State */}
-      {isLoading && (
+      {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[...Array(4)].map((_, index) => (
             <BoardSkeleton key={index} />
@@ -255,20 +181,20 @@ const DashboardBoards = () => {
       )}
 
       {/* Error State */}
-      {!isLoading && error && (
+      {!loading && error && (
         <div className="bg-white rounded-2xl p-12 shadow-sm border text-center">
           <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 mb-4">{error.message}</p>
-          <Button onClick={() => window.location.reload()} variant="outline">
+          <Button onClick={() => refetch()} variant="outline">
             Try Again
           </Button>
         </div>
       )}
 
       {/* Boards Grid - 2 Columns */}
-      {!isLoading && !error && (
+      {!loading && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {userBoards.map((board) => (
+          {boards.map((board) => (
             <Link
               key={board.id}
               to={generateBoardUrl(board.slug)}
@@ -297,7 +223,7 @@ const DashboardBoards = () => {
                 {/* Fixed Height Title Container */}
                 <div className="h-14 flex items-start mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors leading-tight line-clamp-2">
-                    {board.name}
+                    {board.title}
                   </h3>
                 </div>
                 
@@ -330,7 +256,7 @@ const DashboardBoards = () => {
       )}
 
       {/* Empty State */}
-      {!isLoading && !error && userBoards.length === 0 && (
+      {!loading && !error && boards.length === 0 && (
         <div className="bg-white rounded-2xl p-12 shadow-sm border text-center">
           <Layers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No Recipe Boards Yet</h3>
@@ -348,19 +274,19 @@ const DashboardBoards = () => {
       )}
 
       {/* Quick Stats */}
-      {!isLoading && !error && userBoards.length > 0 && (
+      {!loading && !error && boards.length > 0 && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Board Statistics</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <Layers className="w-6 h-6 text-primary-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{userBoards.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{boards.length}</p>
               <p className="text-sm text-gray-600">Total Boards</p>
             </div>
             <div className="text-center">
               <BookOpen className="w-6 h-6 text-blue-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-gray-900">
-                {userBoards.reduce((sum, board) => sum + board.recipe_count, 0)}
+                {boards.reduce((sum, board) => sum + board.recipe_count, 0)}
               </p>
               <p className="text-sm text-gray-600">Total Recipes</p>
             </div>
@@ -369,7 +295,7 @@ const DashboardBoards = () => {
                 <span className="text-white text-xs font-bold">2</span>
               </div>
               <p className="text-2xl font-bold text-gray-900">
-                {userBoards.filter(board => !board.is_private).length}
+                {boards.filter(board => !board.is_private).length}
               </p>
               <p className="text-sm text-gray-600">Public Boards</p>
             </div>
@@ -382,23 +308,12 @@ const DashboardBoards = () => {
         </div>
       )}
 
-      {/* Create Board Modal Placeholder */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-semibold mb-4">Create New Board</h3>
-            <p className="text-gray-600 mb-4">Board creation functionality will be implemented next.</p>
-            <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-                Cancel
-              </Button>
-              <Button className="bg-primary-600 hover:bg-primary-700">
-                Create Board
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Create Board Modal */}
+      <CreateBoardModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onBoardCreated={handleBoardCreated}
+      />
     </div>
   );
 };
