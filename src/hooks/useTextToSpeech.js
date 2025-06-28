@@ -75,40 +75,33 @@ export const useTextToSpeech = () => {
 
       console.log('📡 Calling recipe-tts Edge Function...');
 
-      // Call the Edge Function
-      const response = await supabase.functions.invoke('recipe-tts', {
-        body: payload
+      // Call the Edge Function with responseType: 'arraybuffer'
+      const { data, error: functionError } = await supabase.functions.invoke('recipe-tts', {
+        body: payload,
+        responseType: 'arraybuffer'
       });
 
       // Check for errors in the response
-      if (response.error) {
-        console.error('❌ Edge Function error:', response.error);
-        throw new Error(`Server error: ${response.error.message || 'Unknown error'}`);
+      if (functionError) {
+        console.error('❌ Edge Function error:', functionError);
+        throw new Error(`Server error: ${functionError.message || 'Unknown error'}`);
       }
 
       // Validate audio data
-      validateAudioData(response.data);
+      validateAudioData(data);
 
-      const byteLength = response.data instanceof ArrayBuffer ? response.data.byteLength : response.data.length;
+      const byteLength = data instanceof ArrayBuffer ? data.byteLength : data.length;
       console.log('✅ Valid audio data received:', byteLength, 'bytes');
 
-      // Convert to ArrayBuffer if needed
-      let audioData = response.data;
-      if (response.data instanceof Uint8Array) {
-        audioData = response.data.buffer.slice(
-          response.data.byteOffset,
-          response.data.byteOffset + response.data.byteLength
-        );
-      }
-
       // Create audio blob with explicit MIME type
-      const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+      const audioBlob = new Blob([data], { type: 'audio/mpeg' });
       
       // Verify blob was created successfully
       if (audioBlob.size === 0) {
         throw new Error('Failed to create audio blob - no data');
       }
 
+      console.log('🎵 Audio blob created successfully:', audioBlob.size, 'bytes');
       const audioUrl = URL.createObjectURL(audioBlob);
 
       console.log('🎵 Creating audio element...');
@@ -207,6 +200,11 @@ export const useTextToSpeech = () => {
 
         audio.addEventListener('canplay', onCanPlay);
         audio.addEventListener('error', onError);
+        
+        // If audio is already ready to play, resolve immediately
+        if (audio.readyState >= 3) {
+          resolve();
+        }
       });
 
       // Start playback
