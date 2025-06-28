@@ -9,11 +9,14 @@ import DashboardHeader from './DashboardHeader';
 import DashboardSidebarNav from './DashboardSidebarNav';
 import DashboardRightSidebar from './DashboardRightSidebar';
 import RecipeCreationModal from '../RecipeCreationModal';
-import { Home, Bookmark, Grid3X3, History, Users, HelpCircle } from 'lucide-react';
+import { Home, Bookmark, Grid3X3, History, Users, HelpCircle, Layers, Eye, ThumbsUp } from 'lucide-react';
 
 const consumerNavigationItems = [
   { name: 'Home / Feed', icon: Home, view: 'home' },
   { name: 'Saved Recipes', icon: Bookmark, view: 'saved' },
+  { name: 'Recipe Boards', icon: Layers, view: 'boards' },
+  { name: 'Recently Viewed', icon: Eye, view: 'recent' },
+  { name: 'Recommended for you', icon: ThumbsUp, view: 'recommended' },
   { name: 'By Categories', icon: Grid3X3, view: 'categories' },
   { name: 'Recipe Search History', icon: History, view: 'history' },
   { name: 'Followings', icon: Users, view: 'followings' },
@@ -285,4 +288,4 @@ const ConsumerDashboardLayout = (props) => {
   );
 };
 
-export default ConsumerDashboardLayout; 
+export default ConsumerDashboardLayout;

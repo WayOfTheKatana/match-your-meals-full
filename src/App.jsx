@@ -18,6 +18,9 @@ import DashboardFollowings from './components/dashboard/DashboardFollowings';
 import DashboardFollowers from './components/dashboard/DashboardFollowers';
 import DashboardPublished from './components/dashboard/DashboardPublished';
 import DashboardVetting from './components/dashboard/DashboardVetting';
+import DashboardBoards from './components/dashboard/DashboardBoards';
+import DashboardRecent from './components/dashboard/DashboardRecent';
+import DashboardRecommended from './components/dashboard/DashboardRecommended';
 import ConsumerDashboardLayout from './components/dashboard/ConsumerDashboardLayout';
 import CreatorDashboardLayout from './components/dashboard/CreatorDashboardLayout';
 
@@ -43,6 +46,9 @@ function App() {
             >
               <Route index element={<DashboardHome />} />
               <Route path="saved" element={<DashboardSaved />} />
+              <Route path="boards" element={<DashboardBoards />} />
+              <Route path="recent" element={<DashboardRecent />} />
+              <Route path="recommended" element={<DashboardRecommended />} />
               <Route path="categories" element={<DashboardCategories />} />
               <Route path="history" element={<DashboardHistory />} />
               <Route path="followings" element={<DashboardFollowings />} />
