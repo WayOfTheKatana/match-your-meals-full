@@ -9,8 +9,8 @@ interface RequestPayload {
 // Get ElevenLabs API key from environment variables
 const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY')
 
-// Default voice settings - Amelia voice
-const DEFAULT_VOICE_ID = 'AZnzlk1XvdvUeBnXmlld' // Amelia voice ID
+// Default voice settings - Updated voice ID
+const DEFAULT_VOICE_ID = 'v8DWAeuEGQSfwxqdH9t2' // Updated voice ID
 const DEFAULT_MODEL_ID = 'eleven_monolingual_v1'
 
 async function testElevenLabsConnection(): Promise<boolean> {
