@@ -292,15 +292,18 @@ const DashboardBoards = () => {
                 </div>
               </div>
 
-              {/* Board Content - Title Only */}
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 group-hover:text-primary-600 transition-colors">
-                  {board.name}
-                </h3>
+              {/* Board Content - Fixed Heights for Perfect Alignment */}
+              <div className="p-4 flex flex-col">
+                {/* Fixed Height Title Container */}
+                <div className="h-14 flex items-start mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors leading-tight line-clamp-2">
+                    {board.name}
+                  </h3>
+                </div>
                 
-                {/* Board Actions - Simplified */}
-                <div className="flex items-center justify-end">
-                  <span className="text-sm text-primary-600 font-medium group-hover:text-primary-700">
+                {/* Fixed Height Action Container */}
+                <div className="h-6 flex items-center justify-end">
+                  <span className="text-sm text-primary-600 font-medium group-hover:text-primary-700 transition-colors">
                     View Board →
                   </span>
                 </div>
