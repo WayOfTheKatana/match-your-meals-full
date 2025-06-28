@@ -276,6 +276,11 @@ const RecipeBoardDetail = () => {
     setIsDeleting(true);
     try {
       await deleteBoard(boardData.id);
+      
+      // Remove the board data from React Query cache to prevent refetch attempts
+      queryClient.removeQueries(['boardDetails', boardSlug]);
+      
+      // Navigate away from the deleted board
       navigate('/dashboard/consumer/boards');
     } catch (error) {
       console.error('❌ Error deleting board:', error);
