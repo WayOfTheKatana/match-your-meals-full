@@ -84,6 +84,97 @@ const fetchRecipesByCategory = async ({ queryKey }) => {
   return data || [];
 };
 
+// Skeleton Loading Components
+const CategoryHeaderSkeleton = () => (
+  <div className="bg-white rounded-2xl p-6 shadow-sm border animate-pulse">
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="flex items-center mb-2">
+          <div className="w-6 h-6 bg-gray-200 rounded mr-3"></div>
+          <div className="h-8 bg-gray-200 rounded w-48"></div>
+        </div>
+        <div className="h-4 bg-gray-200 rounded w-80"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const CategoryTagsSkeleton = () => (
+  <div className="bg-white rounded-2xl shadow-sm border p-6 animate-pulse">
+    <div className="mb-4">
+      <div className="flex items-center mb-2">
+        <div className="w-5 h-5 bg-gray-200 rounded mr-2"></div>
+        <div className="h-6 bg-gray-200 rounded w-24"></div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {[...Array(8)].map((_, index) => (
+          <div
+            key={`health-skeleton-${index}`}
+            className="h-8 bg-gray-200 rounded-full"
+            style={{ width: `${Math.random() * 60 + 80}px` }}
+          ></div>
+        ))}
+      </div>
+    </div>
+    <div className="mb-4">
+      <div className="flex items-center mb-2">
+        <div className="w-5 h-5 bg-gray-200 rounded mr-2"></div>
+        <div className="h-6 bg-gray-200 rounded w-28"></div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {[...Array(6)].map((_, index) => (
+          <div
+            key={`dietary-skeleton-${index}`}
+            className="h-8 bg-gray-200 rounded-full"
+            style={{ width: `${Math.random() * 50 + 70}px` }}
+          ></div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const RecipeResultSkeleton = () => (
+  <div className="flex space-x-4 p-4 rounded-xl border border-gray-100 animate-pulse">
+    {/* Recipe Image Skeleton */}
+    <div className="w-32 h-32 bg-gray-200 rounded-xl flex-shrink-0"></div>
+    
+    {/* Recipe Content Skeleton */}
+    <div className="flex-1">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          {/* Title Skeleton */}
+          <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+          
+          {/* Description Skeleton */}
+          <div className="space-y-2 mb-3">
+            <div className="h-4 bg-gray-200 rounded w-full"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </div>
+          
+          {/* Meta Info Skeleton */}
+          <div className="flex items-center space-x-6 mb-4">
+            <div className="flex items-center space-x-1">
+              <div className="w-4 h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-12"></div>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-4 h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-16"></div>
+            </div>
+          </div>
+          
+          {/* Action Buttons Skeleton */}
+          <div className="flex items-center space-x-3">
+            <div className="h-8 bg-gray-200 rounded w-16"></div>
+            <div className="h-8 bg-gray-200 rounded w-24"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const RecipeCategoriesBrowser = ({ 
   isConnected,
   formatTime,
@@ -127,25 +218,21 @@ const RecipeCategoriesBrowser = ({
   return (
     <div className="space-y-6">
       {/* Categories Header */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-serif text-gray-900 mb-2 flex items-center">
-              <Grid3X3 className="w-6 h-6 mr-3 text-primary-600" />
-              Browse by Categories
-            </h2>
-            <p className="text-gray-600">
-              Discover recipes organized by health benefits and dietary preferences
-            </p>
+      {categoriesLoading ? (
+        <CategoryHeaderSkeleton />
+      ) : (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-serif text-gray-900 mb-2 flex items-center">
+                <Grid3X3 className="w-6 h-6 mr-3 text-primary-600" />
+                Browse by Categories
+              </h2>
+              <p className="text-gray-600">
+                Discover recipes organized by health benefits and dietary preferences
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Categories Loading State */}
-      {categoriesLoading && (
-        <div className="bg-white rounded-2xl p-12 shadow-sm border text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading categories...</p>
         </div>
       )}
 
@@ -158,7 +245,9 @@ const RecipeCategoriesBrowser = ({
       )}
 
       {/* Categories List */}
-      {categories && !categoriesLoading && !categoriesError && (
+      {categoriesLoading ? (
+        <CategoryTagsSkeleton />
+      ) : categories && !categoriesError ? (
         <div className="bg-white rounded-2xl shadow-sm border p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
@@ -195,13 +284,23 @@ const RecipeCategoriesBrowser = ({
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Recipes by Category Loading State */}
       {categoryRecipesLoading && selectedCategory && (
-        <div className="bg-white rounded-2xl p-12 shadow-sm border text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading recipes for {selectedCategory.replace(/-/g, ' ')}...</p>
+        <div className="bg-white rounded-2xl shadow-sm border p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-5 h-5 bg-gray-200 rounded mr-2 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+            </div>
+            <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+          </div>
+          <div className="space-y-6">
+            {[...Array(3)].map((_, index) => (
+              <RecipeResultSkeleton key={index} />
+            ))}
+          </div>
         </div>
       )}
 
