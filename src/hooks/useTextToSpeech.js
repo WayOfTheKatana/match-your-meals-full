@@ -330,8 +330,8 @@ export const useTextToSpeech = () => {
     setProgress(0);
   }, []);
 
-  // Validate audio data
-  const validateAudioData = (data) => {
+  // Validate and convert audio data
+  const validateAndConvertAudioData = (data) => {
     // Debug logging
     console.log('🔍 Received data type:', typeof data);
     console.log('🔍 Data constructor:', data?.constructor?.name);
@@ -340,14 +340,38 @@ export const useTextToSpeech = () => {
       throw new Error('No audio data received from server');
     }
 
-    // Check if data is ArrayBuffer or Uint8Array
-    if (!(data instanceof ArrayBuffer) && !(data instanceof Uint8Array)) {
-      console.error('❌ Expected ArrayBuffer or Uint8Array, got:', typeof data, data?.constructor?.name);
+    let audioBuffer;
+
+    // Handle different data types
+    if (data instanceof ArrayBuffer) {
+      audioBuffer = data;
+    } else if (data instanceof Uint8Array) {
+      audioBuffer = data.buffer;
+    } else if (typeof data === 'string') {
+      console.log('🔄 Converting base64 string to ArrayBuffer...');
+      console.log('🔍 String length:', data.length);
+      console.log('🔍 String preview:', data.substring(0, 50) + '...');
+      
+      try {
+        // Convert base64 string to ArrayBuffer
+        const binaryString = atob(data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        audioBuffer = bytes.buffer;
+        console.log('✅ Successfully converted base64 to ArrayBuffer');
+      } catch (error) {
+        console.error('❌ Failed to decode base64 string:', error);
+        throw new Error('Invalid base64 audio data received');
+      }
+    } else {
+      console.error('❌ Expected ArrayBuffer, Uint8Array, or base64 string, got:', typeof data, data?.constructor?.name);
       throw new Error(`Invalid audio data format received: ${typeof data}`);
     }
 
     // Check if data has content
-    const byteLength = data instanceof ArrayBuffer ? data.byteLength : data.length;
+    const byteLength = audioBuffer.byteLength;
     if (byteLength === 0) {
       throw new Error('Empty audio data received from server');
     }
@@ -358,7 +382,7 @@ export const useTextToSpeech = () => {
     }
 
     console.log('✅ Audio data validation passed:', byteLength, 'bytes');
-    return true;
+    return audioBuffer;
   };
 
   // Generate and play speech
@@ -435,8 +459,13 @@ export const useTextToSpeech = () => {
           throw new Error('No data received from server');
         }
 
+        // For string responses (base64), we'll handle this in validation
+        if (typeof data === 'string') {
+          console.log('✅ Received base64 string response');
+          // Let the validation function handle the conversion
+        }
         // If data is an object (potentially JSON response)
-        if (typeof data === 'object' && !(data instanceof ArrayBuffer) && !(data instanceof Uint8Array)) {
+        else if (typeof data === 'object' && !(data instanceof ArrayBuffer) && !(data instanceof Uint8Array)) {
           console.log('🔍 Received object response, checking for audio data...');
           
           // Try to decode as text to see if it's a JSON error
@@ -519,10 +548,10 @@ export const useTextToSpeech = () => {
         }
       }
 
-      // Validate audio data
-      validateAudioData(audioData);
+      // Validate and convert audio data
+      audioData = validateAndConvertAudioData(audioData);
 
-      const byteLength = audioData instanceof ArrayBuffer ? audioData.byteLength : audioData.length;
+      const byteLength = audioData.byteLength;
       console.log('✅ Valid audio data received:', byteLength, 'bytes');
 
       // Create audio blob with explicit MIME type
