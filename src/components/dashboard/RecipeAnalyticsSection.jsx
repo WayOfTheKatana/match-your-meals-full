@@ -36,19 +36,25 @@ const fetchRecipeAnalyticsForDate = async (userId, date) => {
     .lte('viewed_at', date + 'T23:59:59.999Z');
   if (viewsError) throw new Error(viewsError.message);
 
-  // Group by recipe and count metrics
+  // Group by recipe and count unique views
   const analytics = {};
   recipeIds.forEach(id => {
     analytics[id] = { totalViews: 0, uniqueUsers: new Set(), sessionViews: new Set() };
   });
+  // Use a set to deduplicate by (user_id or session_id) per recipe
+  const uniqueViewKeys = {};
+  recipeIds.forEach(id => { uniqueViewKeys[id] = new Set(); });
   (views || []).forEach(view => {
     if (!analytics[view.recipe_id]) return;
-    analytics[view.recipe_id].totalViews += 1;
+    // Use user_id if available, else session_id
+    const key = view.user_id ? `u:${view.user_id}` : `s:${view.session_id}`;
+    uniqueViewKeys[view.recipe_id].add(key);
     if (view.user_id) analytics[view.recipe_id].uniqueUsers.add(view.user_id);
     if (view.session_id) analytics[view.recipe_id].sessionViews.add(view.session_id);
   });
-  // Convert sets to counts
   Object.keys(analytics).forEach(id => {
+    // Set totalViews to the raw count of all view records for this recipe
+    analytics[id].totalViews = (views || []).filter(view => view.recipe_id === id).length;
     analytics[id].uniqueUsers = analytics[id].uniqueUsers.size;
     analytics[id].sessionViews = analytics[id].sessionViews.size;
   });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   Clock, 
@@ -24,18 +24,21 @@ import { supabase } from '../lib/supabase';
 import { formatTime, getTotalTime } from '../lib/utils';
 import CommonHeader from '../components/CommonHeader';
 import { getOrCreateSessionId } from '../lib/session';
+import { useQueryClient } from '@tanstack/react-query';
 
 const RecipeDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { saveRecipe, removeSavedRecipe, isRecipeSaved } = useSavedRecipes();
+  const queryClient = useQueryClient();
 
   const [recipe, setRecipe] = useState(null);
   const [creatorProfile, setCreatorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const hasRecordedView = useRef(false);
 
   useEffect(() => {
     if (slug) {
@@ -44,7 +47,7 @@ const RecipeDetail = () => {
   }, [slug]);
 
   useEffect(() => {
-    if (!recipe) return;
+    if (!recipe || hasRecordedView.current) return;
 
     const recordView = async () => {
       const sessionId = getOrCreateSessionId();
@@ -54,6 +57,10 @@ const RecipeDetail = () => {
         session_id: sessionId,
         // viewed_at will default to now
       });
+      hasRecordedView.current = true;
+      // Invalidate analytics query for today
+      const today = new Date().toISOString().slice(0, 10);
+      queryClient.invalidateQueries(['recipeAnalyticsForDate', user?.id, today]);
     };
 
     recordView();
