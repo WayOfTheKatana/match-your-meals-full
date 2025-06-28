@@ -44,34 +44,26 @@ export const useTextToSpeech = () => {
       // Prepare request payload
       const payload = {
         text: text.trim(),
-        voice_id: options.voiceId || 'AZnzlk1XvdvUeBnXmlld', // Amelia voice
+        voice_id: options.voiceId || 'v8DWAeuEGQSfwxqdH9t2', // Updated voice ID
         model_id: options.modelId || 'eleven_monolingual_v1'
       };
 
       console.log('📡 Calling recipe-tts Edge Function...');
 
       // Call the Edge Function
-      const { data, error: functionError } = await supabase.functions.invoke('recipe-tts', {
-        body: payload,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await supabase.functions.invoke('recipe-tts', {
+        body: payload
       });
 
-      if (functionError) {
-        console.error('❌ Edge Function error:', functionError);
-        throw new Error(`Speech generation failed: ${functionError.message}`);
-      }
-
       // Check if we received audio data
-      if (!data || !(data instanceof ArrayBuffer)) {
-        throw new Error('Invalid audio data received from server');
+      if (!response.data) {
+        throw new Error('No audio data received from server');
       }
 
-      console.log('✅ Audio data received:', data.byteLength, 'bytes');
+      console.log('✅ Audio data received:', response.data.byteLength, 'bytes');
 
       // Create audio blob and URL
-      const audioBlob = new Blob([data], { type: 'audio/mpeg' });
+      const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
 
       console.log('🎵 Creating audio element...');

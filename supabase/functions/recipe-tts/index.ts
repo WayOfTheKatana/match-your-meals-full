@@ -114,60 +114,25 @@ Deno.serve(async (req: Request) => {
       throw new Error('Only POST method is allowed')
     }
 
-    // Check if request has a body
-    const contentLength = req.headers.get('content-length')
-    if (!contentLength || parseInt(contentLength) === 0) {
-      console.error('❌ Request has no body or empty body')
-      throw new Error('Request body is empty')
-    }
-
-    // Log request headers for debugging
-    console.log('📋 Request headers:')
-    for (const [key, value] of req.headers.entries()) {
-      // Don't log authorization headers
-      if (!key.toLowerCase().includes('auth') && !key.toLowerCase().includes('key')) {
-        console.log(`${key}: ${value}`)
-      }
-    }
-
     // Parse request body with robust error handling
-    let payload: RequestPayload
+    let payload: RequestPayload;
     
     try {
-      // Clone the request to avoid consuming the body
-      const clonedReq = req.clone()
-      
-      // First, read the request body as text
-      const bodyText = await clonedReq.text()
-      console.log('📋 Raw request body length:', bodyText.length)
-      
-      // Check if body is empty
-      if (!bodyText || bodyText.trim().length === 0) {
-        throw new Error('Request body is empty')
-      }
-      
-      // Log first 100 characters of body for debugging (without sensitive data)
-      console.log('📋 Request body preview:', bodyText.substring(0, 100).replace(/"/g, "'"))
-      
-      // Parse the JSON
-      try {
-        payload = JSON.parse(bodyText)
-      } catch (jsonError) {
-        console.error('❌ JSON parse error:', jsonError)
-        throw new Error(`Invalid JSON format: ${jsonError.message}`)
-      }
-      
-    } catch (parseError) {
-      console.error('❌ Failed to parse request body:', parseError)
-      throw new Error(`Invalid JSON in request body: ${parseError.message}`)
+      // Use req.json() directly which will handle empty bodies appropriately
+      payload = await req.json();
+      console.log('📋 Request payload received successfully');
+    } catch (error) {
+      console.error('❌ Error parsing request body:', error);
+      throw new Error(`Failed to parse request body: ${error.message}`);
     }
     
+    // Validate payload
     if (!payload || typeof payload !== 'object') {
-      throw new Error('Invalid request payload: must be a JSON object')
+      throw new Error('Invalid request payload: must be a JSON object');
     }
     
     if (!payload.text || typeof payload.text !== 'string' || payload.text.trim().length === 0) {
-      throw new Error('Text is required for speech generation and must be a non-empty string')
+      throw new Error('Text is required for speech generation and must be a non-empty string');
     }
 
     console.log('📋 TTS request received:', {
