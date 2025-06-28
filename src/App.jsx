@@ -71,6 +71,20 @@ function App() {
               <Route path="revenue" element={<div>Revenue (Creator)</div>} />
               <Route path="help" element={<div>Help & Support (Creator)</div>} />
             </Route>
+            {/* Recipe Board Routes - Authenticated Only */}
+            <Route 
+              path="/creators/board/:boardSlug" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <div className="text-center">
+                      <h1 className="text-2xl font-bold text-gray-900 mb-2">Recipe Board</h1>
+                      <p className="text-gray-600">Board view will be implemented next</p>
+                    </div>
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/recipes/:slug" element={<RecipeDetail />} />
             <Route path="/creators/:creatorId" element={<CreatorProfile />} />
           </Routes>
