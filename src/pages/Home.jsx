@@ -66,6 +66,7 @@ const Home = () => {
             <SearchSection />
           </div>
         </main>
+         <div className="text-5xl font-bold">Hello World</div>
       </div>
     </div>
   );
