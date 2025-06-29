@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import CommonHeader from '../components/CommonHeader';
 import SearchSection from '../components/SearchSection';
@@ -11,6 +12,21 @@ import { FaqSection } from '../components/ui/faq';
 import { StackedCircularFooter } from '../components/ui/stacked-circular-footer';
 
 const Home = () => {
+  const location = useLocation();
+
+  // Scroll to section when hash changes
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.substring(1); // Remove the # character
+      const element = document.getElementById(id);
+      
+      if (element) {
+        // Smooth scroll to the element
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [location.hash]);
+
   // Food-related items for the grid
   const gridItems = [
     'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300',
