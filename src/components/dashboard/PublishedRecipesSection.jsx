@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   ChefHat, 
   Loader2, 
@@ -19,11 +19,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import RecipeCreationModal from '../RecipeCreationModal';
+import ConfirmationModal from '../ConfirmationModal';
 
 const fetchPublishedRecipes = async (userId) => {
   const { data, error } = await supabase
     .from('recipes')
-    .select('id, slug, title, description, image_path, created_at')
+    .select('*')
     .eq('creator_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
@@ -63,7 +65,11 @@ const PublishedRecipeSkeleton = () => (
 
 const PublishedRecipesSection = () => {
   const { user } = useAuth();
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const navigate = useNavigate();
+  const [showRecipeCreationModal, setShowRecipeCreationModal] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState(null);
+  const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
+  const [recipeToDeleteId, setRecipeToDeleteId] = useState(null);
 
   const {
     data: recipes = [],
@@ -78,16 +84,24 @@ const PublishedRecipesSection = () => {
   });
 
   const handleEdit = (recipeId) => {
-    console.log('Edit recipe:', recipeId);
-    // Implement edit functionality
+    const recipeToEdit = recipes.find(recipe => recipe.id === recipeId);
+    if (recipeToEdit) {
+      setEditingRecipe(recipeToEdit);
+      setShowRecipeCreationModal(true);
+    }
   };
 
-  const handleDelete = async (recipeId) => {
+  const handleDelete = (recipeId) => {
+    setRecipeToDeleteId(recipeId);
+    setShowConfirmDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
     try {
       const { error } = await supabase
         .from('recipes')
         .delete()
-        .eq('id', recipeId);
+        .eq('id', recipeToDeleteId);
       
       if (error) throw error;
       
@@ -97,13 +111,28 @@ const PublishedRecipesSection = () => {
       console.error('Error deleting recipe:', error);
       alert('Failed to delete recipe. Please try again.');
     } finally {
-      setDeleteConfirmId(null);
+      setShowConfirmDeleteModal(false);
+      setRecipeToDeleteId(null);
     }
   };
 
-  const handleViewAnalytics = (recipeId) => {
-    console.log('View analytics for recipe:', recipeId);
-    // Implement analytics view functionality
+  const handleViewAnalytics = () => {
+    navigate('/dashboard/creator/analytics');
+  };
+
+  const handleCloseModal = () => {
+    setShowRecipeCreationModal(false);
+    setEditingRecipe(null);
+  };
+
+  const handleSaveRecipe = async (recipeData) => {
+    console.log('Recipe saved:', recipeData);
+    await refetch();
+  };
+
+  const handlePublishRecipe = async (recipeData) => {
+    console.log('Recipe published:', recipeData);
+    await refetch();
   };
 
   if (isLoading) {
@@ -187,7 +216,7 @@ const PublishedRecipesSection = () => {
                     variant="outline" 
                     size="sm" 
                     className="flex items-center space-x-1 text-red-600 hover:bg-red-50 hover:border-red-200"
-                    onClick={() => setDeleteConfirmId(recipe.id)}
+                    onClick={() => handleDelete(recipe.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete</span>
@@ -207,7 +236,7 @@ const PublishedRecipesSection = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem 
-                      onClick={() => handleViewAnalytics(recipe.id)}
+                      onClick={handleViewAnalytics}
                       className="flex items-center cursor-pointer"
                     >
                       <BarChart3 className="w-4 h-4 mr-2 text-blue-500" />
@@ -216,33 +245,31 @@ const PublishedRecipesSection = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              
-              {/* Delete Confirmation */}
-              {deleteConfirmId === recipe.id && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700 mb-2">Are you sure you want to delete this recipe?</p>
-                  <div className="flex space-x-2 justify-end">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setDeleteConfirmId(null)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => handleDelete(recipe.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Recipe Creation/Edit Modal */}
+      <RecipeCreationModal
+        isOpen={showRecipeCreationModal}
+        onClose={handleCloseModal}
+        initialRecipeData={editingRecipe}
+        onSave={handleSaveRecipe}
+        onPublish={handlePublishRecipe}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmDeleteModal}
+        onClose={() => setShowConfirmDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Recipe"
+        message="Are you sure you want to delete this recipe? This action cannot be undone."
+        confirmText="Delete Recipe"
+        cancelText="Cancel"
+        isDestructive={true}
+      />
     </div>
   );
 };

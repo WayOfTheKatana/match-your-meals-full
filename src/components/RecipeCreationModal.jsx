@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, AlertCircle, Check, Trash2, GripVertical, Sparkles, Loader2, Database } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { generateSlug } from '../lib/utils';
 
-const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
+const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave, onPublish }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
@@ -26,9 +26,67 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
   const [analyzingRecipe, setAnalyzingRecipe] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const formInitialized = useRef(false);
 
   const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces', 'cloves', 'slices'];
   const difficulties = ['easy', 'medium', 'hard'];
+
+  // Initialize form data when editing a recipe
+  useEffect(() => {
+    if (initialRecipeData && isOpen) {
+      setIsEditMode(true);
+      
+      // Convert database recipe format to form data format
+      const ingredientsForForm = initialRecipeData.ingredients?.map((ing, index) => ({
+        id: index + 1,
+        item: ing.name || '',
+        amount: ing.amount || '',
+        unit: ing.unit || 'cups'
+      })) || [{ id: 1, item: '', amount: '', unit: 'cups' }];
+
+      const instructionsForForm = initialRecipeData.instructions?.map((inst, index) => ({
+        id: index + 1,
+        step: (index + 1).toString(),
+        description: inst || ''
+      })) || [{ id: 1, step: '1', description: '' }];
+
+      // Prepare images array
+      const imagesForForm = [];
+      if (initialRecipeData.image_path) {
+        imagesForForm.push({
+          id: Date.now(),
+          preview: initialRecipeData.image_path,
+          name: initialRecipeData.image_path.split('/').pop() || 'recipe-image.jpg',
+          publicUrl: initialRecipeData.image_path,
+          uploaded: true,
+          storagePath: initialRecipeData.image_path.replace(
+            `${supabase.supabaseUrl}/storage/v1/object/public/matchmymeals-images/`, 
+            ''
+          )
+        });
+      }
+
+      setFormData({
+        title: initialRecipeData.title || '',
+        description: initialRecipeData.description || '',
+        prepTime: initialRecipeData.prep_time?.toString() || '',
+        cookTime: initialRecipeData.cook_time?.toString() || '',
+        servings: initialRecipeData.servings?.toString() || '',
+        difficulty: initialRecipeData.difficulty || 'easy',
+        ingredients: ingredientsForForm,
+        instructions: instructionsForForm,
+        images: imagesForForm
+      });
+      
+      formInitialized.current = true;
+    } else if (isOpen) {
+      // Reset form for new recipe creation
+      setIsEditMode(false);
+      resetForm();
+      formInitialized.current = true;
+    }
+  }, [initialRecipeData, isOpen]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -67,7 +125,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
   // Ingredient Management
   const addIngredient = () => {
-    const newId = Math.max(...formData.ingredients.map(i => i.id)) + 1;
+    const newId = Math.max(...formData.ingredients.map(i => i.id), 0) + 1;
     setFormData(prev => ({
       ...prev,
       ingredients: [...prev.ingredients, { id: newId, item: '', amount: '', unit: 'cups' }]
@@ -94,7 +152,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
 
   // Instruction Management
   const addInstruction = () => {
-    const newId = Math.max(...formData.instructions.map(i => i.id)) + 1;
+    const newId = Math.max(...formData.instructions.map(i => i.id), 0) + 1;
     setFormData(prev => ({
       ...prev,
       instructions: [...prev.instructions, { id: newId, step: (prev.instructions.length + 1).toString(), description: '' }]
@@ -281,13 +339,13 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         recipeId: recipeId
       };
 
-      const { data, error } = await supabase.functions.invoke('recipe-analyzer', {
+      const { data, error: functionError } = await supabase.functions.invoke('recipe-analyzer', {
         body: payload
       });
 
-      if (error) {
-        console.error('❌ Edge Function error:', error);
-        throw new Error(`Recipe analyzer failed: ${error.message}`);
+      if (functionError) {
+        console.error('❌ Edge Function error:', functionError);
+        throw new Error(`Recipe analyzer failed: ${functionError.message}`);
       }
 
       console.log('✅ Edge Function response:', data);
@@ -374,19 +432,38 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       
       console.log('💾 Saving recipe to database:', recipeData);
 
-      const { data, error } = await supabase
-        .from('recipes')
-        .insert([recipeData])
-        .select()
-        .single();
+      if (isEditMode && initialRecipeData?.id) {
+        // Update existing recipe
+        const { data, error } = await supabase
+          .from('recipes')
+          .update(recipeData)
+          .eq('id', initialRecipeData.id)
+          .select()
+          .single();
 
-      if (error) {
-        console.error('❌ Supabase error:', error);
-        throw error;
+        if (error) {
+          console.error('❌ Supabase update error:', error);
+          throw error;
+        }
+
+        console.log('✅ Recipe updated successfully:', data);
+        return data;
+      } else {
+        // Insert new recipe
+        const { data, error } = await supabase
+          .from('recipes')
+          .insert([recipeData])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('❌ Supabase insert error:', error);
+          throw error;
+        }
+
+        console.log('✅ Recipe saved successfully:', data);
+        return data;
       }
-
-      console.log('✅ Recipe saved successfully:', data);
-      return data;
     } catch (error) {
       console.error('❌ Error saving recipe:', error);
       throw error;
@@ -403,7 +480,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
       const savedRecipe = await saveRecipeToDatabase();
       
       // Show success message
-      alert('Recipe saved as draft successfully!');
+      alert(`Recipe ${isEditMode ? 'updated' : 'saved'} as draft successfully!`);
       
       // Call parent handler if provided
       if (onSave) {
@@ -467,25 +544,25 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
         handleClose();
       }, 2000);
       
-    } catch (error) {
-      console.error('❌ Error publishing recipe:', error);
+    } catch (err) {
+      console.error('❌ Error publishing recipe:', err);
       setAnalyzingRecipe(false);
       setAnalysisComplete(false);
       
       // Show user-friendly error message
       let errorMessage = 'Failed to publish recipe. Please try again.';
       
-      if (error.message?.includes('not authenticated')) {
+      if (err.message?.includes('not authenticated')) {
         errorMessage = 'Please log in to publish recipes.';
-      } else if (error.message?.includes('violates')) {
+      } else if (err.message?.includes('violates')) {
         errorMessage = 'Please check all required fields are filled correctly.';
-      } else if (error.message?.includes('Function not found') || error.message?.includes('recipe-analyzer')) {
+      } else if (err.message?.includes('Function not found') || err.message?.includes('recipe-analyzer')) {
         errorMessage = 'Recipe analyzer function not found. Please ensure the recipe-analyzer function is deployed in Supabase.';
-      } else if (error.message?.includes('Failed to connect')) {
-        errorMessage = `API Connection failed: ${error.message}`;
-      } else if (error.message?.includes('Recipe analyzer failed')) {
-        errorMessage = `Recipe analysis failed: ${error.message}`;
-      } else if (error.message?.includes('Failed to fetch')) {
+      } else if (err.message?.includes('Failed to connect')) {
+        errorMessage = `API Connection failed: ${err.message}`;
+      } else if (err.message?.includes('Recipe analyzer failed')) {
+        errorMessage = `Recipe analysis failed: ${err.message}`;
+      } else if (err.message?.includes('Failed to fetch')) {
         errorMessage = 'Failed to connect to Edge Function. Please check your Supabase configuration.';
       }
       
@@ -518,6 +595,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
     setAnalyzingRecipe(false);
     setAnalysisComplete(false);
     setUploadingImages(false);
+    setIsEditMode(false);
   };
 
   const handleClose = () => {
@@ -537,7 +615,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               <ChefHat className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-serif text-gray-900">Create New Recipe</h2>
+              <h2 className="text-2xl font-serif text-gray-900">{isEditMode ? 'Edit Recipe' : 'Create New Recipe'}</h2>
               <p className="text-sm text-gray-600">Share your culinary creation with AI-powered analysis</p>
             </div>
           </div>
@@ -951,7 +1029,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               ) : (
                 <Check className="w-4 h-4" />
               )}
-              <span>Save as Draft</span>
+              <span>{isEditMode ? 'Save Changes' : 'Save as Draft'}</span>
             </Button>
             
             <Button
@@ -968,7 +1046,7 @@ const RecipeCreationModal = ({ isOpen, onClose, onSave, onPublish }) => {
               ) : (
                 <>
                   <Database className="w-4 h-4" />
-                  <span>Publish Recipe</span>
+                  <span>{isEditMode ? 'Update & Publish' : 'Publish Recipe'}</span>
                 </>
               )}
             </Button>
