@@ -182,7 +182,7 @@ const SearchSection = () => {
         )}
 
         {/* Full-Width Search Bar */}
-        <div className="w-full max-w-4xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="max-w-4xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <div className="relative flex items-center bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-3xl focus-within:shadow-3xl focus-within:scale-[1.01] border border-white/20">
             {/* Voice/Mic Icon */}
             <div className="flex items-center pl-6 pr-4">
