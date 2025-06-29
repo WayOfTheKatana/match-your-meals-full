@@ -132,14 +132,16 @@ const SearchSection = () => {
           </span>
         </div>
 
-        {/* Main Heading */}
+        {/* Main Heading - Now with glassy effect */}
         <div className="mb-12 animate-slide-up">
-          <h1 className="text-3xl md:text-6xl font-urbanist text-white mb-1.5 leading-tight font-medium tracking-normal">
-            Find Your Perfect
-          </h1>
-          <h1 className="text-3xl md:text-6xl font-urbanist text-white mb-4 leading-tight font-medium">
-            Recipe in <span className="italic font-light font-dm-serif md:text-[4rem]">Seconds</span>
-          </h1>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <h1 className="text-3xl md:text-6xl font-urbanist text-white mb-1.5 leading-tight font-medium tracking-normal">
+              Find Your Perfect
+            </h1>
+            <h1 className="text-3xl md:text-6xl font-urbanist text-white mb-4 leading-tight font-medium">
+              Recipe in <span className="italic font-light font-dm-serif md:text-[4rem]">Seconds</span>
+            </h1>
+          </div>
         </div>
 
         {/* Speech Error Alert */}
