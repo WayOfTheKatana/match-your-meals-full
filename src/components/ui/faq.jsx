@@ -90,7 +90,7 @@ const FaqItem = React.forwardRef(
           "border border-gray-200/50",
           isOpen
             ? "bg-gradient-to-br from-white via-gray-100/50 to-white"
-            : "hover:bg-[#d85809]/30"
+            : "hover:bg-[#d85809]/10"
         )}
       >
         <Button
