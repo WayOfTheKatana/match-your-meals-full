@@ -137,7 +137,7 @@ const SearchSection = () => {
 
   return (
     <>
-      <div className="flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto w-full">
+      <div className="flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto w-full backdrop-blur-sm bg-black/20 py-12 rounded-3xl">
         {/* Badge */}
         <div className="mb-8 animate-fade-in">
           <span className="inline-flex items-center px-4 py-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white text-sm font-medium font-urbanist">
