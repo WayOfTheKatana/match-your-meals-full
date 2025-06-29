@@ -87,7 +87,7 @@ const Home = () => {
             from={{ opacity: 0, y: 40 }}
             to={{ opacity: 1, y: 0 }}
             threshold={0.1}
-            rootMargin="-120px"
+            rootMargin="120px"
             textAlign="center"
             onLetterAnimationComplete={handleAnimationComplete}
           />
