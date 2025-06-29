@@ -21,6 +21,7 @@ export const useGeolocation = () => {
     queryKey: ['geolocation'],
     queryFn: fetchGeolocation,
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
-    retry: 1, // Only retry once to avoid excessive API calls
+    retry: 3, // Retry up to 3 times with exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff with max 30s delay
   });
 };
