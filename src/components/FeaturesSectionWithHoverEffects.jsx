@@ -93,7 +93,7 @@ const Feature = ({
       {index >= 4 && (
         <div className="opacity-0 group-hover/feature:opacity-100 transition duration-200 absolute inset-0 h-full w-full bg-gradient-to-b from-primary-50 to-transparent pointer-events-none" />
       )}
-      <div className="mb-4 relative z-10 px-10 text-gray-900">
+      <div className="mb-4 relative z-10 px-10 text-gray-200">
         {React.cloneElement(icon, { className: "w-6 h-6 text-primary-600" })}
       </div>
       <div className="text-lg font-bold mb-2 relative z-10 px-10">
