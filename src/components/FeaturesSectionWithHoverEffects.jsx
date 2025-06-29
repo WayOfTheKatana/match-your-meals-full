@@ -58,9 +58,9 @@ Just type "quick breakfast for kids" or "low-carb dinner" and get exactly what y
 ,
     },
     {
-      title: "Recipe Collections",
+      title: "Save & Organize",
       description:
-        "Create custom boards to organize your favorite recipes by meal type, occasion, or diet plan.",
+        `Create recipe collections like "Weekend Brunch" or "Quick Weeknight Dinners" to stay organized.`,
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
   <path d="M11.644 1.59a.75.75 0 0 1 .712 0l9.75 5.25a.75.75 0 0 1 0 1.32l-9.75 5.25a.75.75 0 0 1-.712 0l-9.75-5.25a.75.75 0 0 1 0-1.32l9.75-5.25Z" />
   <path d="m3.265 10.602 7.668 4.129a2.25 2.25 0 0 0 2.134 0l7.668-4.13 1.37.739a.75.75 0 0 1 0 1.32l-9.75 5.25a.75.75 0 0 1-.71 0l-9.75-5.25a.75.75 0 0 1 0-1.32l1.37-.738Z" />
