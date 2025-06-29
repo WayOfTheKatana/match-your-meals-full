@@ -18,8 +18,8 @@ export function Features() {
                                     </svg>
                                     <span className="mx-auto block w-fit text-5xl font-semibold">100%</span>
                                 </div>
-                                <h2 className="mt-6 text-center text-3xl font-semibold font-dm-serif">Authentic Recipe</h2>
-                                <span className="text-center text-xl font-urbanist">From Community Creators</span>
+                                <h2 className="mt-6 text-center text-3xl font-semibold font-dm-serif">Authentic Recipes</h2>
+                                <span className="text-center text-xl font-urbanist">From Community Recipe Creators</span>
                             </CardContent>
                         </Card>
                         <Card className="relative col-span-full overflow-hidden sm:col-span-3 lg:col-span-2">
