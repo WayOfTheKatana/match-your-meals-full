@@ -110,8 +110,8 @@ const PublishedRecipesSection = () => {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold mb-4">My Published Recipes</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, index) => (
             <PublishedRecipeSkeleton key={index} />
           ))}
         </div>
@@ -141,7 +141,7 @@ const PublishedRecipesSection = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold mb-4">My Published Recipes</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {recipes.map(recipe => (
           <div key={recipe.id} className="bg-white rounded-xl shadow p-5 border border-gray-100 flex flex-col h-full">
             {/* Recipe Image */}
