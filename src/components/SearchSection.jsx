@@ -8,7 +8,6 @@ import LoginModal from './LoginModal';
 
 const SearchSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -66,22 +65,12 @@ const SearchSection = () => {
     }
 
     if (isListening) {
-      // Stop listening and clear transcript if needed
       toggleListening();
     } else {
-      // Start listening and reset previous transcript
       resetTranscript();
       setSearchQuery('');
       toggleListening();
     }
-  };
-
-  const handleFocus = () => {
-    setIsFocused(true);
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
   };
 
   const handleSearch = () => {
@@ -111,8 +100,6 @@ const SearchSection = () => {
   const getPlaceholderText = () => {
     if (isListening) {
       return "Listening... Speak your recipe request";
-    } else if (isFocused) {
-      return "Type your recipe search...";
     } else {
       return "pre-workout banana milkshake and suggest me post workout";
     }
@@ -137,7 +124,7 @@ const SearchSection = () => {
 
   return (
     <>
-      <div className="flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto w-full backdrop-blur-sm bg-black/20 py-12 rounded-3xl">
+      <div className="flex flex-col items-center justify-center text-center px-6 max-w-5xl mx-auto w-full">
         {/* Badge */}
         <div className="mb-8 animate-fade-in">
           <span className="inline-flex items-center px-4 py-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white text-sm font-medium font-urbanist">
@@ -221,8 +208,6 @@ const SearchSection = () => {
                 placeholder={getPlaceholderText()}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
                 onKeyPress={handleKeyPress}
                 className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-16 text-lg bg-transparent px-0 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-50"
               />
@@ -250,33 +235,6 @@ const SearchSection = () => {
               </button>
             </div>
           </div>
-
-          {/* Search Suggestions/Quick Actions */}
-          {isFocused && (
-            <div className="mt-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-4 animate-fade-in">
-              <div className="flex flex-wrap gap-2">
-                {['Healthy breakfast', 'Quick dinner', 'Vegan protein', 'Low carb', 'Meal prep'].map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSearchQuery(suggestion)}
-                    className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-              
-              {/* Voice Search Tip */}
-              {speechSupported && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-600 flex items-center">
-                    <Mic className="w-3 h-3 mr-1" />
-                    Tip: Click the microphone icon or press and hold to search with your voice
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Trending Section */}
