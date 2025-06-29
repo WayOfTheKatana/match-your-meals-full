@@ -43,7 +43,7 @@ const Home = () => {
 
   return (
     <>
-         <div className="min-h-screen relative overflow-hidden">
+      <div className="min-h-screen relative overflow-hidden">
       {/* Background with GridMotion */}
       <div className="absolute inset-0">
         <GridMotion items={gridItems} gradientColor="rgba(211, 84, 0, 0.7)" />
@@ -69,6 +69,8 @@ const Home = () => {
         </main> 
       </div>
     </div>
+
+      <div>Hello World</div>
     </>
  
   );
