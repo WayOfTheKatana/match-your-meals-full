@@ -450,147 +450,71 @@ export const useTextToSpeech = () => {
 
       console.log('📡 Calling recipe-tts Edge Function...');
 
-      // Try direct fetch approach first as a fallback
+      // Use direct fetch instead of Supabase invoke to avoid binary data corruption
       let audioData;
-      let useDirectFetch = false;
 
       try {
-        // First try without responseType to see what we get
-        console.log('📡 Trying Supabase invoke without responseType...');
-        const { data, error: functionError } = await supabase.functions.invoke('recipe-tts', {
-          body: payload
+        console.log('📡 Using direct fetch to Edge Function...');
+        
+        // Get the Supabase project URL and key
+        const supabaseUrl = supabase.supabaseUrl;
+        const supabaseKey = supabase.supabaseKey;
+        const functionUrl = `${supabaseUrl}/functions/v1/recipe-tts`;
+        
+        console.log('🔗 Function URL:', functionUrl);
+
+        const response = await fetch(functionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+            'apikey': supabaseKey,
+          },
+          body: JSON.stringify(payload)
         });
 
-        // Comprehensive debugging
-        console.log('🔍 Full response debugging:');
-        console.log('- functionError:', functionError);
-        console.log('- data type:', typeof data);
-        console.log('- data constructor:', data?.constructor?.name);
-        console.log('- data instance checks:', {
-          isArrayBuffer: data instanceof ArrayBuffer,
-          isUint8Array: data instanceof Uint8Array,
-          isNull: data === null,
-          isUndefined: data === undefined
-        });
-        
-        if (data) {
-          console.log('- data properties:', Object.getOwnPropertyNames(data));
-          if (data.byteLength !== undefined) {
-            console.log('- data.byteLength:', data.byteLength);
-          }
-          if (data.length !== undefined) {
-            console.log('- data.length:', data.length);
-          }
+        console.log('📊 Response status:', response.status);
+        console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()));
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Direct fetch error:', response.status, errorText);
+          throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
 
-        // Check for errors in the response
-        if (functionError) {
-          console.error('❌ Edge Function error:', functionError);
-          throw new Error(`Server error: ${functionError.message || 'Unknown error'}`);
-        }
+        // Check content type to determine how to handle the response
+        const contentType = response.headers.get('content-type');
+        console.log('🔍 Content-Type:', contentType);
 
-        // Handle different response types
-        audioData = data;
-        
-        // If data is null or undefined
-        if (!data) {
-          throw new Error('No data received from server');
-        }
-
-        // For string responses (base64), we'll handle this in validation
-        if (typeof data === 'string') {
-          console.log('✅ Received base64 string response');
-          // Let the validation function handle the conversion
-        }
-        // If data is an object (potentially JSON response)
-        else if (typeof data === 'object' && !(data instanceof ArrayBuffer) && !(data instanceof Uint8Array)) {
-          console.log('🔍 Received object response, checking for audio data...');
-          
-          // Try to decode as text to see if it's a JSON error
-          try {
-            let textData;
-            if (data instanceof ArrayBuffer) {
-              textData = new TextDecoder().decode(data);
-            } else {
-              textData = JSON.stringify(data);
-            }
-            
-            console.log('🔍 Response as text:', textData.substring(0, 200));
-            
-            // Try to parse as JSON
-            const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-            
-            if (parsedData.error) {
-              throw new Error(`Server error: ${parsedData.error}`);
-            }
-            
-            // If it has audioData property, use that
-            if (parsedData.audioData) {
-              if (typeof parsedData.audioData === 'string') {
-                // Convert base64 to ArrayBuffer
-                const binaryString = atob(parsedData.audioData);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                  bytes[i] = binaryString.charCodeAt(i);
-                }
-                audioData = bytes.buffer;
-              } else {
-                audioData = parsedData.audioData;
-              }
-            } else {
-              console.log('🔄 No audio data in response, trying direct fetch...');
-              useDirectFetch = true;
-            }
-          } catch (parseError) {
-            console.error('❌ Failed to parse response:', parseError);
-            console.log('🔄 Trying direct fetch as fallback...');
-            useDirectFetch = true;
-          }
-        }
-
-      } catch (supabaseError) {
-        console.error('❌ Supabase invoke error:', supabaseError);
-        console.log('🔄 Trying direct fetch as fallback...');
-        useDirectFetch = true;
-      }
-
-      // Fallback: Direct fetch to the Edge Function URL
-      if (useDirectFetch) {
-        try {
-          console.log('📡 Using direct fetch to Edge Function...');
-          
-          // Get the Supabase project URL
-          const supabaseUrl = supabase.supabaseUrl;
-          const functionUrl = `${supabaseUrl}/functions/v1/recipe-tts`;
-          
-          const response = await fetch(functionUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabase.supabaseKey}`,
-            },
-            body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Direct fetch error: ${response.status} - ${errorText}`);
-          }
-
+        if (contentType && contentType.includes('audio')) {
+          // Response is audio data
           audioData = await response.arrayBuffer();
-          console.log('✅ Direct fetch successful, received:', audioData.byteLength, 'bytes');
-
-        } catch (fetchError) {
-          console.error('❌ Direct fetch also failed:', fetchError);
-          throw new Error('Failed to generate speech using both methods');
+          console.log('✅ Direct fetch successful, received audio data:', audioData.byteLength, 'bytes');
+        } else if (contentType && contentType.includes('application/json')) {
+          // Response is JSON (probably an error)
+          const jsonResponse = await response.json();
+          if (jsonResponse.error) {
+            throw new Error(`Server error: ${jsonResponse.error}`);
+          } else {
+            throw new Error('Unexpected JSON response from audio endpoint');
+          }
+        } else {
+          // Try as array buffer anyway
+          audioData = await response.arrayBuffer();
+          console.log('✅ Direct fetch successful (unknown content-type), received:', audioData.byteLength, 'bytes');
         }
+
+      } catch (fetchError) {
+        console.error('❌ Direct fetch failed:', fetchError);
+        throw new Error(`Failed to generate speech: ${fetchError.message}`);
       }
 
-      // Validate and convert audio data
-      audioData = validateAndConvertAudioData(audioData);
+      // Validate and convert audio data (should now be ArrayBuffer from direct fetch)
+      if (!(audioData instanceof ArrayBuffer)) {
+        throw new Error(`Expected ArrayBuffer from direct fetch, got: ${typeof audioData}`);
+      }
 
-      const byteLength = audioData.byteLength;
-      console.log('✅ Valid audio data received:', byteLength, 'bytes');
+      console.log('✅ Valid audio data received:', audioData.byteLength, 'bytes');
 
       // Create audio blob with explicit MIME type
       const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
