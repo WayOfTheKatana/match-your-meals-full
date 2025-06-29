@@ -136,7 +136,6 @@ const Home = () => {
         <FaqSection
           className="font-dm-serif"
           title="Frequently Asked Questions"
-          description="Everything you need to know about our AI-powered recipe platform"
           items={DEMO_FAQS}
           contactInfo={{
             title: "Still have questions?",
