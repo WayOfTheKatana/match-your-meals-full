@@ -20,12 +20,14 @@ import {
   Pause,
   Square,
   Volume2,
-  VolumeX
+  VolumeX,
+  MapPin
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedRecipes } from '../hooks/useSavedRecipes';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
+import { useGeolocation } from '../hooks/useGeolocation';
 import { supabase } from '../lib/supabase';
 import { formatTime, getTotalTime } from '../lib/utils';
 import CommonHeader from '../components/CommonHeader';
@@ -47,6 +49,7 @@ const RecipeDetail = () => {
     progress: ttsProgress,
     clearError: clearTtsError 
   } = useTextToSpeech();
+  const { data: geolocation, isLoading: geoLoading, error: geoError } = useGeolocation();
   const queryClient = useQueryClient();
 
   const [recipe, setRecipe] = useState(null);
@@ -67,20 +70,41 @@ const RecipeDetail = () => {
 
     const recordView = async () => {
       const sessionId = getOrCreateSessionId();
-      await supabase.from('recipe_views').insert({
-        recipe_id: recipe.id,
-        user_id: user ? user.id : null,
-        session_id: sessionId,
-        // viewed_at will default to now
-      });
-      hasRecordedView.current = true;
-      // Invalidate analytics query for today
-      const today = new Date().toISOString().slice(0, 10);
-      queryClient.invalidateQueries(['recipeAnalyticsForDate', user?.id, today]);
+      
+      try {
+        // Add geolocation data to the view record if available
+        const { error } = await supabase.from('recipe_views').insert({
+          recipe_id: recipe.id,
+          user_id: user ? user.id : null,
+          session_id: sessionId,
+          country_code: geolocation?.country_code,
+          country_name: geolocation?.country_name,
+          city: geolocation?.city,
+          region: geolocation?.region,
+          latitude: geolocation?.latitude,
+          longitude: geolocation?.longitude
+        });
+        
+        if (error) {
+          console.error('Error recording view:', error);
+        } else {
+          console.log('View recorded successfully with geolocation data');
+          hasRecordedView.current = true;
+          
+          // Invalidate analytics query for today
+          const today = new Date().toISOString().slice(0, 10);
+          queryClient.invalidateQueries(['recipeAnalyticsForDate', user?.id, today]);
+        }
+      } catch (err) {
+        console.error('Error in recordView:', err);
+      }
     };
 
-    recordView();
-  }, [recipe, user]);
+    // Wait for geolocation data if it's still loading
+    if (!geoLoading) {
+      recordView();
+    }
+  }, [recipe, user, geolocation, geoLoading]);
 
   const fetchRecipe = async () => {
     setLoading(true);
@@ -308,6 +332,16 @@ const RecipeDetail = () => {
                   <div className="flex items-center space-x-2 mb-3">
                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
                     <span className="text-white font-medium">4.8 (127 reviews)</span>
+                    
+                    {/* Geolocation Info */}
+                    {!geoLoading && !geoError && geolocation && (
+                      <div className="flex items-center space-x-1 ml-4">
+                        <MapPin className="w-4 h-4 text-white" />
+                        <span className="text-white text-sm">
+                          Viewed from {geolocation.country_name}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <h1 className="text-4xl font-serif text-white mb-2">{recipe.title}</h1>
                   <p className="text-white/90 text-lg">{recipe.description}</p>
@@ -493,10 +527,38 @@ const RecipeDetail = () => {
 
           {/* Right Sidebar - Clean Widget Cards (1/3 width) */}
           <div className="space-y-8">
+            {/* Geolocation Information */}
+            {!geoLoading && !geoError && geolocation && (
+              <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                  <MapPin className="w-5 h-5 mr-2 text-primary-600" />
+                  Your Location
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Country:</span>
+                    <span className="font-medium text-gray-900">{geolocation.country_name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">City:</span>
+                    <span className="font-medium text-gray-900">{geolocation.city || 'Unknown'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Region:</span>
+                    <span className="font-medium text-gray-900">{geolocation.region || 'Unknown'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Timezone:</span>
+                    <span className="font-medium text-gray-900">{geolocation.timezone || 'Unknown'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Author Information */}
             {creatorProfile && (
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+              <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
                   <User className="w-5 h-5 mr-2 text-primary-600" />
                   Recipe Creator
                 </h4>
@@ -529,12 +591,9 @@ const RecipeDetail = () => {
               </div>
             )}
 
-            {/* Separator */}
-            <div className="border-t border-gray-200"></div>
-
             {/* Recipe Timing & Servings */}
-            <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+              <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
                 <Clock className="w-5 h-5 mr-2 text-primary-600" />
                 Timing & Servings
               </h4>
@@ -564,91 +623,82 @@ const RecipeDetail = () => {
 
             {/* Recipe Tags */}
             {(recipe.dietary_tags?.length > 0 || recipe.health_tags?.length > 0) && (
-              <>
-                <div className="border-t border-gray-200"></div>
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Tag className="w-5 h-5 mr-2 text-primary-600" />
-                    Recipe Tags
-                  </h4>
-                  <div className="space-y-3">
-                    {recipe.dietary_tags?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">Dietary</p>
-                        <div className="flex flex-wrap gap-2">
-                          {recipe.dietary_tags.map((tag, index) => (
-                            <span
-                              key={`dietary-${index}`}
-                              className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium"
-                            >
-                              {tag.replace(/-/g, ' ')}
-                            </span>
-                          ))}
-                        </div>
+              <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                  <Tag className="w-5 h-5 mr-2 text-primary-600" />
+                  Recipe Tags
+                </h4>
+                <div className="space-y-3">
+                  {recipe.dietary_tags?.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">Dietary</p>
+                      <div className="flex flex-wrap gap-2">
+                        {recipe.dietary_tags.map((tag, index) => (
+                          <span
+                            key={`dietary-${index}`}
+                            className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium"
+                          >
+                            {tag.replace(/-/g, ' ')}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                    {recipe.health_tags?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">Health</p>
-                        <div className="flex flex-wrap gap-2">
-                          {recipe.health_tags.map((tag, index) => (
-                            <span
-                              key={`health-${index}`}
-                              className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
-                            >
-                              {tag.replace(/-/g, ' ')}
-                            </span>
-                          ))}
-                        </div>
+                    </div>
+                  )}
+                  {recipe.health_tags?.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">Health</p>
+                      <div className="flex flex-wrap gap-2">
+                        {recipe.health_tags.map((tag, index) => (
+                          <span
+                            key={`health-${index}`}
+                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
+                          >
+                            {tag.replace(/-/g, ' ')}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              </>
+              </div>
             )}
 
             {/* Health Benefits */}
             {recipe.health_benefits?.length > 0 && (
-              <>
-                <div className="border-t border-gray-200"></div>
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Award className="w-5 h-5 mr-2 text-green-600" />
-                    Health Benefits
-                  </h4>
-                  <div className="space-y-3">
-                    {recipe.health_benefits.map((benefit, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0 mt-2"></div>
-                        <span className="text-green-800 text-sm leading-relaxed">{benefit}</span>
-                      </div>
-                    ))}
-                  </div>
+              <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                  <Award className="w-5 h-5 mr-2 text-green-600" />
+                  Health Benefits
+                </h4>
+                <div className="space-y-3">
+                  {recipe.health_benefits.map((benefit, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0 mt-2"></div>
+                      <span className="text-green-800 text-sm leading-relaxed">{benefit}</span>
+                    </div>
+                  ))}
                 </div>
-              </>
+              </div>
             )}
 
             {/* Nutritional Information */}
             {recipe.nutritional_info && (
-              <>
-                <div className="border-t border-gray-200"></div>
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
-                    Nutrition (per serving)
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(recipe.nutritional_info).map(([key, value]) => (
-                      <div key={key} className="text-center">
-                        <p className="text-2xl font-bold text-blue-600">{value}</p>
-                        <p className="text-xs text-blue-800 capitalize">
-                          {key.replace(/_/g, ' ').replace('grams', 'g').replace('mg', 'mg')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+              <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                  <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
+                  Nutrition (per serving)
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {Object.entries(recipe.nutritional_info).map(([key, value]) => (
+                    <div key={key} className="text-center">
+                      <p className="text-2xl font-bold text-blue-600">{value}</p>
+                      <p className="text-xs text-blue-800 capitalize">
+                        {key.replace(/_/g, ' ').replace('grams', 'g').replace('mg', 'mg')}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
