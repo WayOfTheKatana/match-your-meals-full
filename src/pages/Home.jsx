@@ -93,6 +93,7 @@ const Home = () => {
             onLetterAnimationComplete={handleAnimationComplete}
           />
         </div>
+        <Features />
       </div>
 
       {/* Features Section */}
