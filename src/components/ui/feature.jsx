@@ -25,9 +25,9 @@ function Feature() {
               <div className="flex flex-row gap-6 items-start">
                 <Check className="w-4 h-4 mt-2 text-primary-600" />
                 <div className="flex flex-col gap-1">
-                  <p className="text-gray-900 font-medium">Fair Revenue Share</p>
+                  <p className="text-gray-900 font-medium">Early Creator Advantage</p>
                   <p className="text-gray-600 text-sm">
-                    Earn up to 70% of ad revenue generated from your recipes.
+                    Join now to secure priority access and exclusive benefits
                   </p>
                 </div>
               </div>
