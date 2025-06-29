@@ -91,9 +91,6 @@ const Home = () => {
             textAlign="center"
             onLetterAnimationComplete={handleAnimationComplete}
           />
-          <p className="text-lg text-gray-600 mt-6">
-            Our AI-powered recipe search gets you straight to the ingredients and instructions.
-          </p>
         </div>
       </div>
     </>
