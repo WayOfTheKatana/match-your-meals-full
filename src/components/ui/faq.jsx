@@ -54,7 +54,7 @@ const FaqSection = React.forwardRef(
               <div className="inline-flex items-center justify-center p-1.5 rounded-full mb-4">
                 <Mail className="h-4 w-4" />
               </div>
-              <p className="text-sm font-medium text-gray-900 mb-1">
+              <p className="text-sm font-medium text-gray-900 mb-1 font-urbanist">
                 {contactInfo.title}
               </p>
               <p className="text-xs text-gray-600 mb-4">
