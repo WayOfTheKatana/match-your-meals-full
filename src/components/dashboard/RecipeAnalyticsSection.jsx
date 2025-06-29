@@ -61,6 +61,60 @@ const fetchRecipeAnalyticsForDate = async (userId, date) => {
   return analytics;
 };
 
+// Skeleton Loading Components
+const AnalyticsTableSkeleton = () => (
+  <div className="overflow-x-auto">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 animate-pulse">
+      <div className="min-w-full">
+        {/* Table Header */}
+        <div className="grid grid-cols-4 bg-gray-50 rounded-t-xl">
+          <div className="px-6 py-3">
+            <div className="h-6 bg-gray-200 rounded w-24"></div>
+          </div>
+          <div className="px-6 py-3 text-center">
+            <div className="h-6 bg-gray-200 rounded w-20 mx-auto"></div>
+          </div>
+          <div className="px-6 py-3 text-center">
+            <div className="h-6 bg-gray-200 rounded w-24 mx-auto"></div>
+          </div>
+          <div className="px-6 py-3 text-center">
+            <div className="h-6 bg-gray-200 rounded w-24 mx-auto"></div>
+          </div>
+        </div>
+        
+        {/* Table Rows */}
+        {[...Array(6)].map((_, index) => (
+          <div key={index} className={`grid grid-cols-4 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+            <div className="px-6 py-4">
+              <div className="h-5 bg-gray-200 rounded w-32"></div>
+            </div>
+            <div className="px-6 py-4 text-center">
+              <div className="h-5 bg-gray-200 rounded w-8 mx-auto"></div>
+            </div>
+            <div className="px-6 py-4 text-center">
+              <div className="h-5 bg-gray-200 rounded w-8 mx-auto"></div>
+            </div>
+            <div className="px-6 py-4 text-center">
+              <div className="h-5 bg-gray-200 rounded w-8 mx-auto"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const DatePickerSkeleton = () => (
+  <div className="mb-4 animate-pulse">
+    <div className="h-5 bg-gray-200 rounded w-32 mb-2"></div>
+    <div className="h-10 bg-gray-200 rounded w-48"></div>
+  </div>
+);
+
+const HeaderSkeleton = () => (
+  <div className="h-8 bg-gray-200 rounded w-64 mb-8 animate-pulse"></div>
+);
+
 const RecipeAnalyticsSection = () => {
   const { user } = useAuth();
   // Date state (default today)
@@ -93,14 +147,18 @@ const RecipeAnalyticsSection = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  if (recipesLoading || analyticsLoading) {
+  const isLoading = recipesLoading || analyticsLoading;
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-40">
-        <Loader2 className="w-6 h-6 animate-spin text-primary-600 mr-2" />
-        <span className="text-gray-700">Loading analytics...</span>
+      <div className="space-y-8">
+        <HeaderSkeleton />
+        <DatePickerSkeleton />
+        <AnalyticsTableSkeleton />
       </div>
     );
   }
+
   if (recipesError || analyticsError) {
     return (
       <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -108,6 +166,7 @@ const RecipeAnalyticsSection = () => {
       </div>
     );
   }
+
   if (recipes.length === 0) {
     return (
       <div className="p-6 text-center text-gray-500">
@@ -183,4 +242,4 @@ const RecipeAnalyticsSection = () => {
   );
 };
 
-export default RecipeAnalyticsSection; 
+export default RecipeAnalyticsSection;
