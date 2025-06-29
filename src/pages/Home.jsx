@@ -135,7 +135,7 @@ const Home = () => {
       {/* FAQ Section */}
       <section id="faq">
         <FaqSection
-          className="font-urbanist"
+          className="font-inter"
           title="Frequently Asked Questions"
           items={DEMO_FAQS}
           contactInfo={{
