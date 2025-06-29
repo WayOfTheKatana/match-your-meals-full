@@ -222,7 +222,7 @@ const RecipeShowcaseSection = () => {
                 shimmerColor="#ffffff"
                 shimmerDuration="2.5s"
               >
-                <span className="flex items-center">
+                <span className="flex items-center text-white">
                   Explore More Recipes
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </span>
