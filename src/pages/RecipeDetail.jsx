@@ -70,20 +70,41 @@ const RecipeDetail = () => {
 
     const recordView = async () => {
       const sessionId = getOrCreateSessionId();
-      await supabase.from('recipe_views').insert({
-        recipe_id: recipe.id,
-        user_id: user ? user.id : null,
-        session_id: sessionId,
-        // viewed_at will default to now
-      });
-      hasRecordedView.current = true;
-      // Invalidate analytics query for today
-      const today = new Date().toISOString().slice(0, 10);
-      queryClient.invalidateQueries(['recipeAnalyticsForDate', user?.id, today]);
+      
+      try {
+        // Add geolocation data to the view record if available
+        const { error } = await supabase.from('recipe_views').insert({
+          recipe_id: recipe.id,
+          user_id: user ? user.id : null,
+          session_id: sessionId,
+          country_code: geolocation?.country_code,
+          country_name: geolocation?.country_name,
+          city: geolocation?.city,
+          region: geolocation?.region,
+          latitude: geolocation?.latitude,
+          longitude: geolocation?.longitude
+        });
+        
+        if (error) {
+          console.error('Error recording view:', error);
+        } else {
+          console.log('View recorded successfully with geolocation data');
+          hasRecordedView.current = true;
+          
+          // Invalidate analytics query for today
+          const today = new Date().toISOString().slice(0, 10);
+          queryClient.invalidateQueries(['recipeAnalyticsForDate', user?.id, today]);
+        }
+      } catch (err) {
+        console.error('Error in recordView:', err);
+      }
     };
 
-    recordView();
-  }, [recipe, user]);
+    // Wait for geolocation data if it's still loading
+    if (!geoLoading) {
+      recordView();
+    }
+  }, [recipe, user, geolocation, geoLoading]);
 
   const fetchRecipe = async () => {
     setLoading(true);

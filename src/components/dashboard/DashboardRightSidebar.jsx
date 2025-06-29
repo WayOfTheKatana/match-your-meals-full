@@ -3,6 +3,7 @@ import ConsumerStatsWidget from './ConsumerStatsWidget';
 import CreatorStatsWidget from './CreatorStatsWidget';
 import SavedRecipesSidebarWidgets from './SavedRecipesSidebarWidgets';
 import RecipeCreatorsWidget from './RecipeCreatorsWidget';
+import GeoAnalyticsWidget from './GeoAnalyticsWidget';
 
 const DashboardRightSidebar = ({ 
   currentView,
@@ -40,11 +41,15 @@ const DashboardRightSidebar = ({
           <>
             {/* Show only the appropriate stats widget */}
             {mode === 'creator' ? (
-              <CreatorStatsWidget
-                publishedCount={publishedCount}
-                followersCount={followersCount}
-                analyticsSummary={analyticsSummary}
-              />
+              <>
+                <CreatorStatsWidget
+                  publishedCount={publishedCount}
+                  followersCount={followersCount}
+                  analyticsSummary={analyticsSummary}
+                />
+                {/* Show geographic analytics for creator mode */}
+                <GeoAnalyticsWidget />
+              </>
             ) : (
               <ConsumerStatsWidget
                 followingsCount={followingsCount}
