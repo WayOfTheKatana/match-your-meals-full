@@ -58,6 +58,14 @@ const CreatorDashboardLayout = (props) => {
   const [currentStats, setCurrentStats] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [currentView, setCurrentView] = useState('');
+
+  // Update current view based on location
+  useEffect(() => {
+    const path = location.pathname;
+    const view = path.split('/').pop();
+    setCurrentView(view === 'creator' ? 'home' : view);
+  }, [location]);
 
   // Published recipes for creator
   const {
@@ -325,6 +333,7 @@ const CreatorDashboardLayout = (props) => {
           trendingTopics={trendingTopics}
           upcomingEvents={upcomingEvents}
           mode="creator"
+          currentView={currentView}
           publishedCount={publishedCount}
           followersCount={followersCount}
           analyticsSummary={analyticsSummary}

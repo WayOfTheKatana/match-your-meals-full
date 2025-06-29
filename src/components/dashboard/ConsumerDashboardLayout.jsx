@@ -75,6 +75,7 @@ const ConsumerDashboardLayout = (props) => {
   const [currentStats, setCurrentStats] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [currentView, setCurrentView] = useState('');
 
   const {
     data: recentRecipes = [],
@@ -86,6 +87,13 @@ const ConsumerDashboardLayout = (props) => {
     queryFn: fetchRecentRecipes,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Update current view based on location
+  useEffect(() => {
+    const path = location.pathname;
+    const view = path.split('/').pop();
+    setCurrentView(view === 'consumer' ? 'home' : view);
+  }, [location]);
 
   // Query stats directly from database
   const { data: followingsData } = useQuery({
@@ -370,9 +378,16 @@ const ConsumerDashboardLayout = (props) => {
           trendingTopics={trendingTopics}
           upcomingEvents={upcomingEvents}
           mode="consumer"
+          currentView={currentView}
           followingsCount={followingsCount}
           searchesCount={searchesCount}
           savedRecipesCount={savedRecipesCount}
+          savedRecipes={savedRecipes}
+          relatedRecipes={relatedRecipes}
+          relatedRecipesLoading={relatedRecipesLoading}
+          formatTime={formatTime}
+          getTotalTime={getTotalTime}
+          handleSaveSearchedRecipe={handleSaveSearchedRecipe}
         />
       </main>
       <RecipeCreationModal isOpen={showRecipeModal} onClose={() => setShowRecipeModal(false)} />
