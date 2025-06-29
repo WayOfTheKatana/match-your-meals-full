@@ -97,7 +97,6 @@ export const CommonHeader = ({ variant = 'default' }) => {
                       
                       <button
                         onClick={() => {
-                           e.stopPropagation();
                           navigate('/dashboard');
                           setShowUserMenu(false);
                         }}
