@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSavedRecipes } from '../../hooks/useSavedRecipes';
 import { useSearchHistory } from '../../hooks/useSearchHistory';
@@ -54,6 +54,8 @@ const ConsumerDashboardLayout = (props) => {
   const { user, userProfile, signOut, isConnected } = useAuth();
   const { savedRecipes, saveRecipe, removeSavedRecipe, isRecipeSaved, loading: savedRecipesLoading } = useSavedRecipes();
   const { searchHistory, addSearchHistory, deleteSearchHistory, clearAllSearchHistory, loading: searchHistoryLoading, error: searchHistoryError } = useSearchHistory();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // State variables
   const [showRecipeModal, setShowRecipeModal] = useState(false);
@@ -262,9 +264,15 @@ const ConsumerDashboardLayout = (props) => {
   // Handlers (copy from Dashboard.jsx as needed)
   const handleCreateRecipe = () => setShowRecipeModal(true);
   const handleKeyPress = (e) => { if (e.key === 'Enter') performSearch(searchQuery); };
-  const handleSearch = () => performSearch(searchQuery); 
+  const handleSearch = () => performSearch(searchQuery);
   const handleQuickSearch = (query) => { setSearchQuery(query); performSearch(query); };
-  const handleSearchFromHistory = (query) => { setSearchQuery(query); performSearch(query); };
+  const handleSearchFromHistory = (query) => { 
+    // First navigate to the consumer dashboard home
+    navigate('/dashboard/consumer');
+    // Then set the search query and perform the search
+    setSearchQuery(query); 
+    performSearch(query); 
+  };
   const handleDeleteSearchHistory = async (historyId) => { await deleteSearchHistory(historyId); };
   const handleClearAllHistory = async () => { await clearAllSearchHistory(); };
   const formatTime = (minutes) => `${minutes} min`;
