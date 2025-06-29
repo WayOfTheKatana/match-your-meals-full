@@ -92,7 +92,7 @@ const Home = () => {
               Features That You Love,
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Find your perfect recipe in seconds, not minutes. Here's how we make cooking discovery effortless"
+              Find your perfect recipe in seconds, not minutes. Here's how we make cooking discovery effortless
             </p>
           </div>
           
