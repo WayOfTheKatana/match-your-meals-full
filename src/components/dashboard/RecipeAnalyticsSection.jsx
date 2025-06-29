@@ -96,6 +96,30 @@ const fetchRecipeAnalyticsForDate = async (userId, date) => {
 };
 
 // Fetch country analytics for all recipes
+// const fetchCountryAnalytics = async (userId) => {
+//   // Get all recipe IDs for this user
+//   const { data: userRecipes, error: recipesError } = await supabase
+//     .from('recipes')
+//     .select('id')
+//     .eq('creator_id', userId);
+//   if (recipesError) throw new Error(recipesError.message);
+//   const recipeIds = (userRecipes || []).map(r => r.id);
+//   if (!recipeIds.length) return [];
+
+//   // Query all views with country data
+//   const { data: views, error: viewsError } = await supabase
+//     .from('recipe_views')
+//     .select('country_code, country_name, count')
+//     .in('recipe_id', recipeIds)
+//     .not('country_name', 'is', null)
+//     .group('country_code, country_name');
+  
+//   if (viewsError) throw new Error(viewsError.message);
+  
+//   return views || [];
+// };
+
+// Fixed fetchCountryAnalytics function
 const fetchCountryAnalytics = async (userId) => {
   // Get all recipe IDs for this user
   const { data: userRecipes, error: recipesError } = await supabase
@@ -106,17 +130,32 @@ const fetchCountryAnalytics = async (userId) => {
   const recipeIds = (userRecipes || []).map(r => r.id);
   if (!recipeIds.length) return [];
 
-  // Query all views with country data
+  // Query all views with country data (without .group())
   const { data: views, error: viewsError } = await supabase
     .from('recipe_views')
-    .select('country_code, country_name, count')
+    .select('country_code, country_name')
     .in('recipe_id', recipeIds)
-    .not('country_name', 'is', null)
-    .group('country_code, country_name');
+    .not('country_name', 'is', null);
   
   if (viewsError) throw new Error(viewsError.message);
   
-  return views || [];
+  // Group the results manually
+  const countryCount = {};
+  (views || []).forEach(view => {
+    const key = `${view.country_code}-${view.country_name}`;
+    if (!countryCount[key]) {
+      countryCount[key] = {
+        country_code: view.country_code,
+        country_name: view.country_name,
+        count: 0
+      };
+    }
+    countryCount[key].count++;
+  });
+  
+  // Convert to array and sort by count
+  return Object.values(countryCount)
+    .sort((a, b) => b.count - a.count);
 };
 
 // Skeleton Loading Components
