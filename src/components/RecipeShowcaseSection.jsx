@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChefHat, ArrowRight } from 'lucide-react';
-import RecipeCard from './RecipeCard';
 import { ShimmerButton } from './ui/shimmer-button';
 
 const RecipeShowcaseSection = () => {
@@ -189,16 +188,50 @@ const RecipeShowcaseSection = () => {
     }
   ];
 
-  // Mock saved recipes state
-  const [savedRecipes, setSavedRecipes] = React.useState([]);
-
-  const handleSaveRecipe = (recipeId) => {
-    if (savedRecipes.includes(recipeId)) {
-      setSavedRecipes(savedRecipes.filter(id => id !== recipeId));
-    } else {
-      setSavedRecipes([...savedRecipes, recipeId]);
+  // Carousel state and refs
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+  const carouselRef = useRef(null);
+  
+  // Create a triple-length array for seamless looping
+  // Original + Clone + Clone
+  const tripleRecipes = [...recipes, ...recipes, ...recipes];
+  
+  // Calculate the width of a single set of recipes
+  const singleSetWidth = recipes.length * 300; // 300px per image
+  
+  // Auto-scroll effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Increment scroll position
+      setScrollPosition(prev => {
+        const newPosition = prev + 1;
+        
+        // If we've scrolled past the second set, jump back to the first set (without animation)
+        if (newPosition >= singleSetWidth * 2) {
+          // Disable transition temporarily
+          setIsTransitioning(false);
+          // Reset to the equivalent position in the first set
+          return newPosition - singleSetWidth;
+        }
+        
+        return newPosition;
+      });
+    }, 20); // Smooth scrolling speed
+    
+    return () => clearInterval(interval);
+  }, [singleSetWidth]);
+  
+  // Re-enable transitions after position reset
+  useEffect(() => {
+    if (!isTransitioning) {
+      const timeout = setTimeout(() => {
+        setIsTransitioning(true);
+      }, 50);
+      
+      return () => clearTimeout(timeout);
     }
-  };
+  }, [isTransitioning]);
 
   return (
     <section className="py-16 bg-gray-50">
@@ -231,16 +264,37 @@ const RecipeShowcaseSection = () => {
           </div>
         </div>
 
-        {/* Recipe Grid - Smaller cards with more columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {recipes.map(recipe => (
-            <RecipeCard 
-              key={recipe.id} 
-              recipe={recipe} 
-              onSave={() => handleSaveRecipe(recipe.id)}
-              isSaved={savedRecipes.includes(recipe.id)}
-            />
-          ))}
+        {/* Recipe Image Carousel */}
+        <div className="relative w-full overflow-hidden h-80 my-12">
+          {/* Left Gradient Fade */}
+          <div className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none bg-gradient-to-r from-gray-50 to-transparent"></div>
+          
+          {/* Carousel Container */}
+          <div 
+            ref={carouselRef}
+            className="flex"
+            style={{
+              transform: `translateX(-${scrollPosition}px)`,
+              transition: isTransitioning ? 'transform 0.5s linear' : 'none',
+              width: `${tripleRecipes.length * 300}px` // 300px per image
+            }}
+          >
+            {tripleRecipes.map((recipe, index) => (
+              <div 
+                key={`${recipe.id}-${index}`} 
+                className="w-[300px] h-80 flex-shrink-0 px-2"
+              >
+                <img
+                  src={recipe.image}
+                  alt={recipe.title}
+                  className="w-full h-full object-cover rounded-xl shadow-md"
+                />
+              </div>
+            ))}
+          </div>
+          
+          {/* Right Gradient Fade */}
+          <div className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none bg-gradient-to-l from-gray-50 to-transparent"></div>
         </div>
       </div>
     </section>
