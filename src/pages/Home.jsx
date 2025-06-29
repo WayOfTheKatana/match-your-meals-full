@@ -6,6 +6,7 @@ import GridMotion from '../components/GridMotion';
 import SplitText from "../components/SplitText";
 import RecipeShowcaseSection from '../components/RecipeShowcaseSection';
 import { FeaturesSectionWithHoverEffects } from '../components/FeaturesSectionWithHoverEffects';
+import { Feature } from '../components/ui/feature';
 
 const Home = () => {
   // Food-related items for the grid
@@ -82,7 +83,7 @@ const Home = () => {
       <RecipeShowcaseSection />
 
       {/* Features Section */}
-      <section id="features" className="pb-16  bg-gray-50">
+      <section id="features" className="pb-16 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-4">
@@ -98,6 +99,11 @@ const Home = () => {
           
           <FeaturesSectionWithHoverEffects />
         </div>
+      </section>
+
+      {/* Creator Revenue Share Section */}
+      <section id="about" className="bg-white">
+        <Feature />
       </section>
     </>
   );
