@@ -151,18 +151,92 @@ const CreatorDashboardLayout = (props) => {
   const followersCount = followersData || 0;
   const analyticsSummary = analyticsData || { totalViews: 0, uniqueUsers: 0, sessionViews: 0 };
 
+  // Perform search with direct fetch to Edge Function
+  const performSearch = async (query, fetchFunction) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSearchError('');
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchError('');
+
+    try {
+      console.log('🔍 Starting search for:', query);
+      
+      // Use the provided fetch function or fall back to direct fetch
+      const searchFn = fetchFunction || (async (q) => {
+        // Direct fetch to Edge Function
+        const supabaseUrl = supabase.supabaseUrl;
+        const supabaseKey = supabase.supabaseKey;
+        const functionUrl = `${supabaseUrl}/functions/v1/recipe-semantic-search`;
+        
+        const response = await fetch(functionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+            'apikey': supabaseKey,
+          },
+          body: JSON.stringify({
+            query: q.trim()
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Search failed: ${response.status} - ${errorText}`);
+        }
+        
+        return await response.json();
+      });
+      
+      const data = await searchFn(query);
+
+      if (!data.success) {
+        throw new Error(data.message || 'Search failed');
+      }
+
+      console.log('✅ Search completed:', data);
+      setSearchResults(data.results || []);
+
+    } catch (err) {
+      console.error('❌ Search error:', err);
+      setSearchError(err.message || 'Failed to search recipes. Please try again.');
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   // Handlers (copy from Dashboard.jsx as needed)
   const handleCreateRecipe = () => setShowRecipeModal(true);
-  const handleKeyPress = (e) => { if (e.key === 'Enter') handleSearch(); };
-  const handleSearch = () => { /* implement as in Dashboard.jsx */ };
-  const handleQuickSearch = (query) => { setSearchQuery(query); handleSearch(); };
-  const handleSearchFromHistory = (query) => { setSearchQuery(query); handleSearch(); };
+  const handleKeyPress = (e) => { if (e.key === 'Enter') performSearch(searchQuery); };
+  const handleSearch = () => performSearch(searchQuery);
+  const handleQuickSearch = (query) => { setSearchQuery(query); performSearch(query); };
+  const handleSearchFromHistory = (query) => { setSearchQuery(query); performSearch(query); };
   const handleDeleteSearchHistory = async (historyId) => { await deleteSearchHistory(historyId); };
   const handleClearAllHistory = async () => { await clearAllSearchHistory(); };
   const formatTime = (minutes) => `${minutes} min`;
   const getTotalTime = (recipe) => (recipe.prep_time || 0) + (recipe.cook_time || 0);
-  const handleSaveSearchedRecipe = async (recipeId) => { /* implement as in Dashboard.jsx */ };
+  const handleSaveSearchedRecipe = async (recipeId) => { 
+    try {
+      if (isRecipeSaved(recipeId)) {
+        await removeSavedRecipe(recipeId);
+      } else {
+        await saveRecipe(recipeId);
+      }
+    } catch (error) {
+      console.error('Error toggling recipe save status:', error);
+      alert(error.message || 'Failed to save recipe. Please try again.');
+    }
+  };
   const handleRemoveSavedRecipe = async (recipeId) => { await removeSavedRecipe(recipeId); };
+
+  // Check if we should show search results
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  const showSearchResults = hasSearchQuery && (searchLoading || searchResults.length > 0 || searchError);
 
   // Compose context for Outlet
   const context = {
@@ -210,6 +284,10 @@ const CreatorDashboardLayout = (props) => {
     handleSaveSearchedRecipe,
     handleRemoveSavedRecipe,
     recentRecipes: publishedRecipes,
+    performSearch,
+    showSearchResults,
+    hasSearchQuery,
+    isCreatorMode: true
   };
 
   return (
@@ -240,4 +318,4 @@ const CreatorDashboardLayout = (props) => {
   );
 };
 
-export default CreatorDashboardLayout; 
+export default CreatorDashboardLayout;
