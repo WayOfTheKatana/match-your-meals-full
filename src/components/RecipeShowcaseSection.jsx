@@ -126,6 +126,66 @@ const RecipeShowcaseSection = () => {
       servings: 2,
       rating: '4.5',
       tags: ['Vegan', 'Quick', 'Asian']
+    },
+    {
+      id: '11',
+      slug: 'mushroom-risotto',
+      title: 'Creamy Mushroom Risotto',
+      description: 'A luxurious Italian risotto with mixed mushrooms, white wine, and freshly grated Parmesan cheese.',
+      image: 'https://images.pexels.com/photos/6419736/pexels-photo-6419736.jpeg?auto=compress&cs=tinysrgb&w=400',
+      prep_time: 10,
+      cook_time: 30,
+      servings: 4,
+      rating: '4.8',
+      tags: ['Italian', 'Vegetarian', 'Comfort Food']
+    },
+    {
+      id: '12',
+      slug: 'greek-salad',
+      title: 'Authentic Greek Salad',
+      description: 'A refreshing salad with cucumber, tomato, red onion, olives, and feta cheese, dressed with olive oil and oregano.',
+      image: 'https://images.pexels.com/photos/1211887/pexels-photo-1211887.jpeg?auto=compress&cs=tinysrgb&w=400',
+      prep_time: 15,
+      cook_time: 0,
+      servings: 4,
+      rating: '4.7',
+      tags: ['Greek', 'Salad', 'No-Cook']
+    },
+    {
+      id: '13',
+      slug: 'spicy-black-bean-tacos',
+      title: 'Spicy Black Bean Tacos',
+      description: 'Quick and flavorful vegetarian tacos filled with spiced black beans, avocado, and fresh salsa.',
+      image: 'https://images.pexels.com/photos/2092507/pexels-photo-2092507.jpeg?auto=compress&cs=tinysrgb&w=400',
+      prep_time: 15,
+      cook_time: 10,
+      servings: 4,
+      rating: '4.6',
+      tags: ['Mexican', 'Vegetarian', 'Quick']
+    },
+    {
+      id: '14',
+      slug: 'banana-oatmeal-pancakes',
+      title: 'Banana Oatmeal Pancakes',
+      description: 'Fluffy and healthy pancakes made with oats and ripe bananas. No refined sugar and naturally gluten-free!',
+      image: 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=400',
+      prep_time: 10,
+      cook_time: 15,
+      servings: 2,
+      rating: '4.8',
+      tags: ['Breakfast', 'Gluten-Free', 'Healthy']
+    },
+    {
+      id: '15',
+      slug: 'homemade-pizza',
+      title: 'Homemade Margherita Pizza',
+      description: 'Classic Italian pizza with a crispy crust, fresh tomato sauce, mozzarella, and basil leaves.',
+      image: 'https://images.pexels.com/photos/905847/pexels-photo-905847.jpeg?auto=compress&cs=tinysrgb&w=400',
+      prep_time: 30,
+      cook_time: 15,
+      servings: 4,
+      rating: '4.9',
+      tags: ['Italian', 'Vegetarian', 'Weekend']
     }
   ];
 
@@ -143,7 +203,7 @@ const RecipeShowcaseSection = () => {
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+        {/* Section Header with CTA Button */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-4">
             <ChefHat className="w-6 h-6 text-primary-600" />
@@ -151,32 +211,13 @@ const RecipeShowcaseSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-urbanist">
             Discover Delicious Recipes
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore our collection of mouth-watering recipes crafted by expert chefs and home cooks alike.
-          </p>
-        </div>
-
-        {/* Recipe Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-          {recipes.map(recipe => (
-            <RecipeCard 
-              key={recipe.id} 
-              recipe={recipe} 
-              onSave={() => handleSaveRecipe(recipe.id)}
-              isSaved={savedRecipes.includes(recipe.id)}
-            />
-          ))}
-        </div>
-
-        {/* CTA with Shimmer Button */}
-        <div className="text-center">
-          <div className="max-w-md mx-auto">
-            <p className="text-gray-600 mb-6">
-              Ready to discover more delicious recipes tailored to your preferences?
+          <div className="flex flex-col items-center">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+              Explore our collection of mouth-watering recipes crafted by expert chefs and home cooks alike.
             </p>
             <Link to="/explore-recipes">
               <ShimmerButton 
-                className="px-8 py-4 text-base font-medium"
+                className="px-8 py-3 text-base font-medium"
                 background="rgba(211, 84, 0, 0.9)"
                 shimmerColor="#ffffff"
                 shimmerDuration="2.5s"
@@ -188,6 +229,18 @@ const RecipeShowcaseSection = () => {
               </ShimmerButton>
             </Link>
           </div>
+        </div>
+
+        {/* Recipe Grid - Smaller cards with more columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {recipes.map(recipe => (
+            <RecipeCard 
+              key={recipe.id} 
+              recipe={recipe} 
+              onSave={() => handleSaveRecipe(recipe.id)}
+              isSaved={savedRecipes.includes(recipe.id)}
+            />
+          ))}
         </div>
       </div>
     </section>
