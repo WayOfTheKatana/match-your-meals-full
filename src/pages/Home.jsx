@@ -2,6 +2,7 @@ import React from 'react';
 import CommonHeader from '../components/CommonHeader';
 import SearchSection from '../components/SearchSection';
 import GridMotion from '../components/GridMotion';
+import SplitText from "../components/SplitText";
 
 const Home = () => {
   // Food-related items for the grid
@@ -41,6 +42,10 @@ const Home = () => {
     'https://images.pexels.com/photos/1435896/pexels-photo-1435896.jpeg?auto=compress&cs=tinysrgb&w=300',
   ];
 
+  const handleAnimationComplete = () => {
+    console.log('All letters have animated!');
+  };
+
   return (
     <>
       <div className="min-h-screen relative overflow-hidden">
@@ -69,8 +74,28 @@ const Home = () => {
         </main> 
       </div>
     </div>
-      {/* New Section Starts Div  */}
-      <div>Hello World</div>
+      {/* New Section with SplitText */}
+      <div className="py-20 bg-white text-center">
+        <div className="max-w-4xl mx-auto px-4">
+          <SplitText
+            text="Stop scrolling through endless life stories just to find a recipe"
+            className="text-3xl md:text-5xl font-semibold text-gray-900 mb-8"
+            delay={100}
+            duration={0.6}
+            ease="power3.out"
+            splitType="chars"
+            from={{ opacity: 0, y: 40 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-100px"
+            textAlign="center"
+            onLetterAnimationComplete={handleAnimationComplete}
+          />
+          <p className="text-lg text-gray-600 mt-6">
+            Our AI-powered recipe search gets you straight to the ingredients and instructions.
+          </p>
+        </div>
+      </div>
     </>
  
   );
