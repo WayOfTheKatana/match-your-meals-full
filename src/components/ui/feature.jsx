@@ -17,7 +17,7 @@ function Feature() {
                   Earn While You Create
                 </h2>
                 <p className="text-lg leading-relaxed tracking-tight text-gray-600 max-w-xl text-left font-sans">
-                  Turn your culinary passion into profit. Share your unique recipes and earn revenue from every view, save, and cook.
+                  Turn your culinary passion into profit. Build your audience now and be first in line when our creator monetization program launches Q1 2026.
                 </p>
               </div>
             </div>
