@@ -2,7 +2,6 @@ import React from 'react';
 import CommonHeader from '../components/CommonHeader';
 import SearchSection from '../components/SearchSection';
 import GridMotion from '../components/GridMotion';
-import HomepageIntroSection from '../components/HomepageIntroSection';
 
 const Home = () => {
   // Food-related items for the grid
@@ -61,22 +60,7 @@ const Home = () => {
           </div>
         </div>
         
-        <main className="flex-1 flex flex-col items-center justify-center py-12 pt-24">
-          {/* Main Heading - With glassy effect */}
-          <div className="relative z-20 w-full max-w-6xl mx-auto px-4 mb-8">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <h1 className="text-3xl md:text-6xl font-urbanist text-white mb-1.5 leading-tight font-medium tracking-normal">
-                Find Your Perfect
-              </h1>
-              <h1 className="text-3xl md:text-6xl font-urbanist text-white mb-4 leading-tight font-medium">
-                Recipe in <span className="italic font-light font-dm-serif md:text-[4rem]">Seconds</span>
-              </h1>
-            </div>
-          </div>
-          
-          {/* Split Text Section */}
-          <HomepageIntroSection />
-          
+        <main className="flex-1 flex items-center justify-center py-12 pt-24">
           {/* SearchSection with enhanced styling for better visibility over the grid */}
           <div className="relative z-20 w-full max-w-6xl mx-auto px-4">
             <SearchSection />
