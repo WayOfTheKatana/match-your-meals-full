@@ -37,8 +37,8 @@ export const CommonHeader = ({ variant = 'default' }) => {
   const navigationItems = [
     { label: 'Features', href: '#features' },
     { label: 'Creator Share', href: '#about' },
-    { label: 'FAQs', href: '#how-it-works' },
-    { label: 'Explore Recipes', href: '#about' },
+    { label: 'FAQs', href: '#faq' },
+    { label: 'Explore Recipes', href: '/explore-recipes' },
   ];
 
   return (
