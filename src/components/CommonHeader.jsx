@@ -39,7 +39,6 @@ export const CommonHeader = ({ variant = 'default' }) => {
     { label: 'How it Works', href: '#how-it-works' },
     { label: 'Creator Share', href: '#about' },
     { label: 'Explore Recipes', href: '#about' },
-    { label: 'Explore Recipes', href: '#about' },
   ];
 
   return (
