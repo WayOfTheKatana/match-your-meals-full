@@ -84,7 +84,7 @@ const Home = () => {
       {/* Features Section */}
       <section id="features" className="py-16 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-0">
+          <div className="text-center mb-4">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-4">
               <Sparkles className="w-6 h-6 text-primary-600" />
             </div>
