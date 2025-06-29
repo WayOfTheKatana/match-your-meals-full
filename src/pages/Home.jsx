@@ -50,6 +50,9 @@ const Home = () => {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/40 z-[15]"></div>
+        
         {/* Use CommonHeader instead of Header */}
         <div className="absolute top-0 left-0 right-0 z-20">
           <div className="bg-primary-600/90 backdrop-blur-sm">
