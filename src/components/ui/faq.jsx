@@ -10,7 +10,7 @@ const FaqSection = React.forwardRef(
       <section
         ref={ref}
         className={cn(
-          "py-16 w-full bg-gradient-to-b from-transparent via-orange-100/50 to-transparent",
+          "py-16 w-full bg-gradient-to-b from-transparent via-gray-100/50 to-transparent",
           className
         )}
         {...props}
@@ -90,7 +90,7 @@ const FaqItem = React.forwardRef(
           "border border-gray-200/50",
           isOpen
             ? "bg-gradient-to-br from-white via-gray-100/50 to-white"
-            : "hover:bg-gray-100/50"
+            : "hover:bg-orange-100/50"
         )}
       >
         <Button
