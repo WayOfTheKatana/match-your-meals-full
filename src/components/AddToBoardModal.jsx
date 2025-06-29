@@ -3,6 +3,7 @@ import { X, Layers, Plus, Loader2, AlertCircle, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useRecipeBoards } from '../hooks/useRecipeBoards';
+import CreateBoardModal from './dashboard/CreateBoardModal';
 
 const AddToBoardModal = ({ isOpen, onClose, recipeId }) => {
   const { user } = useAuth();
@@ -10,6 +11,7 @@ const AddToBoardModal = ({ isOpen, onClose, recipeId }) => {
   const [selectedBoards, setSelectedBoards] = useState(new Set());
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
 
   const handleBoardToggle = (boardId) => {
     const newSelected = new Set(selectedBoards);
@@ -53,6 +55,12 @@ const AddToBoardModal = ({ isOpen, onClose, recipeId }) => {
     setError('');
     setSuccess('');
     onClose();
+  };
+
+  const handleBoardCreated = (newBoard) => {
+    console.log('✅ Board created from modal:', newBoard);
+    setShowCreateBoardModal(false);
+    // The useRecipeBoards hook will automatically refetch the boards
   };
 
   if (!isOpen || !recipeId) return null;
@@ -113,7 +121,7 @@ const AddToBoardModal = ({ isOpen, onClose, recipeId }) => {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Boards Yet</h3>
               <p className="text-gray-600 mb-4">Create your first board to organize recipes</p>
               <Button
-                onClick={handleClose}
+                onClick={() => setShowCreateBoardModal(true)}
                 className="bg-primary-600 hover:bg-primary-700"
               >
                 Create Board
@@ -171,26 +179,43 @@ const AddToBoardModal = ({ isOpen, onClose, recipeId }) => {
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleAddToBoards}
-              disabled={selectedBoards.size === 0 || isAddingRecipe}
-              className="bg-primary-600 hover:bg-primary-700"
-            >
-              {isAddingRecipe ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Adding...</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <Plus className="w-4 h-4" />
-                  <span>Add to {selectedBoards.size} Board{selectedBoards.size === 1 ? '' : 's'}</span>
-                </div>
-              )}
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateBoardModal(true)}
+                disabled={isAddingRecipe}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                New Board
+              </Button>
+              <Button
+                onClick={handleAddToBoards}
+                disabled={selectedBoards.size === 0 || isAddingRecipe}
+                className="bg-primary-600 hover:bg-primary-700"
+              >
+                {isAddingRecipe ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Adding...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Plus className="w-4 h-4" />
+                    <span>Add to {selectedBoards.size} Board{selectedBoards.size === 1 ? '' : 's'}</span>
+                  </div>
+                )}
+              </Button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Create Board Modal */}
+      <CreateBoardModal
+        isOpen={showCreateBoardModal}
+        onClose={() => setShowCreateBoardModal(false)}
+        onBoardCreated={handleBoardCreated}
+      />
     </div>
   );
 };

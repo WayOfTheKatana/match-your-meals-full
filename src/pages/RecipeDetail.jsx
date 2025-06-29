@@ -20,8 +20,7 @@ import {
   Pause,
   Square,
   Volume2,
-  VolumeX,
-  MapPin
+  VolumeX
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
@@ -332,16 +331,6 @@ const RecipeDetail = () => {
                   <div className="flex items-center space-x-2 mb-3">
                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
                     <span className="text-white font-medium">4.8 (127 reviews)</span>
-                    
-                    {/* Geolocation Info */}
-                    {!geoLoading && !geoError && geolocation && (
-                      <div className="flex items-center space-x-1 ml-4">
-                        <MapPin className="w-4 h-4 text-white" />
-                        <span className="text-white text-sm">
-                          Viewed from {geolocation.country_name}
-                        </span>
-                      </div>
-                    )}
                   </div>
                   <h1 className="text-4xl font-serif text-white mb-2">{recipe.title}</h1>
                   <p className="text-white/90 text-lg">{recipe.description}</p>
@@ -350,7 +339,7 @@ const RecipeDetail = () => {
             </div>
 
             {/* Action Buttons - Positioned under the featured image */}
-            <div className="flex items-center justify-center space-x-4">
+            <div className="flex flex-wrap items-center justify-center gap-4">
               <Button
                 variant="outline"
                 size="lg"
@@ -527,34 +516,6 @@ const RecipeDetail = () => {
 
           {/* Right Sidebar - Clean Widget Cards (1/3 width) */}
           <div className="space-y-8">
-            {/* Geolocation Information */}
-            {!geoLoading && !geoError && geolocation && (
-              <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
-                <h4 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
-                  <MapPin className="w-5 h-5 mr-2 text-primary-600" />
-                  Your Location
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Country:</span>
-                    <span className="font-medium text-gray-900">{geolocation.country_name}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">City:</span>
-                    <span className="font-medium text-gray-900">{geolocation.city || 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Region:</span>
-                    <span className="font-medium text-gray-900">{geolocation.region || 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Timezone:</span>
-                    <span className="font-medium text-gray-900">{geolocation.timezone || 'Unknown'}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Author Information */}
             {creatorProfile && (
               <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
