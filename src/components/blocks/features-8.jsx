@@ -19,7 +19,7 @@ export function Features() {
                                     <span className="mx-auto block w-fit text-5xl font-semibold">100%</span>
                                 </div>
                                 <h2 className="mt-6 text-center text-3xl font-semibold font-dm-serif">Authentic Recipes</h2>
-                                <span className="display-block mt-6 text-center text-lg font-urbanist leading-tight">From Community Recipe <br /> Creators</span>
+                                <span className="display-block mt-6 text-center text-lg font-urbanist leading-tight">From Community Recipe  Creators</span>
                             </CardContent>
                         </Card>
                         <Card className="relative col-span-full overflow-hidden sm:col-span-3 lg:col-span-2">
