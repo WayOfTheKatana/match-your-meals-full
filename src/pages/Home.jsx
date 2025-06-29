@@ -65,7 +65,6 @@ const Home = () => {
           <div className="relative z-20 w-full max-w-6xl mx-auto px-4">
             <SearchSection />
           </div>
-          <div className="text-5xl font-bold">Hello World</div>
         </main>
       </div>
     </div>
