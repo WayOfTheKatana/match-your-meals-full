@@ -11,10 +11,13 @@ const DashboardSidebarNav = ({ currentNavigation, mode = 'consumer' }) => {
         <nav className="space-y-6">
           {currentNavigation.map((item, index) => {
             if (item.type === 'heading') {
-              // Render heading
+              // Render heading with horizontal line for all except the first heading
               return (
-                <div key={`heading-${index}`} className="pt-2 first:pt-0">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+                <div 
+                  key={`heading-${index}`} 
+                  className={`pt-2 px-3 ${index > 0 ? 'border-t border-gray-200 mt-4' : ''}`}
+                >
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                     {item.label}
                   </h3>
                 </div>
