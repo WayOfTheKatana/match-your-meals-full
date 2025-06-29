@@ -18,7 +18,7 @@ import {
 export function FeaturesSectionWithHoverEffects() {
   const features = [
     {
-      title: "AI-Powered Search",
+      title: "Smart Search",
       description:
         "Find recipes by ingredients, dietary needs, or health goals with our advanced semantic search technology.",
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#d85809" class="size-6">
