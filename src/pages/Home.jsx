@@ -8,6 +8,7 @@ import RecipeShowcaseSection from '../components/RecipeShowcaseSection';
 import { FeaturesSectionWithHoverEffects } from '../components/FeaturesSectionWithHoverEffects';
 import { Feature } from '../components/ui/feature';
 import { FaqSection } from '../components/ui/faq';
+import { StackedCircularFooter } from '../components/ui/stacked-circular-footer';
 
 const Home = () => {
   // Food-related items for the grid
@@ -145,6 +146,9 @@ const Home = () => {
           }}
         />
       </section>
+
+      {/* Footer Section */}
+      <StackedCircularFooter />
     </>
   );
 };
