@@ -51,7 +51,7 @@ export function Features() {
                                 </div>
                                 <div className="relative z-10 mt-6 space-y-2 text-center">
                                     <h2 className="group-hover:text-secondary-950 text-lg font-medium transition font-dm-serif">Smart AI Recipe Search</h2>
-                                    <p className="text-foreground">Provident fugit and vero voluptate. magnam magni doloribus dolores voluptates a sapiente nisi.</p>
+                                    <p className="text-foreground">Say what you want to cook and our AI finds the perfect recipe instantly.</p>
                                 </div>
                             </CardContent>
                         </Card>
