@@ -182,8 +182,8 @@ const SearchSection = () => {
         )}
 
         {/* Full-Width Search Bar */}
-        <div className="max-w-9xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          <div className="relative flex items-center bg-white rounded-xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-3xl focus-within:shadow-3xl focus-within:scale-[1.01] border border-white/20">
+        <div className="max-w-7xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="relative flex items-center bg-white rounded-full shadow-2xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-3xl focus-within:shadow-3xl focus-within:scale-[1.01] border border-white/20">
             {/* Voice/Mic Icon */}
             <div className="flex items-center pl-4 pr-2">
               <button
@@ -227,15 +227,13 @@ const SearchSection = () => {
             </div>
             
             {/* Search Icon/Button */}
-            <div className="flex items-center pr-0 pl-0 h-full">
-              <button
-                onClick={handleSearch}
-                className="h-16 w-16 bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-105 shadow-lg hover:shadow-xl group rounded-r-xl rounded-l-none flex items-center justify-center"
-                aria-label="Search recipes"
-              >
-                <Search className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
-              </button>
-            </div>
+            <button
+              onClick={handleSearch}
+              className="h-16 w-16 bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-105 shadow-lg hover:shadow-xl group rounded-r-full rounded-l-none flex items-center justify-center"
+              aria-label="Search recipes"
+            >
+              <Search className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+            </button>
           </div>
         </div>
 

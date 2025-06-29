@@ -114,7 +114,7 @@ const Home = () => {
           
           <main className="flex-1 flex items-center justify-center py-12 pt-24">
             {/* SearchSection with enhanced styling for better visibility over the grid */}
-            <div className="relative z-20 w-full max-w-6xl mx-auto px-4">
+            <div className="relative z-20 w-full max-w-7xl mx-auto px-4">
               <SearchSection />
             </div>
           </main> 
