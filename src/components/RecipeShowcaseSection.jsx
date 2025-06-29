@@ -217,7 +217,7 @@ const RecipeShowcaseSection = () => {
             </p>
             <Link to="/explore-recipes">
               <ShimmerButton 
-                className="px-8 py-3 text-base font-medium"
+                className="px-8 py-3 text-base font-medium text-white"
                 background="rgba(211, 84, 0, 0.9)"
                 shimmerColor="#ffffff"
                 shimmerDuration="2.5s"
