@@ -82,7 +82,7 @@ const Home = () => {
             className="text-3xl md:text-5xl font-semibold text-gray-900 mb-8"
             delay={100}
             duration={0.6}
-            ease="elastic.out(1,0.3)"
+            ease="elastic.out(1, 0.3)"
             splitType="chars"
             from={{ opacity: 0, y: 40 }}
             to={{ opacity: 1, y: 0 }}
