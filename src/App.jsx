@@ -8,6 +8,8 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import RecipeDetail from './pages/RecipeDetail';
 import CreatorProfile from './pages/CreatorProfile';
+import ExploreRecipes from './pages/ExploreRecipes';
+import RecipeBoardDetail from './pages/RecipeBoardDetail';
 import BoltBadge from './components/BoltBadge';
 import DashboardHome from './components/dashboard/DashboardHome';
 import DashboardAnalytics from './components/dashboard/DashboardAnalytics';
@@ -18,6 +20,9 @@ import DashboardFollowings from './components/dashboard/DashboardFollowings';
 import DashboardFollowers from './components/dashboard/DashboardFollowers';
 import DashboardPublished from './components/dashboard/DashboardPublished';
 import DashboardVetting from './components/dashboard/DashboardVetting';
+import DashboardBoards from './components/dashboard/DashboardBoards';
+import DashboardRecent from './components/dashboard/DashboardRecent';
+import DashboardRecommended from './components/dashboard/DashboardRecommended';
 import ConsumerDashboardLayout from './components/dashboard/ConsumerDashboardLayout';
 import CreatorDashboardLayout from './components/dashboard/CreatorDashboardLayout';
 
@@ -30,6 +35,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/explore-recipes" element={<ExploreRecipes />} />
             {/* Redirect /dashboard to /dashboard/consumer */}
             <Route path="/dashboard" element={<Navigate to="/dashboard/consumer" replace />} />
             {/* Consumer Dashboard */}
@@ -43,6 +49,9 @@ function App() {
             >
               <Route index element={<DashboardHome />} />
               <Route path="saved" element={<DashboardSaved />} />
+              <Route path="boards" element={<DashboardBoards />} />
+              <Route path="recent" element={<DashboardRecent />} />
+              <Route path="recommended" element={<DashboardRecommended />} />
               <Route path="categories" element={<DashboardCategories />} />
               <Route path="history" element={<DashboardHistory />} />
               <Route path="followings" element={<DashboardFollowings />} />
@@ -65,6 +74,8 @@ function App() {
               <Route path="revenue" element={<div>Revenue (Creator)</div>} />
               <Route path="help" element={<div>Help & Support (Creator)</div>} />
             </Route>
+            {/* Recipe Board Detail Route - Public Access */}
+            <Route path="/creators/board/:boardSlug" element={<RecipeBoardDetail />} />
             <Route path="/recipes/:slug" element={<RecipeDetail />} />
             <Route path="/creators/:creatorId" element={<CreatorProfile />} />
           </Routes>

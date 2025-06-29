@@ -44,7 +44,7 @@ const SavedRecipesSidebarWidgets = ({
               <div key={recipe.id} className="bg-white rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex space-x-3">
                   <img
-                    src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=100'}
+                    src={recipe.image_path || 'https://images.pexels.com/photos/262959/pexels-photo-262959.jpeg?auto=compress&cs=tinysrgb&w=100'}
                     alt={recipe.title}
                     className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                   />

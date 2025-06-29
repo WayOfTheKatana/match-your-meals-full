@@ -15,11 +15,17 @@ import {
   Timer,
   User,
   Calendar,
-  BarChart3
+  BarChart3,
+  Play,
+  Pause,
+  Square,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedRecipes } from '../hooks/useSavedRecipes';
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { supabase } from '../lib/supabase';
 import { formatTime, getTotalTime } from '../lib/utils';
 import CommonHeader from '../components/CommonHeader';
@@ -31,6 +37,16 @@ const RecipeDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { saveRecipe, removeSavedRecipe, isRecipeSaved } = useSavedRecipes();
+  const { 
+    speak, 
+    stop, 
+    toggle, 
+    isLoading: ttsLoading, 
+    isPlaying: ttsPlaying, 
+    error: ttsError, 
+    progress: ttsProgress,
+    clearError: clearTtsError 
+  } = useTextToSpeech();
   const queryClient = useQueryClient();
 
   const [recipe, setRecipe] = useState(null);
@@ -183,6 +199,49 @@ const RecipeDetail = () => {
     }
   };
 
+  const handleSpeakInstructions = async () => {
+    if (!recipe || !recipe.instructions || recipe.instructions.length === 0) {
+      alert('No instructions available to read');
+      return;
+    }
+
+    // Clear any previous TTS errors
+    clearTtsError();
+
+    // Prepare the text for speech
+    const instructionsText = recipe.instructions
+      .map((instruction, index) => `Step ${index + 1}: ${instruction}`)
+      .join('. ');
+
+    // Add a nice introduction
+    const fullText = `Here are the cooking instructions for ${recipe.title}. ${instructionsText}`;
+
+    try {
+      await speak(fullText, {
+        voiceId: 'AZnzlk1XvdvUeBnXmlld', // Amelia voice
+        modelId: 'eleven_monolingual_v1'
+      });
+    } catch (error) {
+      console.error('Error speaking instructions:', error);
+    }
+  };
+
+  const handleTogglePlayback = () => {
+    if (ttsPlaying) {
+      toggle(); // This will pause
+    } else if (ttsLoading) {
+      // If loading, we can't do anything
+      return;
+    } else {
+      // If not playing and not loading, start speaking
+      handleSpeakInstructions();
+    }
+  };
+
+  const handleStopPlayback = () => {
+    stop();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -240,7 +299,7 @@ const RecipeDetail = () => {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="relative h-96 overflow-hidden">
                 <img
-                  src={recipe.image_path || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                  src={recipe.image_path || 'https://images.pexels.com/photos/262959/pexels-photo-262959.jpeg?auto=compress&cs=tinysrgb&w=800'}
                   alt={recipe.title}
                   className="w-full h-full object-cover"
                 />
@@ -288,7 +347,79 @@ const RecipeDetail = () => {
                   <span>{isRecipeSaved(recipe.id) ? 'Recipe Saved' : 'Save Recipe'}</span>
                 </Button>
               )}
+
+              {/* Amelia TTS Button */}
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleTogglePlayback}
+                disabled={ttsLoading}
+                className={`flex items-center space-x-2 px-6 py-3 transition-all duration-200 ${
+                  ttsPlaying 
+                    ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100' 
+                    : 'border-gray-300 hover:border-blue-300 hover:text-blue-600'
+                }`}
+              >
+                {ttsLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : ttsPlaying ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Volume2 className="w-5 h-5" />
+                )}
+                <span>
+                  {ttsLoading ? 'Loading...' : ttsPlaying ? 'Pause Amelia' : 'Listen with Amelia'}
+                </span>
+              </Button>
+
+              {/* Stop Button (only show when playing or paused) */}
+              {(ttsPlaying || ttsProgress > 0) && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleStopPlayback}
+                  className="flex items-center space-x-2 px-4 py-3 border-gray-300 hover:border-red-300 hover:text-red-600"
+                >
+                  <Square className="w-5 h-5" />
+                  <span>Stop</span>
+                </Button>
+              )}
             </div>
+
+            {/* TTS Progress Bar */}
+            {(ttsPlaying || ttsProgress > 0) && (
+              <div className="bg-white rounded-lg p-4 shadow-sm border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    {ttsPlaying ? 'Amelia is reading the instructions...' : 'Playback paused'}
+                  </span>
+                  <span className="text-sm text-gray-500">{Math.round(ttsProgress)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${ttsProgress}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            {/* TTS Error Display */}
+            {ttsError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-red-700 font-medium">Speech Error</p>
+                  <p className="text-xs text-red-600">{ttsError}</p>
+                </div>
+                <button
+                  onClick={clearTtsError}
+                  className="text-red-400 hover:text-red-600 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+            )}
 
             {/* Ingredients - Clean Design */}
             <div className="space-y-6">
@@ -312,12 +443,37 @@ const RecipeDetail = () => {
               </div>
             </div>
 
-            {/* Instructions - Clean Design */}
+            {/* Instructions - Clean Design with TTS Integration */}
             <div className="space-y-6">
-              <h3 className="text-2xl font-semibold text-gray-900 flex items-center">
-                <ChefHat className="w-6 h-6 mr-3 text-primary-600" />
-                Instructions
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-semibold text-gray-900 flex items-center">
+                  <ChefHat className="w-6 h-6 mr-3 text-primary-600" />
+                  Instructions
+                </h3>
+                
+                {/* Secondary TTS Controls */}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleTogglePlayback}
+                    disabled={ttsLoading}
+                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    {ttsLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : ttsPlaying ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                    <span className="text-sm">
+                      {ttsLoading ? 'Loading...' : ttsPlaying ? 'Pause' : 'Listen'}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+              
               <div className="space-y-6">
                 {recipe.instructions?.map((instruction, index) => (
                   <div key={index} className="flex space-x-6 pb-6 border-b border-gray-100 last:border-b-0">
