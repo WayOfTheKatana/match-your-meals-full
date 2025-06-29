@@ -3,6 +3,7 @@ import CommonHeader from '../components/CommonHeader';
 import SearchSection from '../components/SearchSection';
 import GridMotion from '../components/GridMotion';
 import SplitText from "../components/SplitText";
+import RecipeShowcaseSection from '../components/RecipeShowcaseSection';
 
 const Home = () => {
   // Food-related items for the grid
@@ -49,31 +50,32 @@ const Home = () => {
   return (
     <>
       <div className="min-h-screen relative overflow-hidden">
-      {/* Background with GridMotion */}
-      <div className="absolute inset-0">
-        <GridMotion items={gridItems} gradientColor="rgba(211, 84, 0, 0.7)" />
+        {/* Background with GridMotion */}
+        <div className="absolute inset-0">
+          <GridMotion items={gridItems} gradientColor="rgba(211, 84, 0, 0.7)" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col min-h-screen">
+          {/* Dark overlay for better text readability */}
+          <div className="absolute inset-0 bg-black/40 z-[15]"></div>
+          
+          {/* Use CommonHeader instead of Header */}
+          <div className="absolute top-0 left-0 right-0 z-20">
+            <div className="bg-primary-600/90 backdrop-blur-sm">
+              <CommonHeader />
+            </div>
+          </div>
+          
+          <main className="flex-1 flex items-center justify-center py-12 pt-24">
+            {/* SearchSection with enhanced styling for better visibility over the grid */}
+            <div className="relative z-20 w-full max-w-6xl mx-auto px-4">
+              <SearchSection />
+            </div>
+          </main> 
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/40 z-[15]"></div>
-        
-        {/* Use CommonHeader instead of Header */}
-        <div className="absolute top-0 left-0 right-0 z-20">
-          <div className="bg-primary-600/90 backdrop-blur-sm">
-            <CommonHeader />
-          </div>
-        </div>
-        
-        <main className="flex-1 flex items-center justify-center py-12 pt-24">
-          {/* SearchSection with enhanced styling for better visibility over the grid */}
-          <div className="relative z-20 w-full max-w-6xl mx-auto px-4">
-            <SearchSection />
-          </div>
-        </main> 
-      </div>
-    </div>
       {/* New Section with SplitText */}
       <div className="py-20 bg-white text-center">
         <div className="max-w-4xl mx-auto px-10">
@@ -94,8 +96,9 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Recipe Showcase Section */}
+      <RecipeShowcaseSection />
     </>
- 
   );
 };
 
