@@ -339,7 +339,7 @@ const RecipeDetail = () => {
             </div>
 
             {/* Action Buttons - Positioned under the featured image */}
-            <div className="flex items-center justify-center space-x-4">
+            <div className="flex flex-wrap items-center justify-center gap-4">
               <Button
                 variant="outline"
                 size="lg"
