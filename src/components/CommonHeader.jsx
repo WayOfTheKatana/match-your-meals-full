@@ -12,19 +12,25 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from './ui/dropdown-menu';
 
 export const CommonHeader = ({ variant = 'default' }) => {
   const { user, userProfile, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      setShowUserMenu(false);
       navigate('/');
     } catch (error) {
       console.error('Sign out error:', error);
@@ -71,23 +77,22 @@ export const CommonHeader = ({ variant = 'default' }) => {
             <div className="flex items-center space-x-4">
               {user ? (
                 <div className="relative">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-2"
-                  >
-                    <div className="w-8 h-8 bg-[#D35400] rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
-                    </div>
-                    <span className="hidden sm:block text-sm font-medium">
-                      {userProfile?.full_name || user.email?.split('@')[0] || 'User'}
-                    </span>
-                  </Button>
-
-                  {/* User dropdown menu */}
-                  {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-[999]">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex items-center space-x-2"
+                      >
+                        <div className="w-8 h-8 bg-[#D35400] rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
+                        <span className="hidden sm:block text-sm font-medium">
+                          {userProfile?.full_name || user.email?.split('@')[0] || 'User'}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">
                           {userProfile?.full_name || 'User'}
@@ -95,38 +100,34 @@ export const CommonHeader = ({ variant = 'default' }) => {
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
                       
-                      <button
-                        onClick={() => {
-                          navigate('/dashboard');
-                          setShowUserMenu(false);
-                        }}
+                      <DropdownMenuItem 
+                        onClick={() => navigate('/dashboard')}
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <BookOpen className="h-4 w-4 mr-2" />
                         Dashboard
-                      </button>
+                      </DropdownMenuItem>
                       
-                      <button
-                        onClick={() => {
-                          navigate('/profile');
-                          setShowUserMenu(false);
-                        }}
+                      <DropdownMenuItem
+                        onClick={() => navigate('/profile')}
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <Settings className="h-4 w-4 mr-2" />
                         Settings
-                      </button>
+                      </DropdownMenuItem>
                       
-                      <button
+                      <DropdownMenuSeparator />
+                      
+                      <DropdownMenuItem
                         onClick={handleSignOut}
                         disabled={loading}
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                       >
                         <LogOut className="h-4 w-4 mr-2" />
                         {loading ? 'Signing out...' : 'Sign out'}
-                      </button>
-                    </div>
-                  )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ) : (
                 <div className="hidden sm:flex items-center space-x-2">
@@ -216,12 +217,11 @@ export const CommonHeader = ({ variant = 'default' }) => {
         onClose={() => setShowLoginModal(false)} 
       />
 
-      {/* Click outside to close menus */}
-      {(showUserMenu || showMobileMenu) && (
+      {/* Click outside to close mobile menu */}
+      {showMobileMenu && (
         <div 
-          className="fixed inset-0 z-[100]" 
+          className="fixed inset-0 z-40" 
           onClick={() => {
-            setShowUserMenu(false);
             setShowMobileMenu(false);
           }}
         />
