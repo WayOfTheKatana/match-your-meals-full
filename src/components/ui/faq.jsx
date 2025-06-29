@@ -27,7 +27,7 @@ const FaqSection = React.forwardRef(
               {title}
             </h2>
             {description && (
-              <p className="text-sm text-gray-600">{description}</p>
+              <p className="text-sm text-gray-600 font-urbanist">{description}</p>
             )}
           </motion.div>
 
