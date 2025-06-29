@@ -4,6 +4,7 @@ import SearchSection from '../components/SearchSection';
 import GridMotion from '../components/GridMotion';
 import SplitText from "../components/SplitText";
 import RecipeShowcaseSection from '../components/RecipeShowcaseSection';
+import { FeaturesSectionWithHoverEffects } from '../components/FeaturesSectionWithHoverEffects';
 
 const Home = () => {
   // Food-related items for the grid
@@ -76,10 +77,27 @@ const Home = () => {
         </div>
       </div>
 
-
-
       {/* Recipe Showcase Section */}
       <RecipeShowcaseSection />
+
+      {/* Features Section */}
+      <section id="features" className="py-16 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-4">
+              <Sparkles className="w-6 h-6 text-primary-600" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-urbanist">
+              Powerful Features
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Discover how MatchMyMeals makes finding the perfect recipe easier than ever before
+            </p>
+          </div>
+          
+          <FeaturesSectionWithHoverEffects />
+        </div>
+      </section>
     </>
   );
 };
