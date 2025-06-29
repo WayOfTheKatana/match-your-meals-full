@@ -78,7 +78,7 @@ Just type "quick breakfast for kids" or "low-carb dinner" and get exactly what y
 ,
     },
     {
-      title: "Audio Instructions",
+      title: "Cooking Assistant Amelia",
       description:
         "Listen to step-by-step cooking instructions with our natural-sounding voice assistant.",
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
