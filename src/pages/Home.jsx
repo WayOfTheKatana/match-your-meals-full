@@ -42,7 +42,8 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <>
+         <div className="min-h-screen relative overflow-hidden">
       {/* Background with GridMotion */}
       <div className="absolute inset-0">
         <GridMotion items={gridItems} gradientColor="rgba(211, 84, 0, 0.7)" />
@@ -65,10 +66,11 @@ const Home = () => {
           <div className="relative z-20 w-full max-w-6xl mx-auto px-4">
             <SearchSection />
           </div>
-        </main>
-         <div className="text-5xl font-bold h-screen">Hello World</div>
+        </main> 
       </div>
     </div>
+    </>
+ 
   );
 };
 
