@@ -43,7 +43,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 w-full bg-[#D35400] `}>
+      <header className={`sticky top-0 w-full bg-[#D35400] `}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
