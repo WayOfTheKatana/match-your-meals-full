@@ -3,11 +3,13 @@ import { X, Plus, Minus, Upload, Image as ImageIcon, Clock, Users, ChefHat, Aler
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 import { supabase } from '../lib/supabase';
 import { generateSlug } from '../lib/utils';
 
 const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave, onPublish }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -102,7 +104,12 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
   // AI Description Enhancement with Edge Function
   const handleEnhanceDescription = async () => {
     if (!formData.title.trim()) {
-      alert('Please enter a recipe title first to enhance the description.');
+      toast({
+        title: "Missing Title",
+        description: "Please enter a recipe title first to enhance the description.",
+        variant: "destructive",
+        duration: 3000,
+      });
       return;
     }
 
@@ -136,8 +143,13 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
       // Update the description field with the enhanced version
       handleInputChange('description', data.enhanced_description);
       
-      // Show success message
-      alert('Description enhanced successfully!');
+      // Show success toast
+      toast({
+        title: "Description Enhanced",
+        description: "Your recipe description has been enhanced with AI.",
+        variant: "success",
+        duration: 3000,
+      });
     } catch (error) {
       console.error('❌ Error enhancing description:', error);
       
@@ -153,7 +165,12 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
         errorMessage = error.message;
       }
       
-      alert(errorMessage);
+      toast({
+        title: "Enhancement Failed",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 5000,
+      });
     } finally {
       setEnhancingDescription(false);
     }
@@ -282,7 +299,12 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
       console.log('✅ All images uploaded successfully');
     } catch (error) {
       console.error('❌ Error uploading images:', error);
-      alert(`Error uploading images: ${error.message}`);
+      toast({
+        title: "Upload Failed",
+        description: `Error uploading images: ${error.message}`,
+        variant: "destructive",
+        duration: 5000,
+      });
     } finally {
       setUploadingImages(false);
     }
@@ -516,7 +538,12 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
       const savedRecipe = await saveRecipeToDatabase();
       
       // Show success message
-      alert(`Recipe ${isEditMode ? 'updated' : 'saved'} as draft successfully!`);
+      toast({
+        title: `Recipe ${isEditMode ? 'Updated' : 'Saved'}`,
+        description: `Recipe ${isEditMode ? 'updated' : 'saved'} as draft successfully!`,
+        variant: "success",
+        duration: 3000,
+      });
       
       // Call parent handler if provided
       if (onSave) {
@@ -536,7 +563,12 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
         errorMessage = 'Please check all required fields are filled correctly.';
       }
       
-      alert(errorMessage);
+      toast({
+        title: "Save Failed",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 5000,
+      });
     } finally {
       setLoading(false);
     }
@@ -570,6 +602,14 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
       setAnalyzingRecipe(false);
       setAnalysisComplete(true);
       
+      // Show success toast
+      toast({
+        title: "Recipe Published",
+        description: "Your recipe has been analyzed and published successfully!",
+        variant: "success",
+        duration: 3000,
+      });
+      
       // Call parent handler if provided
       if (onPublish) {
         await onPublish({ ...formData, id: recipeId, slug: savedRecipe.slug, ...analyzedData });
@@ -602,7 +642,12 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
         errorMessage = 'Failed to connect to Edge Function. Please check your Supabase configuration.';
       }
       
-      alert(errorMessage);
+      toast({
+        title: "Publish Failed",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 5000,
+      });
     } finally {
       setLoading(false);
     }
