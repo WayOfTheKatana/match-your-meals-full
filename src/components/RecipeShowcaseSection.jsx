@@ -213,7 +213,7 @@ const RecipeShowcaseSection = () => {
           </h2>
           <div className="flex flex-col items-center">
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
-              Explore our collection of mouth-watering recipes crafted by expert chefs and home cooks alike.
+              Tired of recipe blogs with endless backstories. Get straight to the recipes.
             </p>
             <Link to="/explore-recipes">
               <ShimmerButton 
