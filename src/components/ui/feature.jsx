@@ -4,8 +4,8 @@ import { Badge } from "./badge";
 
 function Feature() {
   return (
-    <div className="max-w-4xl mx-auto py-20 lg:py-20">
-      <div className="container mx-auto">
+    <div className="mw-full mx-auto py-20 lg:py-20 bg-gray-50">
+      <div className="max-w-4xl mx-auto">
         <div className="grid border rounded-lg container p-8 grid-cols-1 gap-8 items-center lg:grid-cols-2">
           <div className="flex gap-10 flex-col">
             <div className="flex gap-4 flex-col">
