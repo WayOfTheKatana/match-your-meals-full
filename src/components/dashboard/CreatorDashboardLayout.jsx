@@ -12,13 +12,22 @@ import RecipeCreationModal from '../RecipeCreationModal';
 import { Home, FileText, UserCheck, CheckCircle, BarChart3, DollarSign, HelpCircle } from 'lucide-react';
 
 const creatorNavigationItems = [
-  { name: 'Dashboard Overview', icon: Home, view: 'home' },
-  { name: 'Published Recipes', icon: FileText, view: 'published' },
-  { name: 'Followers', icon: UserCheck, view: 'followers' },
-  { name: 'Recipe Vetting', icon: CheckCircle, view: 'vetting' },
-  { name: 'Analytics', icon: BarChart3, view: 'analytics' },
-  { name: 'Revenue', icon: DollarSign, view: 'revenue' },
-  { name: 'Help & Support', icon: HelpCircle, view: 'help' }
+  { type: 'heading', label: 'Dashboard' },
+  { type: 'link', name: 'Dashboard Overview', icon: Home, view: 'home' },
+  
+  { type: 'heading', label: 'Content' },
+  { type: 'link', name: 'Published Recipes', icon: FileText, view: 'published' },
+  { type: 'link', name: 'Recipe Vetting', icon: CheckCircle, view: 'vetting' },
+  
+  { type: 'heading', label: 'Audience' },
+  { type: 'link', name: 'Followers', icon: UserCheck, view: 'followers' },
+  
+  { type: 'heading', label: 'Performance' },
+  { type: 'link', name: 'Analytics', icon: BarChart3, view: 'analytics' },
+  { type: 'link', name: 'Revenue', icon: DollarSign, view: 'revenue' },
+  
+  { type: 'heading', label: 'Support' },
+  { type: 'link', name: 'Help & Support', icon: HelpCircle, view: 'help' }
 ];
 
 const fetchPublishedRecipes = async (userId) => {
@@ -36,6 +45,7 @@ const CreatorDashboardLayout = (props) => {
   const { savedRecipes, saveRecipe, removeSavedRecipe, isRecipeSaved, loading: savedRecipesLoading } = useSavedRecipes();
   const { searchHistory, addSearchHistory, deleteSearchHistory, clearAllSearchHistory, loading: searchHistoryLoading, error: searchHistoryError } = useSearchHistory();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // State variables
   const [showRecipeModal, setShowRecipeModal] = useState(false);

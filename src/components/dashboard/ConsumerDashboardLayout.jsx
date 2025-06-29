@@ -12,15 +12,22 @@ import RecipeCreationModal from '../RecipeCreationModal';
 import { Home, Bookmark, Grid3X3, History, Users, HelpCircle, Layers, Eye, ThumbsUp } from 'lucide-react';
 
 const consumerNavigationItems = [
-  { name: 'Home / Feed', icon: Home, view: 'home' },
-  { name: 'Saved Recipes', icon: Bookmark, view: 'saved' },
-  { name: 'Recipe Boards', icon: Layers, view: 'boards' },
-  { name: 'Recently Viewed', icon: Eye, view: 'recent' },
-  { name: 'Recommended for you', icon: ThumbsUp, view: 'recommended' },
-  { name: 'By Categories', icon: Grid3X3, view: 'categories' },
-  { name: 'Recipe Search History', icon: History, view: 'history' },
-  { name: 'Followings', icon: Users, view: 'followings' },
-  { name: 'Help & Support', icon: HelpCircle, view: 'help' }
+  { type: 'heading', label: 'Discover' },
+  { type: 'link', name: 'Home / Feed', icon: Home, view: 'home' },
+  { type: 'link', name: 'Recommended for you', icon: ThumbsUp, view: 'recommended' },
+  { type: 'link', name: 'By Categories', icon: Grid3X3, view: 'categories' },
+  
+  { type: 'heading', label: 'Your Collection' },
+  { type: 'link', name: 'Saved Recipes', icon: Bookmark, view: 'saved' },
+  { type: 'link', name: 'Recipe Boards', icon: Layers, view: 'boards' },
+  { type: 'link', name: 'Recently Viewed', icon: Eye, view: 'recent' },
+  
+  { type: 'heading', label: 'Social' },
+  { type: 'link', name: 'Followings', icon: Users, view: 'followings' },
+  { type: 'link', name: 'Recipe Search History', icon: History, view: 'history' },
+  
+  { type: 'heading', label: 'Support' },
+  { type: 'link', name: 'Help & Support', icon: HelpCircle, view: 'help' }
 ];
 
 const fetchRecentRecipes = async () => {
