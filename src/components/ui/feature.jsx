@@ -36,7 +36,7 @@ function Feature() {
                 <div className="flex flex-col gap-1">
                   <p className="text-gray-900 font-medium">Professional Support</p>
                   <p className="text-gray-600 text-sm">
-                    Get dedicated creator tools and resources to maximize your earning potential from day one.
+                    Get dedicated creator tools and resources.
                   </p>
                 </div>
               </div>
