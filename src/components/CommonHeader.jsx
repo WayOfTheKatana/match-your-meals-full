@@ -100,7 +100,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
                           navigate('/dashboard');
                           setShowUserMenu(false);
                         }}
-                        className="flex items-center z-10 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center z-[999] w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <BookOpen className="h-4 w-4 mr-2" />
                         Dashboard
