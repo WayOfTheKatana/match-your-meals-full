@@ -41,7 +41,7 @@ Just type "quick breakfast for kids" or "low-carb dinner" and get exactly what y
 ,
     },
     {
-      title: "Personalized Recommendations",
+      title: "Personalized",
       description:
         "Your recipe boards, saved favorites, and search history create a personalized experience that gets better over time.",
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
