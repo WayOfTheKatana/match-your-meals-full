@@ -15,7 +15,7 @@ const DashboardSidebarNav = ({ currentNavigation, mode = 'consumer' }) => {
               return (
                 <div 
                   key={`heading-${index}`} 
-                  className={`pt-1 px-3 ${index > 0 ? 'border-t border-gray-200 mt-2' : ''}`}
+                  className={`px-3 ${index > 0 ? 'border-t border-gray-200 mt-3 pt-3' : 'pt-1'}`}
                 >
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                     {item.label}
