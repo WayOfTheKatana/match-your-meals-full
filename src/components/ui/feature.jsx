@@ -45,7 +45,7 @@ function Feature() {
                 <div className="flex flex-col gap-1">
                   <p className="text-gray-900 font-medium">Analytics Dashboard</p>
                   <p className="text-gray-600 text-sm">
-                    Track your recipe performance and earnings in real-time.
+                    Track views, engagement, and audience growth in real-time
                   </p>
                 </div>
               </div>
