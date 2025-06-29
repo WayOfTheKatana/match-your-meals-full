@@ -1,4 +1,5 @@
 import React from 'react';
+import { Sparkles } from 'lucide-react';
 import CommonHeader from '../components/CommonHeader';
 import SearchSection from '../components/SearchSection';
 import GridMotion from '../components/GridMotion';
