@@ -219,7 +219,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
       {/* Click outside to close menus */}
       {(showUserMenu || showMobileMenu) && (
         <div 
-          className="fixed inset-0 z-40" 
+          className="fixed inset-0 z-[100]" 
           onClick={() => {
             setShowUserMenu(false);
             setShowMobileMenu(false);
