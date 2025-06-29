@@ -96,8 +96,8 @@ const Home = () => {
         <Features />
       </div>
 
-      {/* Features Section */}
-      <Features />
+      {/* {/* Features Section */}
+      {/* <Features /> */} 
     </>
  
   );
