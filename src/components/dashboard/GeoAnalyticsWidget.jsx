@@ -18,25 +18,23 @@ const fetchGeoAnalytics = async (userId) => {
   const recipeIds = (userRecipes || []).map(r => r.id);
   if (!recipeIds.length) return { countries: [], regions: [] };
   
-  // Get country analytics
+  // Get country analytics - using count aggregation in the select statement
   const { data: countryData, error: countryError } = await supabase
     .from('recipe_views')
-    .select('country_name, count')
+    .select('country_name, count(*)')
     .in('recipe_id', recipeIds)
     .not('country_name', 'is', null)
-    .group('country_name')
     .order('count', { ascending: false })
     .limit(10);
   
   if (countryError) throw countryError;
   
-  // Get region analytics
+  // Get region analytics - using count aggregation in the select statement
   const { data: regionData, error: regionError } = await supabase
     .from('recipe_views')
-    .select('region, count')
+    .select('region, count(*)')
     .in('recipe_id', recipeIds)
     .not('region', 'is', null)
-    .group('region')
     .order('count', { ascending: false })
     .limit(10);
   
