@@ -3,7 +3,6 @@ import CommonHeader from '../components/CommonHeader';
 import SearchSection from '../components/SearchSection';
 import GridMotion from '../components/GridMotion';
 import SplitText from "../components/SplitText";
-import { Features } from "../components/blocks/features-8";
 
 const Home = () => {
   // Food-related items for the grid
