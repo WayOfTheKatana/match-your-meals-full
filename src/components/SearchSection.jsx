@@ -182,7 +182,7 @@ const SearchSection = () => {
         )}
 
         {/* Full-Width Search Bar */}
-        <div className="max-w-7xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="max-w-7xl w-full mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <div className="relative flex items-center bg-white rounded-full shadow-2xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-3xl focus-within:shadow-3xl focus-within:scale-[1.01] border border-white/20">
             {/* Voice/Mic Icon */}
             <div className="flex items-center pl-4 pr-2">
@@ -211,7 +211,7 @@ const SearchSection = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="max-w-6xl border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-16 text-[1rem] bg-transparent px-0 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-50"
+                className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-16 text-[1rem] bg-transparent px-0 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-50"
               />
               
               {/* Voice Input Indicator */}
