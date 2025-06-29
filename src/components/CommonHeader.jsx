@@ -36,8 +36,8 @@ export const CommonHeader = ({ variant = 'default' }) => {
   // Always use homepage-style navigation for cleaner UX
   const navigationItems = [
     { label: 'Features', href: '#features' },
-    { label: 'How it Works', href: '#how-it-works' },
     { label: 'Creator Share', href: '#about' },
+    { label: 'FAQs', href: '#how-it-works' },
     { label: 'Explore Recipes', href: '#about' },
   ];
 
