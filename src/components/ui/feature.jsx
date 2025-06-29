@@ -13,7 +13,7 @@ function Feature() {
                 <Badge variant="outline">Creator Revenue Share</Badge>
               </div>
               <div className="flex gap-2 flex-col">
-                <h2 className="text-3xl lg:text-5xl tracking-tighter max-w-xl text-left font-urbanist text-gray-900">
+                <h2 className="text-3xl lg:text-5xl tracking-normal max-w-xl text-left font-urbanist text-gray-900">
                   Earn While You Create
                 </h2>
                 <p className="text-lg leading-relaxed tracking-tight text-gray-600 max-w-xl text-left font-sans">
