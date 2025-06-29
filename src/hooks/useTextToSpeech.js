@@ -348,22 +348,60 @@ export const useTextToSpeech = () => {
     } else if (data instanceof Uint8Array) {
       audioBuffer = data.buffer;
     } else if (typeof data === 'string') {
-      console.log('🔄 Converting base64 string to ArrayBuffer...');
+      console.log('🔄 Handling string response...');
       console.log('🔍 String length:', data.length);
-      console.log('🔍 String preview:', data.substring(0, 50) + '...');
+      console.log('🔍 String preview:', data.substring(0, 100) + '...');
+      console.log('🔍 First few character codes:', Array.from(data.substring(0, 10)).map(c => c.charCodeAt(0)));
       
-      try {
-        // Convert base64 string to ArrayBuffer
-        const binaryString = atob(data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
+      // Check if it's a valid base64 string
+      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+      const isBase64 = base64Regex.test(data.replace(/\s/g, ''));
+      
+      console.log('🔍 Appears to be base64:', isBase64);
+      
+      if (isBase64) {
+        try {
+          // Convert base64 string to ArrayBuffer
+          const binaryString = atob(data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          audioBuffer = bytes.buffer;
+          console.log('✅ Successfully converted base64 to ArrayBuffer');
+        } catch (error) {
+          console.error('❌ Failed to decode base64 string:', error);
+          throw new Error('Invalid base64 audio data received');
         }
-        audioBuffer = bytes.buffer;
-        console.log('✅ Successfully converted base64 to ArrayBuffer');
-      } catch (error) {
-        console.error('❌ Failed to decode base64 string:', error);
-        throw new Error('Invalid base64 audio data received');
+      } else {
+        // Treat as raw binary string (Latin1 encoded)
+        console.log('🔄 Treating as raw binary string...');
+        try {
+          const bytes = new Uint8Array(data.length);
+          for (let i = 0; i < data.length; i++) {
+            const charCode = data.charCodeAt(i);
+            if (charCode > 255) {
+              throw new Error(`Invalid binary character at position ${i}: ${charCode}`);
+            }
+            bytes[i] = charCode;
+          }
+          audioBuffer = bytes.buffer;
+          console.log('✅ Successfully converted binary string to ArrayBuffer');
+        } catch (error) {
+          console.error('❌ Failed to convert binary string:', error);
+          
+          // Try UTF-8 encoding as last resort
+          console.log('🔄 Trying UTF-8 encoding...');
+          try {
+            const encoder = new TextEncoder();
+            const utf8Bytes = encoder.encode(data);
+            audioBuffer = utf8Bytes.buffer;
+            console.log('✅ Successfully converted UTF-8 string to ArrayBuffer');
+          } catch (utf8Error) {
+            console.error('❌ All string conversion methods failed:', utf8Error);
+            throw new Error('Unable to convert string data to audio format');
+          }
+        }
       }
     } else {
       console.error('❌ Expected ArrayBuffer, Uint8Array, or base64 string, got:', typeof data, data?.constructor?.name);
@@ -417,10 +455,10 @@ export const useTextToSpeech = () => {
       let useDirectFetch = false;
 
       try {
-        // Call the Edge Function with responseType: 'arraybuffer'
+        // First try without responseType to see what we get
+        console.log('📡 Trying Supabase invoke without responseType...');
         const { data, error: functionError } = await supabase.functions.invoke('recipe-tts', {
-          body: payload,
-          responseType: 'arraybuffer'
+          body: payload
         });
 
         // Comprehensive debugging
