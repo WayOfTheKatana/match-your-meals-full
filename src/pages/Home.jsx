@@ -79,7 +79,6 @@ const Home = () => {
         <div className="max-w-4xl mx-auto px-4">
           <SplitText
             text="Stop scrolling through endless life <br /> stories just to find a recipe"
-            text="Hello World"
             className="text-3xl md:text-5xl font-semibold text-gray-900 mb-8"
             delay={100}
             duration={2}
@@ -88,7 +87,7 @@ const Home = () => {
             from={{ opacity: 0, y: 40 }}
             to={{ opacity: 1, y: 0 }}
             threshold={0.1}
-            rootMargin="-100px"
+            rootMargin="-120px"
             textAlign="center"
             onLetterAnimationComplete={handleAnimationComplete}
           />
