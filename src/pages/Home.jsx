@@ -76,12 +76,12 @@ const Home = () => {
     </div>
       {/* New Section with SplitText */}
       <div className="py-20 bg-white text-center">
-        <div className="max-w-4xl mx-auto px-4">
+        <div className="max-w-5xl mx-auto px-4">
           <SplitText
-            text="Stop scrolling through endless life  stories just to find a recipe"
+            text="Stop scrolling through endless life stories just to find a recipe"
             className="text-3xl md:text-5xl font-semibold text-gray-900 mb-8"
             delay={100}
-            duration={2}
+            duration={1.2}
             ease="elastic.out(1, 0.3)"
             splitType="chars"
             from={{ opacity: 0, y: 40 }}
