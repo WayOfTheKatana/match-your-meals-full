@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
-import { ChefHat, Loader2, AlertCircle } from 'lucide-react';
+import { 
+  ChefHat, 
+  Loader2, 
+  AlertCircle, 
+  Edit, 
+  Trash2, 
+  MoreVertical,
+  BarChart3
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '../ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 const fetchPublishedRecipes = async (userId) => {
   const { data, error } = await supabase
@@ -27,29 +42,69 @@ const PublishedRecipeSkeleton = () => (
     <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
     
     {/* Description Skeleton */}
-    <div className="space-y-2 mb-2 flex-1">
+    <div className="space-y-2 mb-4 flex-1">
       <div className="h-4 bg-gray-200 rounded w-full"></div>
       <div className="h-4 bg-gray-200 rounded w-2/3"></div>
     </div>
     
-    {/* Date Skeleton */}
-    <div className="h-3 bg-gray-200 rounded w-1/3 mt-2"></div>
+    {/* Divider Skeleton */}
+    <div className="h-px bg-gray-200 w-full mb-4"></div>
+    
+    {/* Action Buttons Skeleton */}
+    <div className="flex justify-between">
+      <div className="flex space-x-2">
+        <div className="h-8 w-16 bg-gray-200 rounded"></div>
+        <div className="h-8 w-16 bg-gray-200 rounded"></div>
+      </div>
+      <div className="h-8 w-8 bg-gray-200 rounded"></div>
+    </div>
   </div>
 );
 
 const PublishedRecipesSection = () => {
   const { user } = useAuth();
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const {
     data: recipes = [],
     isLoading,
     error,
+    refetch
   } = useQuery({
     queryKey: ['publishedRecipes', user?.id],
     queryFn: () => fetchPublishedRecipes(user.id),
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  const handleEdit = (recipeId) => {
+    console.log('Edit recipe:', recipeId);
+    // Implement edit functionality
+  };
+
+  const handleDelete = async (recipeId) => {
+    try {
+      const { error } = await supabase
+        .from('recipes')
+        .delete()
+        .eq('id', recipeId);
+      
+      if (error) throw error;
+      
+      // Refetch recipes after deletion
+      refetch();
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      alert('Failed to delete recipe. Please try again.');
+    } finally {
+      setDeleteConfirmId(null);
+    }
+  };
+
+  const handleViewAnalytics = (recipeId) => {
+    console.log('View analytics for recipe:', recipeId);
+    // Implement analytics view functionality
+  };
 
   if (isLoading) {
     return (
@@ -89,6 +144,7 @@ const PublishedRecipesSection = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {recipes.map(recipe => (
           <div key={recipe.id} className="bg-white rounded-xl shadow p-5 border border-gray-100 flex flex-col h-full">
+            {/* Recipe Image */}
             <div className="h-40 w-full rounded-lg overflow-hidden mb-4 bg-gray-100 flex items-center justify-center">
               {recipe.image_path ? (
                 <img src={recipe.image_path} alt={recipe.title} className="object-cover w-full h-full" />
@@ -100,6 +156,8 @@ const PublishedRecipesSection = () => {
                 />
               )}
             </div>
+            
+            {/* Recipe Content */}
             <div className="flex-1 flex flex-col">
               <Link 
                 to={`/recipes/${recipe.slug}`} 
@@ -107,8 +165,80 @@ const PublishedRecipesSection = () => {
               >
                 {recipe.title}
               </Link>
-              <p className="text-sm text-gray-600 mt-1 line-clamp-2 mb-2 flex-grow">{recipe.description}</p>
-              <div className="text-xs text-gray-400 mt-auto">Published on {new Date(recipe.created_at).toLocaleDateString()}</div>
+              <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-grow">{recipe.description}</p>
+              
+              {/* Horizontal Line */}
+              <hr className="border-gray-200 mb-4" />
+              
+              {/* Action Buttons */}
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center space-x-1 text-blue-600 hover:bg-blue-50 hover:border-blue-200"
+                    onClick={() => handleEdit(recipe.id)}
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center space-x-1 text-red-600 hover:bg-red-50 hover:border-red-200"
+                    onClick={() => setDeleteConfirmId(recipe.id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </Button>
+                </div>
+                
+                {/* Context Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                    >
+                      <MoreVertical className="h-4 w-4 text-gray-500" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem 
+                      onClick={() => handleViewAnalytics(recipe.id)}
+                      className="flex items-center cursor-pointer"
+                    >
+                      <BarChart3 className="w-4 h-4 mr-2 text-blue-500" />
+                      <span>View Analytics</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              {/* Delete Confirmation */}
+              {deleteConfirmId === recipe.id && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 mb-2">Are you sure you want to delete this recipe?</p>
+                  <div className="flex space-x-2 justify-end">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setDeleteConfirmId(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => handleDelete(recipe.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
