@@ -99,7 +99,7 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
     }
   };
 
-  // Simple AI Enhancement (no Edge Function call)
+  // AI Description Enhancement with Edge Function
   const handleEnhanceDescription = async () => {
     if (!formData.title.trim()) {
       alert('Please enter a recipe title first to enhance the description.');
@@ -108,16 +108,52 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
 
     setEnhancingDescription(true);
     try {
-      // Simulate AI enhancement - no Edge Function call here
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('🔄 Calling recipe-description-enhancer Edge Function...');
       
-      const enhancedDescription = `${formData.description || ''} This delicious ${formData.title.toLowerCase()} combines fresh ingredients with traditional cooking techniques to create a memorable dining experience. Perfect for ${formData.servings || 'family'} servings, this recipe balances flavors beautifully and is sure to become a household favorite. The preparation is ${formData.difficulty || 'easy'} and takes approximately ${formData.prepTime || '15'} minutes to prep.`.trim();
+      // Prepare the payload with context for better enhancement
+      const payload = {
+        description: formData.description || '',
+        title: formData.title,
+        ingredients: formData.ingredients.filter(ing => ing.item.trim() !== '')
+      };
+
+      // Call the Edge Function
+      const { data, error } = await supabase.functions.invoke('recipe-description-enhancer', {
+        body: payload
+      });
+
+      if (error) {
+        console.error('❌ Edge Function error:', error);
+        throw new Error(`Description enhancement failed: ${error.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Description enhancement failed');
+      }
+
+      console.log('✅ Description enhanced successfully:', data);
       
-      handleInputChange('description', enhancedDescription);
+      // Update the description field with the enhanced version
+      handleInputChange('description', data.enhanced_description);
+      
+      // Show success message
       alert('Description enhanced successfully!');
     } catch (error) {
-      console.error('Error enhancing description:', error);
-      alert('Failed to enhance description. Please try again.');
+      console.error('❌ Error enhancing description:', error);
+      
+      let errorMessage = 'Failed to enhance description. Please try again.';
+      
+      if (error.message?.includes('API key')) {
+        errorMessage = 'AI service not configured. Please contact support.';
+      } else if (error.message?.includes('Failed to connect')) {
+        errorMessage = 'Unable to connect to AI service. Please check your internet connection.';
+      } else if (error.message?.includes('Function not found')) {
+        errorMessage = 'Enhancement function not found. Please ensure the recipe-description-enhancer function is deployed in Supabase.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setEnhancingDescription(false);
     }
@@ -693,23 +729,28 @@ const RecipeCreationModal = ({ isOpen, onClose, initialRecipeData = null, onSave
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       placeholder="Describe your recipe..."
                       rows={4}
-                      disabled={loading}
+                      disabled={loading || enhancingDescription}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none ${errors.description ? 'border-red-300' : 'border-gray-300'}`}
                     />
                     {/* AI Enhance Button - Fixed in bottom right corner of textarea */}
                     <button
                       type="button"
                       onClick={handleEnhanceDescription}
-                      disabled={enhancingDescription || loading}
+                      disabled={enhancingDescription || loading || !formData.description.trim()}
                       className="absolute bottom-3 right-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Enhance description with AI"
                     >
                       {enhancingDescription ? (
-                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                        <>
+                          <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Enhancing...</span>
+                        </>
                       ) : (
-                        <Sparkles className="w-3 h-3" />
+                        <>
+                          <Sparkles className="w-3 h-3" />
+                          <span>AI Enhance</span>
+                        </>
                       )}
-                      <span>{enhancingDescription ? 'Enhancing...' : 'AI Enhance'}</span>
                     </button>
                   </div>
                   {errors.description && (
