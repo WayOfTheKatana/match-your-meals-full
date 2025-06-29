@@ -7,6 +7,7 @@ import SplitText from "../components/SplitText";
 import RecipeShowcaseSection from '../components/RecipeShowcaseSection';
 import { FeaturesSectionWithHoverEffects } from '../components/FeaturesSectionWithHoverEffects';
 import { Feature } from '../components/ui/feature';
+import { FaqSection } from '../components/ui/faq';
 
 const Home = () => {
   // Food-related items for the grid
@@ -49,6 +50,30 @@ const Home = () => {
   const handleAnimationComplete = () => {
     console.log('All letters have animated!');
   };
+
+  // FAQ items
+  const DEMO_FAQS = [
+    {
+      question: "How does the AI-powered recipe search work?",
+      answer: "Our AI understands natural language, so you can search exactly how you speak. Just type or say what you're looking for - like 'quick dinner with chicken and spinach' or 'healthy breakfast without eggs' - and our system analyzes your intent, dietary preferences, and time constraints to find perfect matches. It gets smarter with each search, learning your preferences over time.",
+    },
+    {
+      question: "Can I save recipes for later?",
+      answer: "Absolutely! You can save any recipe to your personal collection with a single click. Create custom boards like 'Weeknight Dinners' or 'Holiday Recipes' to keep everything organized. Your saved recipes are accessible across all your devices, so you'll always have your favorites handy whether you're at home or grocery shopping.",
+    },
+    {
+      question: "Is there a way to filter recipes by dietary needs?",
+      answer: "Yes, we offer comprehensive filtering options for dietary preferences and restrictions. You can filter by vegetarian, vegan, gluten-free, keto, low-carb, dairy-free, and many more options. You can also filter by ingredients you want to include or exclude, cooking time, and nutritional content like calories or protein amount.",
+    },
+    {
+      question: "How does the voice search feature work?",
+      answer: "Our voice search feature lets you search hands-free - perfect for when you're cooking! Just tap the microphone icon and speak naturally. For example, say 'Show me quick pasta recipes' or 'Find me a healthy dinner I can make in 30 minutes.' The system will process your request and display relevant results instantly.",
+    },
+    {
+      question: "What is the Cooking Assistant feature?",
+      answer: "Amelia, our cooking assistant, can read recipe instructions aloud while you cook. This hands-free feature is perfect when your hands are messy or you're multitasking in the kitchen. Amelia uses natural-sounding voice technology to clearly guide you through each step of the recipe at your own pace.",
+    },
+  ];
 
   return (
     <>
@@ -104,6 +129,21 @@ const Home = () => {
       {/* Creator Revenue Share Section */}
       <section id="about" className="bg-white">
         <Feature />
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq">
+        <FaqSection
+          title="Frequently Asked Questions"
+          description="Everything you need to know about our AI-powered recipe platform"
+          items={DEMO_FAQS}
+          contactInfo={{
+            title: "Still have questions?",
+            description: "We're here to help with any questions you might have",
+            buttonText: "Contact Support",
+            onContact: () => console.log("Contact support clicked"),
+          }}
+        />
       </section>
     </>
   );
