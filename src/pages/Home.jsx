@@ -3,6 +3,7 @@ import CommonHeader from '../components/CommonHeader';
 import SearchSection from '../components/SearchSection';
 import GridMotion from '../components/GridMotion';
 import SplitText from "../components/SplitText";
+import { Features } from "../components/blocks/features-8";
 
 const Home = () => {
   // Food-related items for the grid
@@ -78,7 +79,7 @@ const Home = () => {
       <div className="py-20 bg-white text-center">
         <div className="max-w-4xl mx-auto px-10">
           <SplitText
-            text="Tired of recipe blogs with endless backstories?"
+            text="Stop scrolling through endless life stories just to find a recipe"
             className="text-3xl md:text-6xl font-semibold text-gray-900 mb-8 font-urbanist"
             delay={100}
             duration={1.2}
@@ -93,6 +94,9 @@ const Home = () => {
           />
         </div>
       </div>
+
+      {/* Features Section */}
+      <Features />
     </>
  
   );
