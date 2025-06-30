@@ -26,6 +26,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState('login'); // 'login' or 'signup'
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleSignOut = async () => {
@@ -134,7 +135,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowLoginModal(true)}
+                    onClick={() => { setLoginModalMode('login'); setShowLoginModal(true); }}
                     className="text-white"
                   >
                     Sign In
@@ -142,7 +143,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
                   <Button
                     size="sm"
                     className="bg-[#D35400] hover:bg-[#B8440E] text-white"
-                    onClick={() => setShowLoginModal(true)}
+                    onClick={() => { setLoginModalMode('signup'); setShowLoginModal(true); }}
                   >
                     Get Started
                   </Button>
@@ -187,6 +188,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
                       size="sm"
                       className="w-full justify-start"
                       onClick={() => {
+                        setLoginModalMode('login');
                         setShowLoginModal(true);
                         setShowMobileMenu(false);
                       }}
@@ -197,6 +199,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
                       size="sm"
                       className="w-full mt-2 bg-[#D35400] hover:bg-[#B8440E] text-white"
                       onClick={() => {
+                        setLoginModalMode('signup');
                         setShowLoginModal(true);
                         setShowMobileMenu(false);
                       }}
@@ -215,6 +218,7 @@ export const CommonHeader = ({ variant = 'default' }) => {
       <LoginModal 
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
+        initialMode={loginModalMode}
       />
 
       {/* Click outside to close mobile menu */}
