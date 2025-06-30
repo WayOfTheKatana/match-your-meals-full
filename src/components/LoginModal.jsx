@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Eye, EyeOff, Mail, Lock, User, ChefHat, AlertCircle, Check } from 'lucide-react';
 import { Button } from './ui/button';
@@ -6,8 +6,8 @@ import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const LoginModal = ({ isOpen, onClose, onSuccess }) => {
-  const [isLogin, setIsLogin] = useState(true);
+const LoginModal = ({ isOpen, onClose, onSuccess, initialMode = 'login' }) => {
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,6 +24,13 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
   const navigate = useNavigate();
 
   const { signIn, signUp, isConnected } = useAuth();
+
+  // Update isLogin when initialMode changes and modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setIsLogin(initialMode === 'login');
+    }
+  }, [initialMode, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

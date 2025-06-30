@@ -1,0 +1,9 @@
+/* Responsive placeholder font size for SearchSection */
+.placeholder-xs::placeholder {
+  font-size: 12px;
+}
+@media (min-width: 640px) {
+  .sm\:placeholder-base::placeholder {
+    font-size: 1rem;
+  }
+} 

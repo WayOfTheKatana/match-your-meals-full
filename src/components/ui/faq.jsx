@@ -10,18 +10,18 @@ const FaqSection = React.forwardRef(
       <section
         ref={ref}
         className={cn(
-          "py-16 w-full bg-gradient-to-b from-transparent via-gray-100/50 to-transparent",
+          "w-full bg-gradient-to-b from-transparent via-gray-100/50 to-transparent sm:py-16 py-8 px-4 sm:px-6",
           className
         )}
         {...props}
       >
-        <div className="container">
+        <div className="max-w-4xl w-full mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="max-w-2xl mx-auto text-center mb-12"
+            className="max-w-2xl w-full mx-auto text-center mb-8 sm:mb-12"
           >
             <h2 className="text-3xl font-semibold mb-3 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
               {title}
@@ -32,7 +32,7 @@ const FaqSection = React.forwardRef(
           </motion.div>
 
           {/* FAQ Items */}
-          <div className="max-w-2xl mx-auto space-y-2">
+          <div className="w-full sm:max-w-2xl mx-auto space-y-2">
             {items.map((item, index) => (
               <FaqItem
                 key={index}
@@ -85,7 +85,7 @@ const FaqItem = React.forwardRef(
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, delay: index * 0.1 }}
         className={cn(
-          "group rounded-lg",
+          "group rounded-lg w-full",
           "transition-all duration-200 ease-in-out",
           "border border-gray-200/50",
           isOpen
@@ -96,11 +96,11 @@ const FaqItem = React.forwardRef(
         <Button
           variant="ghost"
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full px-6 py-4 h-auto justify-between hover:bg-transparent"
+          className="w-full px-3 sm:px-6 py-4 h-auto justify-between hover:bg-transparent"
         >
           <h3
             className={cn(
-              "text-base font-medium transition-colors duration-200 text-left",
+              "text-[10px] sm:text-xs font-medium transition-colors duration-200 text-left",
               "text-gray-700",
               isOpen && "text-gray-900"
             )}
@@ -137,12 +137,12 @@ const FaqItem = React.forwardRef(
                 transition: { duration: 0.2, ease: "easeIn" },
               }}
             >
-              <div className="px-6 pb-4 pt-2">
+              <div className="px-3 sm:px-6 pb-4 pt-2">
                 <motion.p
                   initial={{ y: -10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -10, opacity: 0 }}
-                  className="text-sm text-gray-600 leading-relaxed"
+                  className="text-[10px] sm:text-xs text-gray-600 leading-relaxed break-all whitespace-normal"
                 >
                   {answer}
                 </motion.p>

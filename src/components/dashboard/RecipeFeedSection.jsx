@@ -30,7 +30,8 @@ const RecipeFeedSection = ({
   getTotalTime,
   isRecipeSaved,
   handleSaveSearchedRecipe,
-  handleQuickSearch
+  handleQuickSearch,
+  handleCreateRecipe
 }) => {
   const { user } = useAuth();
   const [selectedRecipeForBoard, setSelectedRecipeForBoard] = useState(null);
@@ -182,7 +183,7 @@ const RecipeFeedSection = ({
           )}
 
           {/* Creator Mode Fallback */}
-          {isCreatorMode && !recipesLoading && !recipesError && recentRecipes.length === 0 && publishedRecipes && (
+          {isCreatorMode && !recipesLoading && !recipesError && recentRecipes.length === 0 && publishedRecipes && publishedRecipes.length > 0 && (
             <>
               {publishedRecipes.map((recipe, index) => (
                 <div key={index} className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
@@ -227,6 +228,27 @@ const RecipeFeedSection = ({
                 </div>
               ))}
             </>
+          )}
+
+          {/* Creator Mode - No Published Recipes Placeholder */}
+          {isCreatorMode && !recipesLoading && !recipesError && recentRecipes.length === 0 && publishedRecipes && publishedRecipes.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-10">
+              <img
+                src="/Social share-cuate.svg"
+                alt="No recipes"
+                className="w-32 h-32 mb-4"
+              />
+              <h4 className="text-lg font-semibold text-gray-700 mb-2">No Recipes Yet</h4>
+              <p className="text-gray-500 mb-4 text-center">
+                You haven't published any recipes yet. Start sharing your culinary creations with the world!
+              </p>
+              <Button
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg shadow hover:bg-primary-700 transition"
+                onClick={handleCreateRecipe ? handleCreateRecipe : () => handleQuickSearch('create')}
+              >
+                + Create Your First Recipe
+              </Button>
+            </div>
           )}
 
           {/* No Recipes State */}
