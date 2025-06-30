@@ -229,10 +229,10 @@ const SearchSection = () => {
             {/* Search Icon/Button */}
             <button
               onClick={handleSearch}
-              className="h-16 w-16 bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out hover:scale-105 shadow-lg hover:shadow-xl group rounded-r-full rounded-l-none flex items-center justify-center"
+              className="h-10 w-10 bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out shadow-lg flex items-center justify-center rounded-full absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               aria-label="Search recipes"
             >
-              <Search className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+              <Search className="w-5 h-5" />
             </button>
           </div>
         </div>
