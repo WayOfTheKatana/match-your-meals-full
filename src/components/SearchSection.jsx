@@ -5,6 +5,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import LoginModal from './LoginModal';
+import './SearchSection.css';
+
+// Custom hook to detect if screen is large or above
+function useIsLargeScreen() {
+  const [isLarge, setIsLarge] = useState(() => window.innerWidth >= 1024);
+  useEffect(() => {
+    function handleResize() {
+      setIsLarge(window.innerWidth >= 1024);
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  return isLarge;
+}
 
 const SearchSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +44,8 @@ const SearchSection = () => {
     "Tuna With Salmon Recipe",
     "Vanilla Milkshake Post-workout Recipe"
   ];
+
+  const isLargeScreen = useIsLargeScreen();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -100,6 +116,8 @@ const SearchSection = () => {
   const getPlaceholderText = () => {
     if (isListening) {
       return "Listening... Speak your recipe request";
+    } else if (!isLargeScreen) {
+      return "Search";
     } else {
       return "pre-workout banana milkshake and suggest me post workout";
     }
@@ -182,8 +200,8 @@ const SearchSection = () => {
         )}
 
         {/* Full-Width Search Bar */}
-        <div className="md:w-[650px] w-[400px] mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          <div className="relative flex items-center bg-white rounded-full shadow-2xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-3xl focus-within:shadow-3xl focus-within:scale-[1.01] border border-white/20">
+        <div className="w-full max-w-xs sm:max-w-md md:max-w-xl lg:max-w-2xl mx-auto px-2 sm:px-0 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="relative flex items-center bg-white rounded-full shadow-2xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-3xl focus-within:shadow-3xl focus-within:scale-[1.01] border border-white/20 w-full">
             {/* Voice/Mic Icon */}
             <div className="flex items-center pl-4 pr-2">
               <button
@@ -211,7 +229,7 @@ const SearchSection = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-16 text-[1rem] bg-transparent px-0 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-50"
+                className="w-full border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-700 placeholder:text-gray-400 h-10 sm:h-12 text-sm sm:text-base bg-transparent px-0 placeholder:transition-opacity placeholder:duration-300 focus:placeholder:opacity-50 placeholder-xs sm:placeholder-base"
               />
               
               {/* Voice Input Indicator */}
@@ -229,10 +247,11 @@ const SearchSection = () => {
             {/* Search Icon/Button */}
             <button
               onClick={handleSearch}
-              className="h-10 w-10 bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out shadow-lg flex items-center justify-center rounded-full absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="h-10 w-10 sm:h-12 sm:w-12 bg-primary-600 hover:bg-primary-700 text-white transition-all duration-300 ease-in-out shadow-lg flex items-center justify-center rounded-full absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none focus:ring-2 focus:ring-primary-500 p-0"
+              style={{ top: '50%', transform: 'translateY(-50%)' }}
               aria-label="Search recipes"
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-5 h-5" style={{ display: 'block', margin: 'auto' }} />
             </button>
           </div>
         </div>
