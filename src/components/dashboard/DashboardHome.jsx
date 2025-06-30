@@ -173,6 +173,7 @@ const DashboardHome = () => {
           setSearchQuery(query);
           performSearch(query, directSearchFetch);
         }}
+        handleCreateRecipe={handleCreateRecipe}
       />
     </div>
   );
